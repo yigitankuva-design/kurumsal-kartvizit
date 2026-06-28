@@ -1,11 +1,15 @@
-<div class="auth-container">
-  <h1>Firma Girişi</h1>
-  <form method="POST" action="/firma/giris">
-    <label>Email</label>
-    <input type="email" name="yetkili_email" required>
-    <label>Şifre</label>
-    <input type="password" name="sifre" required>
-    <button type="submit" class="btn">Giriş Yap</button>
-  </form>
-  <p style="margin-top:16px"><a href="/firma/kayit">Firma kaydı yok mu? Kayıt ol</a></p>
+<div class="auth-wrapper">
+  <div class="auth-container">
+    <div class="auth-logo">NFC<span>Kart</span></div>
+    <h1>Firma girişi</h1>
+    <p class="auth-sub">Yönetim paneline erişin</p>
+    <form method="POST" action="/firma/giris">
+      <label>E-posta adresi</label>
+      <input type="email" name="yetkili_email" placeholder="firma@email.com" required>
+      <label>Şifre</label>
+      <input type="password" name="sifre" placeholder="••••••••" required>
+      <button type="submit" class="btn">Giriş Yap</button>
+    </form>
+    <p class="auth-link">Hesabınız yok mu? <a href="/firma/kayit">Firma kaydı oluşturun</a></p>
+  </div>
 </div>

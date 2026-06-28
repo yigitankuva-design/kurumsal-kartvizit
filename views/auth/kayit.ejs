@@ -1,22 +1,26 @@
-<div class="auth-container">
-  <h1>Firma Kaydı</h1>
-  <form method="POST" action="/firma/kayit">
-    <label>Firma Adı</label>
-    <input type="text" name="ad" required>
-    <label>Sektör</label>
-    <select name="sektor">
-      <option value="diger">Diğer</option>
-      <option value="ilac">İlaç</option>
-      <option value="banka">Banka</option>
-      <option value="sigorta">Sigorta</option>
-    </select>
-    <label>Marka Rengi</label>
-    <input type="color" name="marka_rengi" value="#1a73e8">
-    <label>Yetkili Email</label>
-    <input type="email" name="yetkili_email" required>
-    <label>Şifre</label>
-    <input type="password" name="sifre" required minlength="8">
-    <button type="submit" class="btn">Kayıt Ol</button>
-  </form>
-  <p style="margin-top:16px"><a href="/firma/giris">Zaten hesabın var mı? Giriş yap</a></p>
+<div class="auth-wrapper">
+  <div class="auth-container">
+    <div class="auth-logo">NFC<span>Kart</span></div>
+    <h1>Firma kaydı</h1>
+    <p class="auth-sub">NFC kartvizit sistemine katılın</p>
+    <form method="POST" action="/firma/kayit">
+      <label>Firma adı</label>
+      <input type="text" name="ad" placeholder="Örn: Abdi İbrahim İlaç" required>
+      <label>Sektör</label>
+      <select name="sektor">
+        <option value="diger">Diğer</option>
+        <option value="ilac">İlaç</option>
+        <option value="banka">Banka</option>
+        <option value="sigorta">Sigorta</option>
+      </select>
+      <label>Marka rengi</label>
+      <input type="color" name="marka_rengi" value="#1a73e8">
+      <label>Yetkili e-posta</label>
+      <input type="email" name="yetkili_email" placeholder="yetkili@firma.com" required>
+      <label>Şifre</label>
+      <input type="password" name="sifre" placeholder="En az 8 karakter" required minlength="8">
+      <button type="submit" class="btn">Kayıt Ol</button>
+    </form>
+    <p class="auth-link">Zaten hesabınız var mı? <a href="/firma/giris">Giriş yapın</a></p>
+  </div>
 </div>
