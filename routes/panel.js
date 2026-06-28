@@ -5,6 +5,9 @@ const { calisanSlugOlustur } = require('../utils/slug');
 const XLSX = require('xlsx');
 const multer = require('multer');
 const { excelParse } = require('../utils/excel');
+const { uploadMiddleware } = require('../middleware/upload');
+
+const fotoUpload = uploadMiddleware('calisanlar');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
@@ -130,8 +133,8 @@ router.get('/:id/duzenle', async (req, res) => {
   }
 });
 
-// Çalışan düzenleme POST
-router.post('/:id/duzenle', async (req, res) => {
+// Çalışan düzenleme POST (foto upload destekli)
+router.post('/:id/duzenle', fotoUpload.single('foto'), async (req, res) => {
   const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, ilaclar } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
@@ -139,12 +142,38 @@ router.post('/:id/duzenle', async (req, res) => {
   }
   try {
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
-    await pool.query(
-      `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
-       email=$6, linkedin=$7, biyografi=$8, ilaclar=$9 WHERE id=$10 AND firma_id=$11`,
-      [ad, soyad, unvan || null, departman || null, telefon || null,
-       email || null, linkedin || null, biyografi || null, ilaclarArray, req.params.id, req.session.firmaId]
-    );
+
+    if (req.file) {
+      // S3 üzerinden yüklendi → location, memory storage ise buffer (şimdilik URL yok)
+      const fotoUrl = req.file.location || null;
+      if (fotoUrl) {
+        await pool.query(
+          `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
+           email=$6, linkedin=$7, biyografi=$8, ilaclar=$9, foto_url=$10
+           WHERE id=$11 AND firma_id=$12`,
+          [ad, soyad, unvan || null, departman || null, telefon || null,
+           email || null, linkedin || null, biyografi || null, ilaclarArray, fotoUrl,
+           req.params.id, req.session.firmaId]
+        );
+      } else {
+        await pool.query(
+          `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
+           email=$6, linkedin=$7, biyografi=$8, ilaclar=$9 WHERE id=$10 AND firma_id=$11`,
+          [ad, soyad, unvan || null, departman || null, telefon || null,
+           email || null, linkedin || null, biyografi || null, ilaclarArray,
+           req.params.id, req.session.firmaId]
+        );
+      }
+    } else {
+      await pool.query(
+        `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
+         email=$6, linkedin=$7, biyografi=$8, ilaclar=$9 WHERE id=$10 AND firma_id=$11`,
+        [ad, soyad, unvan || null, departman || null, telefon || null,
+         email || null, linkedin || null, biyografi || null, ilaclarArray,
+         req.params.id, req.session.firmaId]
+      );
+    }
+
     req.flash('success', 'Çalışan güncellendi.');
     res.redirect('/firma/panel');
   } catch (err) {
