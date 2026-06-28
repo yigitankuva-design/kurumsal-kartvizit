@@ -1,0 +1,22 @@
+<div class="auth-container">
+  <h1>Firma Kaydı</h1>
+  <form method="POST" action="/firma/kayit">
+    <label>Firma Adı</label>
+    <input type="text" name="ad" required>
+    <label>Sektör</label>
+    <select name="sektor">
+      <option value="diger">Diğer</option>
+      <option value="ilac">İlaç</option>
+      <option value="banka">Banka</option>
+      <option value="sigorta">Sigorta</option>
+    </select>
+    <label>Marka Rengi</label>
+    <input type="color" name="marka_rengi" value="#1a73e8">
+    <label>Yetkili Email</label>
+    <input type="email" name="yetkili_email" required>
+    <label>Şifre</label>
+    <input type="password" name="sifre" required minlength="8">
+    <button type="submit" class="btn">Kayıt Ol</button>
+  </form>
+  <p style="margin-top:16px"><a href="/firma/giris">Zaten hesabın var mı? Giriş yap</a></p>
+</div>

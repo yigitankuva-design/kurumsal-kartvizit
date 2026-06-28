@@ -1,0 +1,30 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <h2>Tüm Firmalar (<%= firmalar.length %>)</h2>
+    <form method="POST" action="/superadmin/cikis">
+      <button type="submit" class="btn-link">Çıkış</button>
+    </form>
+  </header>
+  <table class="tablo">
+    <thead>
+      <tr><th>Firma Adı</th><th>Slug</th><th>Sektör</th><th>Çalışan</th><th>Kayıt</th><th>İşlem</th></tr>
+    </thead>
+    <tbody>
+      <% firmalar.forEach(f => { %>
+      <tr>
+        <td><%= f.ad %></td>
+        <td><code><%= f.slug %></code></td>
+        <td><%= f.sektor %></td>
+        <td><%= f.calisan_sayisi %></td>
+        <td><%= new Date(f.created_at).toLocaleDateString('tr-TR') %></td>
+        <td>
+          <form method="POST" action="/superadmin/firma-sil/<%= f.id %>"
+                onsubmit="return confirm('Firma ve tüm çalışanları silinecek. Emin misin?')">
+            <button type="submit" class="btn-sm btn-danger">Sil</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+</div>

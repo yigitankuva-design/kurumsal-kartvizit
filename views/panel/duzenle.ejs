@@ -1,0 +1,25 @@
+<div class="form-container">
+  <h2>Çalışan Düzenle</h2>
+  <a href="/firma/panel" class="btn-link" style="display:inline-block;margin-bottom:20px">← Panele Dön</a>
+  <form method="POST" action="/firma/panel/<%= calisan.id %>/duzenle" enctype="multipart/form-data">
+    <div class="form-group"><label>Ad *</label><input type="text" name="ad" value="<%= calisan.ad %>" required></div>
+    <div class="form-group"><label>Soyad *</label><input type="text" name="soyad" value="<%= calisan.soyad %>" required></div>
+    <div class="form-group"><label>Unvan</label><input type="text" name="unvan" value="<%= calisan.unvan || '' %>"></div>
+    <div class="form-group"><label>Departman</label><input type="text" name="departman" value="<%= calisan.departman || '' %>"></div>
+    <div class="form-group"><label>Telefon</label><input type="tel" name="telefon" value="<%= calisan.telefon || '' %>"></div>
+    <div class="form-group"><label>Email</label><input type="email" name="email" value="<%= calisan.email || '' %>"></div>
+    <div class="form-group"><label>LinkedIn URL</label><input type="url" name="linkedin" value="<%= calisan.linkedin || '' %>"></div>
+    <div class="form-group"><label>Biyografi</label><textarea name="biyografi" rows="3"><%= calisan.biyografi || '' %></textarea></div>
+    <div class="form-group"><label>Çalışılan İlaçlar <small style="color:#888">(virgülle ayır)</small></label><input type="text" name="ilaclar" value="<%= (calisan.ilaclar || []).join(', ') %>"></div>
+    <div class="form-group">
+      <label>Fotoğraf</label>
+      <% if (calisan.foto_url) { %>
+        <img src="<%= calisan.foto_url %>" class="foto-onizleme" alt="Mevcut foto">
+      <% } %>
+      <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+      <small style="color:#888">Yeni dosya seçmezsen mevcut foto kalır.</small>
+    </div>
+    <button type="submit" class="btn">Kaydet</button>
+  </form>
+  <p class="slug-bilgi">Profil URL'si: <code>/<%= firma_slug %>/<%= calisan.slug %></code> (hiç değişmez)</p>
+</div>

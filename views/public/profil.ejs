@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= calisan.ad %> <%= calisan.soyad %></title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>.profil-header { background: <%= calisan.marka_rengi %>; }</style>
+</head>
+<body class="profil-body">
+  <div class="profil-kart">
+    <div class="profil-header">
+      <% if (calisan.logo_url) { %>
+        <img src="<%= calisan.logo_url %>" class="firma-logo" alt="<%= calisan.firma_ad %>">
+      <% } else { %>
+        <div class="firma-ad-text"><%= calisan.firma_ad %></div>
+      <% } %>
+      <div class="profil-foto-wrap">
+        <% if (calisan.foto_url) { %>
+          <img src="<%= calisan.foto_url %>" class="profil-foto" alt="<%= calisan.ad %>">
+        <% } else { %>
+          <div class="profil-initials"><%= calisan.ad[0] %><%= calisan.soyad[0] %></div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="profil-icerik">
+      <h1 class="profil-isim"><%= calisan.ad %> <%= calisan.soyad %></h1>
+      <% if (calisan.unvan) { %>
+        <p class="profil-unvan"><%= calisan.unvan %></p>
+      <% } %>
+      <% if (calisan.departman) { %>
+        <p class="profil-departman"><%= calisan.departman %></p>
+      <% } %>
+      <% if (calisan.biyografi) { %>
+        <p class="profil-bio"><%= calisan.biyografi %></p>
+      <% } %>
+      <% if (calisan.sektor === 'ilac' && calisan.ilaclar && calisan.ilaclar.length) { %>
+        <div class="ilac-etiketler">
+          <% calisan.ilaclar.forEach(ilac => { %>
+            <span class="ilac-etiket"><%= ilac %></span>
+          <% }); %>
+        </div>
+      <% } %>
+      <div class="iletisim-butonlar">
+        <% if (calisan.telefon) { %>
+          <a href="tel:<%= calisan.telefon %>" class="btn-iletisim">📞 <%= calisan.telefon %></a>
+        <% } %>
+        <% if (calisan.email) { %>
+          <a href="mailto:<%= calisan.email %>" class="btn-iletisim">✉️ <%= calisan.email %></a>
+        <% } %>
+        <% if (calisan.linkedin) { %>
+          <a href="<%= calisan.linkedin %>" target="_blank" rel="noopener" class="btn-iletisim">💼 LinkedIn</a>
+        <% } %>
+      </div>
+      <a href="/<%= calisan.firma_slug %>/<%= calisan.slug %>/vcf" class="btn-vcf" download>+ Rehbere Kaydet</a>
+      <footer class="profil-footer"><%= calisan.firma_ad %></footer>
+    </div>
+  </div>
+</body>
+</html>

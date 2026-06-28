@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title><%= typeof title !== 'undefined' ? title : '404' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="profil-body">
+  <div class="hata-kart">
+    <h1>404</h1>
+    <p><%= typeof mesaj !== 'undefined' ? mesaj : 'Sayfa bulunamadı.' %></p>
+  </div>
+</body>
+</html>

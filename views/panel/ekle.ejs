@@ -1,0 +1,16 @@
+<div class="form-container">
+  <h2>Yeni Çalışan Ekle</h2>
+  <a href="/firma/panel" class="btn-link" style="display:inline-block;margin-bottom:20px">← Panele Dön</a>
+  <form method="POST" action="/firma/panel/ekle">
+    <div class="form-group"><label>Ad *</label><input type="text" name="ad" required></div>
+    <div class="form-group"><label>Soyad *</label><input type="text" name="soyad" required></div>
+    <div class="form-group"><label>Unvan</label><input type="text" name="unvan"></div>
+    <div class="form-group"><label>Departman</label><input type="text" name="departman"></div>
+    <div class="form-group"><label>Telefon</label><input type="tel" name="telefon"></div>
+    <div class="form-group"><label>Email</label><input type="email" name="email"></div>
+    <div class="form-group"><label>LinkedIn URL</label><input type="url" name="linkedin" placeholder="https://linkedin.com/in/..."></div>
+    <div class="form-group"><label>Biyografi</label><textarea name="biyografi" rows="3" placeholder="Kısa tanıtım yazısı..."></textarea></div>
+    <div class="form-group"><label>Çalışılan İlaçlar <small style="color:#888">(virgülle ayır)</small></label><input type="text" name="ilaclar" placeholder="Cardura, Norvasc, Beloc"></div>
+    <button type="submit" class="btn">Ekle</button>
+  </form>
+</div>

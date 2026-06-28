@@ -12,6 +12,7 @@ const authRoutes = require('./routes/auth');
 const panelRoutes = require('./routes/panel');
 const superadminRoutes = require('./routes/superadmin');
 const publicRoutes = require('./routes/public');
+const { requireFirma } = require('./middleware/authMiddleware');
 
 const app = express();
 
@@ -47,7 +48,7 @@ app.use((req, res, next) => {
 });
 
 app.use('/firma', authRoutes);
-app.use('/firma/panel', panelRoutes);
+app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/', publicRoutes);
 

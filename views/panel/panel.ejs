@@ -1,0 +1,98 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <div class="panel-firma-adi"><%= firma.ad %></div>
+    <form method="POST" action="/firma/cikis">
+      <button type="submit" class="btn-link">Çıkış</button>
+    </form>
+  </header>
+
+  <nav class="panel-tabs">
+    <a href="/firma/panel?tab=calisanlar" class="<%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
+    <a href="/firma/panel?tab=istatistik" class="<%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
+    <a href="/firma/panel?tab=excel" class="<%= tab === 'excel' ? 'active' : '' %>">Excel Yükle</a>
+  </nav>
+
+  <% if (tab === 'calisanlar') { %>
+    <div class="tab-content">
+      <div class="panel-actions">
+        <div class="sayaclar">
+          <span class="chip aktif">Aktif: <%= aktifSayisi %></span>
+          <span class="chip pasif">Pasif: <%= pasifSayisi %></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <a href="/firma/panel/ekle" class="btn">+ Yeni Çalışan</a>
+          <a href="/firma/panel?tab=excel" class="btn btn-secondary">Excel Yükle</a>
+        </div>
+      </div>
+      <% if (calisanlar.length) { %>
+      <table class="tablo">
+        <thead>
+          <tr>
+            <th>Ad Soyad</th>
+            <th>Unvan</th>
+            <th>Durum</th>
+            <th>Profil URL</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% calisanlar.forEach(c => { %>
+          <tr class="<%= c.durum === 'pasif' ? 'row-pasif' : '' %>">
+            <td><%= c.ad %> <%= c.soyad %></td>
+            <td><%= c.unvan || '-' %></td>
+            <td><span class="durum-badge durum-<%= c.durum %>"><%= c.durum %></span></td>
+            <td><a href="/<%= firma.slug %>/<%= c.slug %>" target="_blank" class="url-link">/<%= firma.slug %>/<%= c.slug %></a></td>
+            <td style="display:flex;gap:6px;align-items:center">
+              <a href="/firma/panel/<%= c.id %>/duzenle" class="btn-sm">Düzenle</a>
+              <form method="POST" action="/firma/panel/<%= c.id %>/durum">
+                <input type="hidden" name="_method" value="PATCH">
+                <input type="hidden" name="durum" value="<%= c.durum === 'aktif' ? 'pasif' : 'aktif' %>">
+                <button type="submit" class="btn-sm btn-danger"><%= c.durum === 'aktif' ? 'Pasife Al' : 'Aktif Et' %></button>
+              </form>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <% } else { %>
+        <p class="bos-mesaj">Henüz çalışan eklenmemiş. <a href="/firma/panel/ekle">İlk çalışanı ekle →</a></p>
+      <% } %>
+    </div>
+
+  <% } else if (tab === 'istatistik') { %>
+    <div class="tab-content">
+      <div class="stat-kartlar">
+        <div class="stat-kart"><div class="stat-sayi"><%= aktifSayisi + pasifSayisi %></div><div>Toplam Çalışan</div></div>
+        <div class="stat-kart"><div class="stat-sayi aktif-renk"><%= aktifSayisi %></div><div>Aktif</div></div>
+        <div class="stat-kart"><div class="stat-sayi pasif-renk"><%= pasifSayisi %></div><div>Pasif</div></div>
+        <div class="stat-kart"><div class="stat-sayi"><%= toplamGoruntulenme %></div><div>Toplam Görüntülenme</div></div>
+      </div>
+      <table class="tablo">
+        <thead><tr><th>Ad Soyad</th><th>Görüntülenme</th><th>Durum</th></tr></thead>
+        <tbody>
+          <% [...calisanlar].sort((a,b) => b.goruntuleme_sayisi - a.goruntuleme_sayisi).forEach(c => { %>
+          <tr>
+            <td><%= c.ad %> <%= c.soyad %></td>
+            <td><%= c.goruntuleme_sayisi %></td>
+            <td><span class="durum-badge durum-<%= c.durum %>"><%= c.durum %></span></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+  <% } else if (tab === 'excel') { %>
+    <div class="tab-content">
+      <h3 style="margin-bottom:12px">Excel ile Toplu Çalışan Yükleme</h3>
+      <p style="margin-bottom:16px;color:#666">Önce şablonu indir, doldur, sonra yükle.</p>
+      <a href="/firma/panel/excel-sablon" class="btn btn-secondary" style="margin-bottom:20px;display:inline-block">⬇ Şablonu İndir (.xlsx)</a>
+      <form method="POST" action="/firma/panel/toplu-yukle" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>Excel Dosyası (.xlsx)</label>
+          <input type="file" name="excel" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn">Yükle ve İçe Aktar</button>
+      </form>
+    </div>
+  <% } %>
+</div>
