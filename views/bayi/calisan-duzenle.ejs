@@ -1,0 +1,49 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <h2>Kart Düzenle — <%= calisan.ad %> <%= calisan.soyad %></h2>
+    <a href="/bayi/panel/<%= firma.id %>/calisanlar" class="btn-link">← Geri</a>
+  </header>
+  <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= calisan.id %>/duzenle" enctype="multipart/form-data" class="form-grup">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Ad *</label>
+        <input type="text" name="ad" value="<%= calisan.ad %>" required>
+      </div>
+      <div>
+        <label>Soyad *</label>
+        <input type="text" name="soyad" value="<%= calisan.soyad %>" required>
+      </div>
+    </div>
+    <label>Unvan</label>
+    <input type="text" name="unvan" value="<%= calisan.unvan || '' %>">
+
+    <label>Departman</label>
+    <input type="text" name="departman" value="<%= calisan.departman || '' %>">
+
+    <label>Telefon</label>
+    <input type="tel" name="telefon" value="<%= calisan.telefon || '' %>">
+
+    <label>Email</label>
+    <input type="email" name="email" value="<%= calisan.email || '' %>">
+
+    <label>LinkedIn URL</label>
+    <input type="url" name="linkedin" value="<%= calisan.linkedin || '' %>">
+
+    <label>Biyografi</label>
+    <textarea name="biyografi" rows="3"><%= calisan.biyografi || '' %></textarea>
+
+    <label>Fotoğraf</label>
+    <% if (calisan.foto_url) { %>
+      <img src="<%= calisan.foto_url %>" style="height:60px;border-radius:50%;display:block;margin-bottom:8px" alt="Mevcut foto">
+    <% } %>
+    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+    <small style="color:#888">Yeni seçmezsen mevcut kalır.</small>
+
+    <div style="margin-top:16px;padding:12px;background:#f5f5f5;border-radius:6px">
+      <small>NFC Profil URL'si:</small><br>
+      <code style="font-size:13px">/bayi/<%= firma.bayi_slug %>/<%= firma.slug %>/<%= calisan.slug %></code>
+    </div>
+
+    <button type="submit" class="btn" style="margin-top:16px">Kaydet</button>
+  </form>
+</div>

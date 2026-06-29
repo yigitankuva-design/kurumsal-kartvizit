@@ -1,0 +1,61 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <div>
+      <a href="/bayi/panel" class="btn-link" style="margin-right:12px">← Müşteriler</a>
+      <h2 style="display:inline"><%= firma.ad %></h2>
+    </div>
+    <a href="/bayi/panel/<%= firma.id %>/calisan-ekle" class="btn">+ Kart Ekle</a>
+  </header>
+
+  <div style="display:flex;gap:16px;margin-bottom:24px">
+    <div class="stat-kart"><div class="stat-sayi"><%= aktifSayisi %></div><div class="stat-label">Aktif</div></div>
+    <div class="stat-kart"><div class="stat-sayi"><%= pasifSayisi %></div><div class="stat-label">Pasif</div></div>
+  </div>
+
+  <% if (!calisanlar.length) { %>
+    <p style="color:#888">Henüz kart yok. + Kart Ekle butonuna tıklayın.</p>
+  <% } else { %>
+  <div class="calisan-listesi">
+    <% calisanlar.forEach(c => { %>
+    <div class="calisan-kart <%= c.durum === 'pasif' ? 'pasif' : '' %>">
+      <div class="calisan-foto-wrap">
+        <% if (c.foto_url) { %>
+          <img src="<%= c.foto_url %>" class="calisan-foto-kucuk" alt="<%= c.ad %>">
+        <% } else { %>
+          <div class="calisan-initials-kucuk" style="background:<%= firma.marka_rengi %>">
+            <%= c.ad[0] %><%= c.soyad[0] %>
+          </div>
+        <% } %>
+      </div>
+      <div class="calisan-bilgi">
+        <strong><%= c.ad %> <%= c.soyad %></strong>
+        <% if (c.unvan) { %><span class="calisan-unvan"><%= c.unvan %></span><% } %>
+        <% if (c.telefon) { %><span class="calisan-tel"><%= c.telefon %></span><% } %>
+        <div class="nfc-url">
+          <small>NFC URL:</small>
+          <code>/bayi/<%= firma.bayi_slug %>/<%= firma.slug %>/<%= c.slug %></code>
+        </div>
+      </div>
+      <div class="calisan-aksiyonlar">
+        <a href="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/duzenle" class="btn-sm">Düzenle</a>
+        <% if (c.durum === 'aktif') { %>
+          <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="display:inline">
+            <input type="hidden" name="durum" value="pasif">
+            <button type="submit" class="btn-sm btn-warning">Pasife Al</button>
+          </form>
+        <% } else { %>
+          <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="display:inline">
+            <input type="hidden" name="durum" value="aktif">
+            <button type="submit" class="btn-sm">Aktife Al</button>
+          </form>
+        <% } %>
+        <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/sil"
+              onsubmit="return confirm('<%= c.ad %> <%= c.soyad %> silinecek. Emin misin?')" style="display:inline">
+          <button type="submit" class="btn-sm btn-danger">Sil</button>
+        </form>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+</div>

@@ -1,0 +1,40 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <h2>Yeni Kart — <%= firma.ad %></h2>
+    <a href="/bayi/panel/<%= firma.id %>/calisanlar" class="btn-link">← Geri</a>
+  </header>
+  <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan-ekle" enctype="multipart/form-data" class="form-grup">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label>Ad *</label>
+        <input type="text" name="ad" required>
+      </div>
+      <div>
+        <label>Soyad *</label>
+        <input type="text" name="soyad" required>
+      </div>
+    </div>
+    <label>Unvan</label>
+    <input type="text" name="unvan" placeholder="Örn: Satış Müdürü">
+
+    <label>Departman</label>
+    <input type="text" name="departman">
+
+    <label>Telefon</label>
+    <input type="tel" name="telefon" placeholder="+905001112233">
+
+    <label>Email</label>
+    <input type="email" name="email">
+
+    <label>LinkedIn URL</label>
+    <input type="url" name="linkedin" placeholder="https://linkedin.com/in/...">
+
+    <label>Biyografi</label>
+    <textarea name="biyografi" rows="3"></textarea>
+
+    <label>Fotoğraf</label>
+    <input type="file" name="foto" accept="image/jpeg,image/png,image/webp">
+
+    <button type="submit" class="btn" style="margin-top:8px">Kart Oluştur</button>
+  </form>
+</div>

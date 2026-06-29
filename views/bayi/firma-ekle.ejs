@@ -1,17 +1,11 @@
 <div class="panel-container">
   <header class="panel-header">
-    <h2>Yeni Firma Ekle</h2>
-    <a href="/bayi/panel" class="btn-link">← Panel</a>
+    <h2>Yeni Müşteri Ekle</h2>
+    <a href="/bayi/panel" class="btn-link">← Geri</a>
   </header>
   <form method="POST" action="/bayi/panel/firma-ekle" class="form-grup">
-    <label>Firma Adı *</label>
-    <input type="text" name="ad" required>
-
-    <label>Yetkili Email *</label>
-    <input type="email" name="yetkili_email" required>
-
-    <label>Şifre *</label>
-    <input type="password" name="sifre" required>
+    <label>Müşteri / Firma Adı *</label>
+    <input type="text" name="ad" required placeholder="Örn: Ahmet Demir">
 
     <label>Sektör</label>
     <select name="sektor">
@@ -21,12 +15,11 @@
       <option value="finans">Finans</option>
       <option value="egitim">Eğitim</option>
       <option value="insaat">İnşaat</option>
-      <option value="ilac">İlaç</option>
     </select>
 
-    <label>Marka Rengi</label>
+    <label>Kart Rengi</label>
     <input type="color" name="marka_rengi" value="#1a73e8">
 
-    <button type="submit" class="btn" style="margin-top:8px">Firma Oluştur</button>
+    <button type="submit" class="btn" style="margin-top:8px">Müşteri Oluştur</button>
   </form>
 </div>
