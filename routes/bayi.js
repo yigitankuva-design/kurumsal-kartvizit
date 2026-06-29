@@ -31,7 +31,7 @@ router.post('/giris', async (req, res) => {
     }
     req.session.bayiId = bayi.id;
     req.session.bayiAd = bayi.ad;
-    req.session.save(() => res.redirect('/bayi/panel'));
+    res.redirect('/bayi/panel');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
