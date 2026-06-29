@@ -11,6 +11,7 @@ const { pool } = require('./db');
 const authRoutes = require('./routes/auth');
 const panelRoutes = require('./routes/panel');
 const superadminRoutes = require('./routes/superadmin');
+const bayiRoutes = require('./routes/bayi');
 const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
 
@@ -50,6 +51,7 @@ app.use((req, res, next) => {
 app.use('/firma', authRoutes);
 app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
+app.use('/bayi', bayiRoutes);
 app.use('/', publicRoutes);
 
 const PORT = process.env.PORT || 3000;

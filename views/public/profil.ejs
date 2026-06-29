@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= calisan.ad %> <%= calisan.soyad %></title>
   <link rel="stylesheet" href="/css/style.css">
-  <style>.profil-header { background: <%= calisan.marka_rengi %>; }</style>
+  <style>.profil-header { background: <%= branding.marka_rengi %>; }</style>
 </head>
 <body class="profil-body">
   <div class="profil-kart">
     <div class="profil-header">
-      <% if (calisan.logo_url) { %>
-        <img src="<%= calisan.logo_url %>" class="firma-logo" alt="<%= calisan.firma_ad %>">
+      <% if (branding.logo_url) { %>
+        <img src="<%= branding.logo_url %>" class="firma-logo" alt="<%= branding.ad %>">
       <% } else { %>
-        <div class="firma-ad-text"><%= calisan.firma_ad %></div>
+        <div class="firma-ad-text"><%= branding.ad %></div>
       <% } %>
       <div class="profil-foto-wrap">
         <% if (calisan.foto_url) { %>
@@ -53,7 +53,7 @@
           <a href="<%= calisan.linkedin %>" target="_blank" rel="noopener" class="btn-iletisim">💼 LinkedIn</a>
         <% } %>
       </div>
-      <a href="/<%= calisan.firma_slug %>/<%= calisan.slug %>/vcf" class="btn-vcf" download>+ Rehbere Kaydet</a>
+      <a href="<%= vcfUrl %>" class="btn-vcf" download>+ Rehbere Kaydet</a>
       <footer class="profil-footer"><%= calisan.firma_ad %></footer>
     </div>
   </div>

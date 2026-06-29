@@ -13,4 +13,12 @@ function requireSuperadmin(req, res, next) {
   next();
 }
 
-module.exports = { requireFirma, requireSuperadmin };
+function requireBayi(req, res, next) {
+  if (!req.session.bayiId) {
+    req.flash('error', 'Lütfen bayi girişi yapın.');
+    return res.redirect('/bayi/giris');
+  }
+  next();
+}
+
+module.exports = { requireFirma, requireSuperadmin, requireBayi };

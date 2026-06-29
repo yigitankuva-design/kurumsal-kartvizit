@@ -6,6 +6,18 @@ CREATE TABLE IF NOT EXISTS session (
 );
 CREATE INDEX IF NOT EXISTS IDX_session_expire ON session (expire);
 
+CREATE TABLE IF NOT EXISTS bayiler (
+  id            SERIAL PRIMARY KEY,
+  ad            TEXT NOT NULL,
+  slug          TEXT UNIQUE NOT NULL,
+  logo_url      TEXT,
+  marka_rengi   TEXT DEFAULT '#1a73e8',
+  email         TEXT UNIQUE NOT NULL,
+  sifre_hash    TEXT NOT NULL,
+  aktif         BOOLEAN DEFAULT true,
+  created_at    TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS firmalar (
   id                 SERIAL PRIMARY KEY,
   ad                 TEXT NOT NULL,
@@ -16,6 +28,7 @@ CREATE TABLE IF NOT EXISTS firmalar (
   yetkili_email      TEXT UNIQUE NOT NULL,
   yetkili_sifre_hash TEXT NOT NULL,
   paket              TEXT DEFAULT 'basic',
+  bayi_id            INTEGER REFERENCES bayiler(id) ON DELETE SET NULL,
   created_at         TIMESTAMP DEFAULT NOW()
 );
 

@@ -1,0 +1,50 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <div>
+      <% if (bayi.logo_url) { %>
+        <img src="<%= bayi.logo_url %>" style="height:32px;vertical-align:middle;margin-right:8px" alt="<%= bayi.ad %>">
+      <% } %>
+      <h2 style="display:inline"><%= bayi.ad %> — Bayi Paneli</h2>
+    </div>
+    <form method="POST" action="/bayi/cikis">
+      <button type="submit" class="btn-link">Çıkış</button>
+    </form>
+  </header>
+
+  <div style="display:flex;gap:16px;margin-bottom:24px">
+    <div class="stat-kart"><div class="stat-sayi"><%= firmalar.length %></div><div class="stat-label">Firma</div></div>
+    <div class="stat-kart"><div class="stat-sayi"><%= firmalar.reduce((s,f)=>s+parseInt(f.calisan_sayisi||0),0) %></div><div class="stat-label">Toplam Çalışan</div></div>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h3>Firmalar</h3>
+    <a href="/bayi/panel/firma-ekle" class="btn">+ Firma Ekle</a>
+  </div>
+
+  <% if (!firmalar.length) { %>
+    <p style="color:#888">Henüz firma yok. Yukarıdan ekleyin.</p>
+  <% } else { %>
+  <table class="tablo">
+    <thead>
+      <tr><th>Firma Adı</th><th>Slug</th><th>Sektör</th><th>Çalışan</th><th>Kayıt</th><th>İşlem</th></tr>
+    </thead>
+    <tbody>
+      <% firmalar.forEach(f => { %>
+      <tr>
+        <td><%= f.ad %></td>
+        <td><code><%= f.slug %></code></td>
+        <td><%= f.sektor %></td>
+        <td><%= f.calisan_sayisi %></td>
+        <td><%= new Date(f.created_at).toLocaleDateString('tr-TR') %></td>
+        <td>
+          <form method="POST" action="/bayi/panel/firma-sil/<%= f.id %>"
+                onsubmit="return confirm('Firma ve tüm çalışanları silinecek. Emin misin?')" style="display:inline">
+            <button type="submit" class="btn-sm btn-danger">Sil</button>
+          </form>
+        </td>
+      </tr>
+      <% }); %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
