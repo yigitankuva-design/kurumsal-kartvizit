@@ -13,7 +13,7 @@ router.post('/giris', (req, res) => {
   const { sifre } = req.body;
   if (sifre && sifre.trim() === (process.env.SUPERADMIN_PASSWORD || '').trim()) {
     req.session.superadmin = true;
-    res.redirect('/superadmin');
+    req.session.save(() => res.redirect('/superadmin'));
   } else {
     req.flash('error', 'Şifre hatalı.');
     res.redirect('/superadmin/giris');
