@@ -11,7 +11,7 @@ router.get('/giris', (req, res) => {
 
 router.post('/giris', (req, res) => {
   const { sifre } = req.body;
-  if (sifre === process.env.SUPERADMIN_PASSWORD) {
+  if (sifre && sifre.trim() === (process.env.SUPERADMIN_PASSWORD || '').trim()) {
     req.session.superadmin = true;
     res.redirect('/superadmin');
   } else {
