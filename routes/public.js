@@ -3,7 +3,6 @@ const router = express.Router();
 const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
 
-// Yardımcı: profil sorgusunu çalıştır ve branding objesi hazırla
 async function profilGetir(firmaSlug, calisanSlug, bayiSlug = null) {
   let query, params;
 
@@ -34,7 +33,6 @@ async function profilGetir(firmaSlug, calisanSlug, bayiSlug = null) {
   if (!result.rows.length) return null;
 
   const row = result.rows[0];
-  // Bayi varsa bayi markası, yoksa firma markası
   const branding = {
     logo_url: row.bayi_logo || row.firma_logo,
     marka_rengi: row.bayi_rengi || row.firma_rengi || '#1a73e8',
@@ -74,14 +72,15 @@ router.get('/bayi/:bayiSlug/:firmaSlug/:calisanSlug', async (req, res) => {
     }
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
     const vcfUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}/vcf`;
-    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, layout: false });
+    const profilUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}`;
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
   }
 });
 
-// VCF — eski URL (geriye dönük)
+// VCF — standart URL
 router.get('/:firmaSlug/:calisanSlug/vcf', async (req, res) => {
   try {
     const result = await pool.query(
@@ -103,7 +102,45 @@ router.get('/:firmaSlug/:calisanSlug/vcf', async (req, res) => {
   }
 });
 
-// Profil sayfası — eski URL (geriye dönük)
+// Link tıklama takibi
+router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
+  const { tip } = req.params;
+  const izinliTipler = ['telefon', 'email', 'linkedin', 'instagram', 'twitter', 'youtube', 'website', 'vcf', 'qr'];
+  try {
+    const result = await pool.query(
+      `SELECT c.id, c.telefon, c.email, c.linkedin, c.instagram, c.twitter, c.youtube, c.website
+       FROM calisanlar c JOIN firmalar f ON f.id = c.firma_id
+       WHERE f.slug = $1 AND c.slug = $2 AND c.durum = 'aktif'`,
+      [req.params.firmaSlug, req.params.calisanSlug]
+    );
+    if (!result.rows.length) return res.status(404).send('Bulunamadı.');
+    const calisan = result.rows[0];
+
+    if (izinliTipler.includes(tip)) {
+      await pool.query('INSERT INTO link_tiklama (calisan_id, tip) VALUES ($1, $2)', [calisan.id, tip]);
+    }
+
+    const hedefler = {
+      telefon: calisan.telefon ? `tel:${calisan.telefon}` : null,
+      email: calisan.email ? `mailto:${calisan.email}` : null,
+      linkedin: calisan.linkedin,
+      instagram: calisan.instagram,
+      twitter: calisan.twitter,
+      youtube: calisan.youtube,
+      website: calisan.website,
+      vcf: `/${req.params.firmaSlug}/${req.params.calisanSlug}/vcf`,
+    };
+
+    const hedef = hedefler[tip];
+    if (hedef) return res.redirect(hedef);
+    res.redirect(`/${req.params.firmaSlug}/${req.params.calisanSlug}`);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/${req.params.firmaSlug}/${req.params.calisanSlug}`);
+  }
+});
+
+// Profil sayfası — standart URL
 router.get('/:firmaSlug/:calisanSlug', async (req, res) => {
   try {
     const veri = await profilGetir(req.params.firmaSlug, req.params.calisanSlug);
@@ -116,7 +153,8 @@ router.get('/:firmaSlug/:calisanSlug', async (req, res) => {
     }
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
     const vcfUrl = `/${req.params.firmaSlug}/${calisan.slug}/vcf`;
-    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, layout: false });
+    const profilUrl = `/${req.params.firmaSlug}/${calisan.slug}`;
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });

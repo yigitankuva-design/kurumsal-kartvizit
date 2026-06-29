@@ -27,7 +27,23 @@ router.get('/', async (req, res) => {
     const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
     const tab = req.query.tab || 'calisanlar';
 
-    res.render('panel/panel', { title: 'Panel', firma, calisanlar, aktifSayisi, pasifSayisi, toplamGoruntulenme, tab });
+    let linkAnalytics = [];
+    if (tab === 'analytics') {
+      const ids = calisanlar.map(c => c.id);
+      if (ids.length) {
+        const aResult = await pool.query(
+          `SELECT c.ad, c.soyad, lt.tip, COUNT(*) as sayi
+           FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+           WHERE c.firma_id = $1
+           GROUP BY c.ad, c.soyad, lt.tip
+           ORDER BY sayi DESC`,
+          [req.session.firmaId]
+        );
+        linkAnalytics = aResult.rows;
+      }
+    }
+
+    res.render('panel/panel', { title: 'Panel', firma, calisanlar, aktifSayisi, pasifSayisi, toplamGoruntulenme, tab, linkAnalytics });
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
@@ -42,7 +58,7 @@ router.get('/ekle', (req, res) => {
 
 // Çalışan ekleme POST
 router.post('/ekle', async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, ilaclar } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/firma/panel/ekle');
@@ -56,10 +72,12 @@ router.post('/ekle', async (req, res) => {
     }
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
     await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, ilaclar, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
       [req.session.firmaId, ad, soyad, unvan || null, departman || null,
-       telefon || null, email || null, linkedin || null, biyografi || null, ilaclarArray, slug]
+       telefon || null, email || null, linkedin || null,
+       instagram || null, twitter || null, youtube || null, website || null,
+       biyografi || null, ilaclarArray, slug]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
     res.redirect('/firma/panel');
@@ -135,42 +153,32 @@ router.get('/:id/duzenle', async (req, res) => {
 
 // Çalışan düzenleme POST (foto upload destekli)
 router.post('/:id/duzenle', fotoUpload.single('foto'), async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, ilaclar } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect(`/firma/panel/${req.params.id}/duzenle`);
   }
   try {
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
+    const fotoUrl = req.file ? (req.file.location || null) : undefined;
 
-    if (req.file) {
-      // S3 üzerinden yüklendi → location, memory storage ise buffer (şimdilik URL yok)
-      const fotoUrl = req.file.location || null;
-      if (fotoUrl) {
-        await pool.query(
-          `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
-           email=$6, linkedin=$7, biyografi=$8, ilaclar=$9, foto_url=$10
-           WHERE id=$11 AND firma_id=$12`,
-          [ad, soyad, unvan || null, departman || null, telefon || null,
-           email || null, linkedin || null, biyografi || null, ilaclarArray, fotoUrl,
-           req.params.id, req.session.firmaId]
-        );
-      } else {
-        await pool.query(
-          `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
-           email=$6, linkedin=$7, biyografi=$8, ilaclar=$9 WHERE id=$10 AND firma_id=$11`,
-          [ad, soyad, unvan || null, departman || null, telefon || null,
-           email || null, linkedin || null, biyografi || null, ilaclarArray,
-           req.params.id, req.session.firmaId]
-        );
-      }
+    const baseFields = [ad, soyad, unvan || null, departman || null, telefon || null,
+      email || null, linkedin || null, instagram || null, twitter || null,
+      youtube || null, website || null, biyografi || null, ilaclarArray];
+
+    if (fotoUrl !== undefined) {
+      await pool.query(
+        `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
+         email=$6, linkedin=$7, instagram=$8, twitter=$9, youtube=$10, website=$11,
+         biyografi=$12, ilaclar=$13, foto_url=$14 WHERE id=$15 AND firma_id=$16`,
+        [...baseFields, fotoUrl, req.params.id, req.session.firmaId]
+      );
     } else {
       await pool.query(
         `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
-         email=$6, linkedin=$7, biyografi=$8, ilaclar=$9 WHERE id=$10 AND firma_id=$11`,
-        [ad, soyad, unvan || null, departman || null, telefon || null,
-         email || null, linkedin || null, biyografi || null, ilaclarArray,
-         req.params.id, req.session.firmaId]
+         email=$6, linkedin=$7, instagram=$8, twitter=$9, youtube=$10, website=$11,
+         biyografi=$12, ilaclar=$13 WHERE id=$14 AND firma_id=$15`,
+        [...baseFields, req.params.id, req.session.firmaId]
       );
     }
 

@@ -3,21 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title><%= calisan.ad %> <%= calisan.soyad %></title>
+  <title><%= calisan.ad %> <%= calisan.soyad %> — <%= calisan.firma_ad %></title>
+  <meta name="description" content="<%= calisan.unvan ? calisan.unvan + ', ' : '' %><%= calisan.firma_ad %>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/css/style.css">
-  <style>.profil-header { background: <%= branding.marka_rengi %>; }</style>
+  <% const marka = branding ? branding.marka_rengi : (calisan.marka_rengi || '#1a73e8'); %>
+  <style>
+    .profil-header { background: <%= marka %>; }
+    .btn-vcf { background: <%= marka %>; }
+    .btn-vcf:hover { filter: brightness(0.88); }
+    .ilac-etiket { background: <%= marka %>15; color: <%= marka %>; border-color: <%= marka %>35; }
+  </style>
 </head>
 <body class="profil-body">
   <div class="profil-kart">
     <div class="profil-header">
-      <% if (branding.logo_url) { %>
-        <img src="<%= branding.logo_url %>" class="firma-logo" alt="<%= branding.ad %>">
+      <% const logoUrl = branding ? branding.logo_url : calisan.logo_url; %>
+      <% const firmaAd = branding ? branding.ad : calisan.firma_ad; %>
+      <% if (logoUrl) { %>
+        <img src="<%= logoUrl %>" class="firma-logo" alt="<%= firmaAd %>">
       <% } else { %>
-        <div class="firma-ad-text"><%= branding.ad %></div>
+        <div class="firma-ad-text"><%= firmaAd %></div>
       <% } %>
       <div class="profil-foto-wrap">
         <% if (calisan.foto_url) { %>
-          <img src="<%= calisan.foto_url %>" class="profil-foto" alt="<%= calisan.ad %>">
+          <img src="<%= calisan.foto_url %>" class="profil-foto" alt="<%= calisan.ad %> <%= calisan.soyad %>">
         <% } else { %>
           <div class="profil-initials"><%= calisan.ad[0] %><%= calisan.soyad[0] %></div>
         <% } %>
@@ -32,30 +43,216 @@
       <% if (calisan.departman) { %>
         <p class="profil-departman"><%= calisan.departman %></p>
       <% } %>
+
       <% if (calisan.biyografi) { %>
         <p class="profil-bio"><%= calisan.biyografi %></p>
       <% } %>
+
       <% if (calisan.sektor === 'ilac' && calisan.ilaclar && calisan.ilaclar.length) { %>
-        <div class="ilac-etiketler">
-          <% calisan.ilaclar.forEach(ilac => { %>
-            <span class="ilac-etiket"><%= ilac %></span>
-          <% }); %>
+        <div style="margin-bottom:20px">
+          <p class="ilac-baslik">Çalışılan Ürünler</p>
+          <div class="ilac-etiketler">
+            <% calisan.ilaclar.forEach(ilac => { %>
+              <span class="ilac-etiket"><%= ilac %></span>
+            <% }); %>
+          </div>
         </div>
       <% } %>
+
+      <% const base = profilUrl || ('/' + calisan.firma_slug + '/' + calisan.slug); %>
+
       <div class="iletisim-butonlar">
         <% if (calisan.telefon) { %>
-          <a href="tel:<%= calisan.telefon %>" class="btn-iletisim">📞 <%= calisan.telefon %></a>
+          <a href="<%= base %>/t/telefon" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-telefon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.45 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Telefon</span>
+              <%= calisan.telefon %>
+            </span>
+          </a>
         <% } %>
         <% if (calisan.email) { %>
-          <a href="mailto:<%= calisan.email %>" class="btn-iletisim">✉️ <%= calisan.email %></a>
+          <a href="<%= base %>/t/email" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-email">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">E-posta</span>
+              <%= calisan.email %>
+            </span>
+          </a>
         <% } %>
         <% if (calisan.linkedin) { %>
-          <a href="<%= calisan.linkedin %>" target="_blank" rel="noopener" class="btn-iletisim">💼 LinkedIn</a>
+          <a href="<%= base %>/t/linkedin" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-linkedin">
+              <svg viewBox="0 0 24 24" fill="#0a66c2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">LinkedIn</span>
+              Profili Görüntüle
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.instagram) { %>
+          <a href="<%= base %>/t/instagram" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:url(#ig-grad)">
+                <defs><linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+              </svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Instagram</span>
+              Profili Görüntüle
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.twitter) { %>
+          <a href="<%= base %>/t/twitter" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-twitter">
+              <svg viewBox="0 0 24 24" fill="#000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">X / Twitter</span>
+              Profili Görüntüle
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.youtube) { %>
+          <a href="<%= base %>/t/youtube" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-youtube">
+              <svg viewBox="0 0 24 24" fill="#ff0000"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon fill="#fff" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">YouTube</span>
+              Kanalı Görüntüle
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.website) { %>
+          <a href="<%= base %>/t/website" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-website">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Web Sitesi</span>
+              Ziyaret Et
+            </span>
+          </a>
         <% } %>
       </div>
-      <a href="<%= vcfUrl %>" class="btn-vcf" download>+ Rehbere Kaydet</a>
-      <footer class="profil-footer"><%= calisan.firma_ad %></footer>
+
+      <a href="<%= vcfUrl %>" class="btn-vcf" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Rehbere Ekle
+      </a>
+
+      <!-- QR Kod -->
+      <div class="qr-bolum">
+        <button class="btn-qr" onclick="document.getElementById('qr-modal').classList.add('aktif')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+          QR Kodu Göster
+        </button>
+      </div>
+
+      <!-- E-posta İmzası -->
+      <button class="btn-imza" onclick="document.getElementById('imza-modal').classList.add('aktif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        E-posta İmzası Al
+      </button>
+
+      <div class="profil-divider"></div>
+      <p class="profil-footer"><%= firmaAd %></p>
     </div>
   </div>
+
+  <!-- QR Modal -->
+  <div id="qr-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
+    <div class="modal-kart">
+      <button class="modal-kapat" onclick="document.getElementById('qr-modal').classList.remove('aktif')">✕</button>
+      <h3 style="margin-bottom:16px;font-size:16px;font-weight:700">QR Kodu</h3>
+      <% const fullUrl = 'https://' + (process.env.DOMAIN || (typeof req !== 'undefined' ? req.hostname : 'nfckart.com')) + profilUrl; %>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<%= encodeURIComponent(fullUrl) %>" alt="QR Kod" style="width:220px;height:220px;border-radius:8px">
+      <p style="margin-top:12px;font-size:12px;color:#6b7280;text-align:center">Telefon kameranızla okutun</p>
+      <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=<%= encodeURIComponent(fullUrl) %>" download="qr-kod.png" class="btn" style="margin-top:14px;width:100%;justify-content:center;font-size:14px">
+        ⬇ QR İndir
+      </a>
+    </div>
+  </div>
+
+  <!-- E-posta İmzası Modal -->
+  <div id="imza-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
+    <div class="modal-kart" style="max-width:500px">
+      <button class="modal-kapat" onclick="document.getElementById('imza-modal').classList.remove('aktif')">✕</button>
+      <h3 style="margin-bottom:4px;font-size:16px;font-weight:700">E-posta İmzası</h3>
+      <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Aşağıdaki kodu e-posta istemcinize yapıştırın</p>
+
+      <div class="imza-onizleme">
+        <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937">
+          <tr>
+            <% if (calisan.foto_url) { %>
+            <td style="padding-right:14px;vertical-align:top">
+              <img src="<%= calisan.foto_url %>" width="60" height="60" style="border-radius:50%;object-fit:cover" alt="">
+            </td>
+            <% } %>
+            <td style="vertical-align:top;border-left:3px solid <%= marka %>;padding-left:14px">
+              <div style="font-weight:700;font-size:15px;color:#111827"><%= calisan.ad %> <%= calisan.soyad %></div>
+              <% if (calisan.unvan) { %><div style="color:<%= marka %>;font-size:12px;margin-top:2px"><%= calisan.unvan %></div><% } %>
+              <div style="color:#6b7280;font-size:12px;margin-top:2px"><%= calisan.firma_ad %></div>
+              <div style="margin-top:8px;font-size:12px">
+                <% if (calisan.telefon) { %><div>📞 <a href="tel:<%= calisan.telefon %>" style="color:#1f2937;text-decoration:none"><%= calisan.telefon %></a></div><% } %>
+                <% if (calisan.email) { %><div>✉️ <a href="mailto:<%= calisan.email %>" style="color:#1f2937;text-decoration:none"><%= calisan.email %></a></div><% } %>
+              </div>
+              <div style="margin-top:8px">
+                <a href="<%= fullUrl %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">Dijital Kartvizitim</a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <textarea id="imza-html" class="imza-textarea" readonly></textarea>
+      <button class="btn" onclick="copyImza()" style="width:100%;justify-content:center;margin-top:10px">Kopyala</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var marka = '<%= marka %>';
+      var ad = '<%= calisan.ad %> <%= calisan.soyad %>';
+      var unvan = '<%= calisan.unvan || "" %>';
+      var firmaAd = '<%= calisan.firma_ad %>';
+      var tel = '<%= calisan.telefon || "" %>';
+      var email = '<%= calisan.email || "" %>';
+      var foto = '<%= calisan.foto_url || "" %>';
+      var link = '<%= fullUrl %>';
+
+      var html = '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><tr>';
+      if (foto) html += '<td style="padding-right:14px;vertical-align:top"><img src="' + foto + '" width="60" height="60" style="border-radius:50%;object-fit:cover" alt=""></td>';
+      html += '<td style="vertical-align:top;border-left:3px solid ' + marka + ';padding-left:14px">';
+      html += '<div style="font-weight:700;font-size:15px;color:#111827">' + ad + '</div>';
+      if (unvan) html += '<div style="color:' + marka + ';font-size:12px;margin-top:2px">' + unvan + '</div>';
+      html += '<div style="color:#6b7280;font-size:12px;margin-top:2px">' + firmaAd + '</div>';
+      html += '<div style="margin-top:8px;font-size:12px">';
+      if (tel) html += '<div>📞 <a href="tel:' + tel + '" style="color:#1f2937;text-decoration:none">' + tel + '</a></div>';
+      if (email) html += '<div>✉️ <a href="mailto:' + email + '" style="color:#1f2937;text-decoration:none">' + email + '</a></div>';
+      html += '</div>';
+      html += '<div style="margin-top:8px"><a href="' + link + '" style="display:inline-block;padding:5px 12px;background:' + marka + ';color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">Dijital Kartvizitim</a></div>';
+      html += '</td></tr></table>';
+
+      document.getElementById('imza-html').value = html;
+    })();
+
+    function copyImza() {
+      var el = document.getElementById('imza-html');
+      el.select();
+      document.execCommand('copy');
+      var btn = event.target;
+      btn.textContent = '✓ Kopyalandı!';
+      setTimeout(function() { btn.textContent = 'Kopyala'; }, 2000);
+    }
+  </script>
 </body>
 </html>

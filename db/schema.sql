@@ -48,6 +48,17 @@ CREATE TABLE IF NOT EXISTS calisanlar (
   slug                TEXT NOT NULL,
   durum               TEXT DEFAULT 'aktif',
   goruntuleme_sayisi  INTEGER DEFAULT 0,
+  instagram           TEXT,
+  twitter             TEXT,
+  youtube             TEXT,
+  website             TEXT,
   created_at          TIMESTAMP DEFAULT NOW(),
   UNIQUE(firma_id, slug)
+);
+
+CREATE TABLE IF NOT EXISTS link_tiklama (
+  id          SERIAL PRIMARY KEY,
+  calisan_id  INTEGER REFERENCES calisanlar(id) ON DELETE CASCADE,
+  tip         TEXT NOT NULL,
+  created_at  TIMESTAMP DEFAULT NOW()
 );

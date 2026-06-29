@@ -13,6 +13,7 @@
     <nav class="panel-tabs">
       <a href="/firma/panel?tab=calisanlar" class="<%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
       <a href="/firma/panel?tab=istatistik" class="<%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
+      <a href="/firma/panel?tab=analytics" class="<%= tab === 'analytics' ? 'active' : '' %>">Link Analytics</a>
       <a href="/firma/panel?tab=excel" class="<%= tab === 'excel' ? 'active' : '' %>">Excel Yükle</a>
     </nav>
 
@@ -100,6 +101,34 @@
             <% }); %>
           </tbody>
         </table>
+      </div>
+
+    <% } else if (tab === 'analytics') { %>
+      <div class="tab-content">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:4px">Link Tıklama Analizi</h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:16px">Çalışan profillerindeki linklere kaç kez tıklandı</p>
+        <% if (linkAnalytics.length) { %>
+        <table class="analytics-tablo">
+          <thead>
+            <tr><th>Çalışan</th><th>Link Tipi</th><th>Tıklanma</th></tr>
+          </thead>
+          <tbody>
+            <% linkAnalytics.forEach(row => { %>
+            <tr>
+              <td style="font-weight:600"><%= row.ad %> <%= row.soyad %></td>
+              <td><span class="chip-tip"><%= row.tip %></span></td>
+              <td style="font-weight:700;color:var(--accent)"><%= row.sayi %></td>
+            </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        <% } else { %>
+          <div class="bos-mesaj">
+            <p style="font-size:32px;margin-bottom:12px">📊</p>
+            <p style="font-weight:600;color:#374151;margin-bottom:6px">Henüz tıklama verisi yok</p>
+            <p style="color:#9ca3af">Profil linkleri tıklandıkça burada görünür</p>
+          </div>
+        <% } %>
       </div>
 
     <% } else if (tab === 'excel') { %>

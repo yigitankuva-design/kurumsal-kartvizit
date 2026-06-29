@@ -8,9 +8,16 @@
     <div class="form-group"><label>Departman</label><input type="text" name="departman" value="<%= calisan.departman || '' %>"></div>
     <div class="form-group"><label>Telefon</label><input type="tel" name="telefon" value="<%= calisan.telefon || '' %>"></div>
     <div class="form-group"><label>Email</label><input type="email" name="email" value="<%= calisan.email || '' %>"></div>
-    <div class="form-group"><label>LinkedIn URL</label><input type="url" name="linkedin" value="<%= calisan.linkedin || '' %>"></div>
     <div class="form-group"><label>Biyografi</label><textarea name="biyografi" rows="3"><%= calisan.biyografi || '' %></textarea></div>
     <div class="form-group"><label>Çalışılan İlaçlar <small style="color:#888">(virgülle ayır)</small></label><input type="text" name="ilaclar" value="<%= (calisan.ilaclar || []).join(', ') %>"></div>
+
+    <div class="form-section-title">Sosyal Medya & Linkler</div>
+    <div class="form-group"><label>LinkedIn URL</label><input type="url" name="linkedin" value="<%= calisan.linkedin || '' %>"></div>
+    <div class="form-group"><label>Instagram URL</label><input type="url" name="instagram" value="<%= calisan.instagram || '' %>"></div>
+    <div class="form-group"><label>Twitter / X URL</label><input type="url" name="twitter" value="<%= calisan.twitter || '' %>"></div>
+    <div class="form-group"><label>YouTube URL</label><input type="url" name="youtube" value="<%= calisan.youtube || '' %>"></div>
+    <div class="form-group"><label>Web Sitesi</label><input type="url" name="website" value="<%= calisan.website || '' %>"></div>
+
     <div class="form-group">
       <label>Fotoğraf</label>
       <% if (calisan.foto_url) { %>
