@@ -5,7 +5,7 @@
   },
   "deploy": {
     "startCommand": "node app.js",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }
 }
