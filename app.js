@@ -53,6 +53,7 @@ app.use('/firma', authRoutes);
 app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
+app.get('/', (req, res) => res.redirect('/firma/giris'));
 app.use('/', publicRoutes);
 
 const PORT = process.env.PORT || 3000;
