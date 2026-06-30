@@ -6,37 +6,41 @@
   <title>NFCKartify — Kurumsal Dijital Kartvizit</title>
   <meta name="description" content="Kurumsal NFC dijital kartvizit platformu. Çalışanlarınıza saniyeler içinde dijital kimlik verin.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #0a0a0a;
-      --gray-900: #111827;
-      --gray-600: #4b5563;
-      --gray-400: #9ca3af;
-      --gray-200: #e5e7eb;
-      --gray-100: #f3f4f6;
-      --gray-50: #f9fafb;
+      --bg: #0d0d0f;
+      --bg2: #131316;
+      --bg3: #18181c;
+      --border: rgba(255,255,255,0.07);
+      --border-gold: rgba(200,168,75,0.3);
+      --gold: #c8a84b;
+      --gold-light: #e5c46a;
+      --gold-dim: rgba(200,168,75,0.12);
       --white: #ffffff;
-      --blue: #2563eb;
-      --fs-xs: 0.75rem;
-      --fs-sm: 0.8125rem;
+      --text: #f1f0ee;
+      --text-muted: #888880;
+      --text-faint: #444440;
+      --fs-xs: 0.72rem;
+      --fs-sm: 0.8rem;
       --fs-base: 0.875rem;
       --fw-normal: 400;
       --fw-medium: 500;
       --fw-semibold: 600;
+      --fw-bold: 700;
     }
 
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--white);
-      color: var(--gray-900);
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       line-height: 1.5;
       font-size: var(--fs-base);
-      font-weight: var(--fw-normal);
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
 
     /* ── NAV ── */
@@ -44,229 +48,384 @@
       position: fixed; top: 0; left: 0; right: 0; z-index: 100;
       height: 56px;
       display: flex; align-items: center; justify-content: space-between;
-      padding: 0 24px;
-      background: rgba(255,255,255,0.9);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--gray-200);
+      padding: 0 32px;
+      background: rgba(13,13,15,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
     }
-
-    .logo {
-      font-size: var(--fs-base); font-weight: var(--fw-semibold);
-      color: var(--black); text-decoration: none; letter-spacing: -0.01em;
-    }
-    .logo em { font-style: normal; color: var(--blue); }
-
+    .logo { font-size: var(--fs-base); font-weight: var(--fw-bold); color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+    .logo em { font-style: normal; color: var(--gold); }
     .nav-right { display: flex; align-items: center; gap: 8px; }
 
     .btn {
       display: inline-flex; align-items: center; justify-content: center;
-      height: 32px; padding: 0 12px;
+      height: 32px; padding: 0 14px;
       font-size: var(--fs-sm); font-weight: var(--fw-medium);
       border-radius: 6px; text-decoration: none; border: none; cursor: pointer;
-      transition: background 0.15s, color 0.15s;
-      white-space: nowrap;
+      transition: all 0.15s; white-space: nowrap; font-family: inherit;
     }
-    .btn-ghost { background: transparent; color: var(--gray-600); }
-    .btn-ghost:hover { background: var(--gray-100); color: var(--gray-900); }
-    .btn-solid { background: var(--black); color: var(--white); }
-    .btn-solid:hover { background: var(--gray-900); }
-    .btn-outline { background: var(--white); color: var(--gray-900); border: 1px solid var(--gray-200); }
-    .btn-outline:hover { background: var(--gray-50); border-color: var(--gray-400); }
+    .btn-ghost { background: transparent; color: var(--text-muted); }
+    .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+    .btn-gold {
+      background: var(--gold); color: #000;
+      font-weight: var(--fw-semibold);
+      box-shadow: 0 0 20px rgba(200,168,75,0.25);
+    }
+    .btn-gold:hover { background: var(--gold-light); box-shadow: 0 0 28px rgba(200,168,75,0.4); }
 
     /* ── HERO ── */
     .hero {
-      padding: 120px 24px 72px;
+      padding: 112px 32px 72px;
       text-align: center;
-      max-width: 640px;
+      max-width: 680px;
       margin: 0 auto;
+      position: relative;
     }
 
-    .tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px;
-      background: var(--gray-100); border-radius: 100px;
-      font-size: var(--fs-xs); font-weight: var(--fw-medium);
-      color: var(--gray-600); letter-spacing: 0.01em;
-      margin-bottom: 20px;
+    /* Radial glow behind hero */
+    .hero::before {
+      content: '';
+      position: fixed; top: 0; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(200,168,75,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
     }
-    .tag-dot { width: 5px; height: 5px; background: #22c55e; border-radius: 50%; }
+    .hero > * { position: relative; z-index: 1; }
+
+    /* Live badge */
+    .live-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 100px;
+      font-size: var(--fs-xs); font-weight: var(--fw-medium);
+      color: var(--text-muted); margin-bottom: 24px;
+      animation: badgePop 0.6s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    @keyframes badgePop { from{opacity:0;transform:scale(0.8) translateY(8px);} to{opacity:1;transform:scale(1) translateY(0);} }
+    .live-dot {
+      width: 6px; height: 6px; background: #22c55e; border-radius: 50%;
+      box-shadow: 0 0 6px rgba(34,197,94,0.6);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 6px rgba(34,197,94,0.6);} 50%{box-shadow:0 0 12px rgba(34,197,94,0.9);} }
+
+    /* Social proof counter */
+    .ticker {
+      color: var(--gold); font-weight: var(--fw-semibold); font-variant-numeric: tabular-nums;
+    }
 
     h1 {
-      font-size: 2rem; font-weight: var(--fw-semibold);
-      line-height: 1.15; letter-spacing: -0.03em;
-      color: var(--black); margin-bottom: 14px;
+      font-size: clamp(1.875rem, 4.5vw, 3rem);
+      font-weight: var(--fw-bold);
+      line-height: 1.1; letter-spacing: -0.04em;
+      color: var(--white); margin-bottom: 16px;
+      animation: fadeUp 0.7s 0.1s cubic-bezier(0.16,1,0.3,1) both;
     }
+    .gold-text {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 50%, var(--gold) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; background-size: 200% 100%;
+      animation: shimmer 4s linear infinite;
+    }
+    @keyframes shimmer { from{background-position:200% 0;} to{background-position:-200% 0;} }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
 
     .hero-desc {
-      font-size: var(--fs-base); color: var(--gray-600); font-weight: var(--fw-normal);
-      line-height: 1.6; margin-bottom: 28px;
+      font-size: var(--fs-base); color: var(--text-muted); font-weight: var(--fw-normal);
+      line-height: 1.65; margin-bottom: 28px; max-width: 480px; margin-left: auto; margin-right: auto;
+      animation: fadeUp 0.7s 0.2s cubic-bezier(0.16,1,0.3,1) both;
     }
 
     .hero-actions {
-      display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-      margin-bottom: 48px;
+      display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
+      margin-bottom: 52px;
+      animation: fadeUp 0.7s 0.3s cubic-bezier(0.16,1,0.3,1) both;
     }
+    .btn-hero { height: 40px; padding: 0 18px; font-size: var(--fs-sm); border-radius: 8px; }
+    .btn-outline-hero {
+      height: 40px; padding: 0 18px; font-size: var(--fs-sm); border-radius: 8px;
+      background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+      text-decoration: none; display: inline-flex; align-items: center;
+      transition: all 0.15s; font-weight: var(--fw-medium); font-family: inherit;
+    }
+    .btn-outline-hero:hover { border-color: var(--border-gold); color: var(--text); }
 
-    .btn-hero { height: 38px; padding: 0 16px; font-size: var(--fs-sm); border-radius: 7px; }
-
-    /* ── NFC CARDS ── */
-    .cards {
+    /* ── NFC CARDS — 3D ── */
+    .cards-scene {
       display: flex; justify-content: center; align-items: flex-end;
-      padding: 0 16px;
+      animation: fadeUp 0.7s 0.4s cubic-bezier(0.16,1,0.3,1) both;
+      perspective: 1000px;
     }
+
+    .card-wrap {
+      cursor: pointer;
+      transition: transform 0.1s ease-out;
+    }
+    .card-wrap:nth-child(1) { --base-r: -5deg; --base-ty: 10px; transform: rotate(-5deg) translateY(10px); z-index: 1; }
+    .card-wrap:nth-child(2) { --base-r: 0deg; --base-ty: 0px; z-index: 3; margin: 0 -12px; }
+    .card-wrap:nth-child(3) { --base-r: 5deg; --base-ty: 10px; transform: rotate(5deg) translateY(10px); z-index: 1; }
 
     .nfc-card {
-      width: 196px; height: 124px; border-radius: 11px;
-      flex-shrink: 0; position: relative; overflow: hidden;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+      width: 200px; height: 126px; border-radius: 12px;
+      position: relative; overflow: hidden;
+      transform-style: preserve-3d;
+      transition: box-shadow 0.3s;
     }
-    .nfc-card:nth-child(1) { transform: rotate(-4deg) translateY(8px); z-index: 1; }
-    .nfc-card:nth-child(2) { transform: rotate(0deg); z-index: 3; width: 216px; height: 136px; box-shadow: 0 16px 48px rgba(0,0,0,0.16); margin: 0 -10px; }
-    .nfc-card:nth-child(3) { transform: rotate(4deg) translateY(8px); z-index: 1; }
+    .card-wrap:nth-child(2) .nfc-card { width: 224px; height: 142px; }
 
-    .card-black { background: linear-gradient(140deg, #1a1a1a, #2e2e2e); }
-    .card-white { background: linear-gradient(140deg, #f0f0f0, #e2e2e2); }
-    .card-gold  { background: linear-gradient(140deg, #c8a84b, #e5c060, #b5903a); }
+    .card-black {
+      background: linear-gradient(145deg, #1c1c1c 0%, #2a2a2a 50%, #111 100%);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    .card-gold-card {
+      background: linear-gradient(145deg, #8a6820 0%, #c8a84b 30%, #e8c860 55%, #c0952a 80%, #a07818 100%);
+      box-shadow: 0 12px 40px rgba(200,168,75,0.35), 0 4px 12px rgba(200,168,75,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+    }
+    .card-white-card {
+      background: linear-gradient(145deg, #e8e8e8 0%, #f2f2f2 40%, #e0e0e0 100%);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+
+    /* Sheen on hover */
+    .card-sheen {
+      position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 50%, transparent 60%);
+      transform: skewX(-8deg); pointer-events: none; transition: none;
+    }
 
     .card-chip {
-      position: absolute; top: 11px; left: 13px;
-      width: 28px; height: 20px; border-radius: 4px;
+      position: absolute; top: 13px; left: 14px;
+      width: 30px; height: 22px; border-radius: 4px;
     }
-    .card-black .card-chip { background: linear-gradient(135deg, #d4af37, #f0c040); }
-    .card-white .card-chip { background: linear-gradient(135deg, #a8a8a8, #d0d0d0); }
-    .card-gold  .card-chip { background: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.45); }
+    .card-black .card-chip { background: linear-gradient(135deg, #c8a84b, #f0d060, #a88030); }
+    .card-gold-card .card-chip { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4); }
+    .card-white-card .card-chip { background: linear-gradient(135deg, #a8a8a8, #d0d0d0, #909090); }
+
+    /* Chip lines */
+    .card-chip::before, .card-chip::after {
+      content: ''; position: absolute; background: rgba(0,0,0,0.15);
+    }
+    .card-chip::before { top: 7px; left: 3px; right: 3px; height: 1px; }
+    .card-chip::after { top: 3px; left: 50%; transform: translateX(-50%); width: 1px; height: calc(100% - 6px); }
 
     .card-nfc {
-      position: absolute; top: 11px; right: 11px;
-      width: 18px; height: 18px; opacity: 0.45;
+      position: absolute; top: 12px; right: 13px;
+      width: 20px; height: 20px;
     }
-    .card-black .card-nfc { color: #fff; }
-    .card-white .card-nfc { color: #222; }
-    .card-gold  .card-nfc { color: #fff; }
+    .card-black .card-nfc { color: rgba(255,255,255,0.4); }
+    .card-gold-card .card-nfc { color: rgba(255,255,255,0.6); }
+    .card-white-card .card-nfc { color: rgba(0,0,0,0.3); }
+
+    /* NFC pulse ring */
+    .card-nfc-ring {
+      position: absolute; top: 8px; right: 8px;
+      width: 28px; height: 28px; border-radius: 50%;
+      border: 1px solid currentColor; opacity: 0;
+      animation: nfcRing 2.5s ease-out infinite;
+    }
+    .card-black .card-nfc-ring { color: rgba(200,168,75,0.5); animation-delay: 0s; }
+    .card-gold-card .card-nfc-ring { color: rgba(255,255,255,0.4); animation-delay: 0.8s; }
+    .card-white-card .card-nfc-ring { color: rgba(0,0,0,0.2); animation-delay: 1.6s; }
+    @keyframes nfcRing {
+      0% { opacity: 0.8; transform: scale(0.6); }
+      100% { opacity: 0; transform: scale(1.8); }
+    }
 
     .card-footer {
-      position: absolute; bottom: 0; left: 0; right: 0;
-      padding: 7px 13px;
+      position: absolute; bottom: 0; left: 0; right: 0; padding: 8px 14px;
     }
-    .card-name { font-size: 0.52rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
-    .card-role { font-size: 0.45rem; margin-top: 1px; letter-spacing: 0.04em; }
+    .card-name { font-size: 0.53rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+    .card-role { font-size: 0.44rem; margin-top: 1px; letter-spacing: 0.03em; }
     .card-black .card-name { color: rgba(255,255,255,0.88); }
-    .card-black .card-role { color: rgba(255,255,255,0.38); }
-    .card-white .card-name { color: rgba(0,0,0,0.7); }
-    .card-white .card-role { color: rgba(0,0,0,0.35); }
-    .card-gold  .card-name { color: rgba(255,255,255,0.95); }
-    .card-gold  .card-role { color: rgba(255,255,255,0.55); }
+    .card-black .card-role { color: rgba(255,255,255,0.35); }
+    .card-gold-card .card-name { color: rgba(255,255,255,0.95); }
+    .card-gold-card .card-role { color: rgba(255,255,255,0.6); }
+    .card-white-card .card-name { color: rgba(0,0,0,0.72); }
+    .card-white-card .card-role { color: rgba(0,0,0,0.35); }
 
-    /* ── DIVIDER ── */
-    .divider { border: none; border-top: 1px solid var(--gray-200); }
+    /* Hologram bottom-right */
+    .card-holo {
+      position: absolute; bottom: 10px; right: 12px;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: conic-gradient(rgba(255,255,255,0.3), rgba(200,168,75,0.4), rgba(255,255,255,0.1), rgba(200,168,75,0.3));
+      opacity: 0.5;
+    }
+
+    /* ── SECTION DIVIDER ── */
+    .divider { border: none; border-top: 1px solid var(--border); }
 
     /* ── STATS ── */
-    .stats {
-      display: flex; justify-content: center;
-      border-bottom: 1px solid var(--gray-200);
-    }
+    .stats { display: flex; border-bottom: 1px solid var(--border); }
     .stat {
-      flex: 1; max-width: 200px;
-      padding: 24px 16px; text-align: center;
-      border-right: 1px solid var(--gray-200);
+      flex: 1; padding: 28px 24px; text-align: center;
+      border-right: 1px solid var(--border);
     }
     .stat:last-child { border-right: none; }
-    .stat-n { font-size: 1.375rem; font-weight: var(--fw-semibold); color: var(--black); letter-spacing: -0.03em; }
-    .stat-l { font-size: var(--fs-xs); color: var(--gray-400); margin-top: 2px; }
+    .stat-n {
+      font-size: 1.625rem; font-weight: var(--fw-bold);
+      color: var(--gold); letter-spacing: -0.04em;
+    }
+    .stat-l { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 3px; }
 
     /* ── FEATURES ── */
     .features {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      border-bottom: 1px solid var(--gray-200);
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-bottom: 1px solid var(--border);
     }
     .feat {
-      padding: 24px;
-      border-right: 1px solid var(--gray-200);
-      border-bottom: 1px solid var(--gray-200);
+      padding: 28px 24px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+      opacity: 0; transform: translateY(16px);
+      transition: background 0.2s, opacity 0.5s, transform 0.5s;
     }
+    .feat.visible { opacity: 1; transform: translateY(0); }
     .feat:nth-child(3n) { border-right: none; }
     .feat:nth-child(n+4) { border-bottom: none; }
-    .feat-icon { font-size: 0.9rem; margin-bottom: 8px; display: block; }
-    .feat-title { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--black); margin-bottom: 4px; }
-    .feat-desc { font-size: var(--fs-xs); color: var(--gray-400); line-height: 1.55; }
+    .feat:hover { background: var(--bg2); }
+    .feat-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--gold-dim); border: 1px solid var(--border-gold);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.875rem; margin-bottom: 14px;
+    }
+    .feat-title { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text); margin-bottom: 5px; }
+    .feat-desc { font-size: var(--fs-xs); color: var(--text-faint); line-height: 1.6; }
 
     /* ── PRICING ── */
-    .pricing-wrap {
-      padding: 56px 24px;
-      max-width: 860px; margin: 0 auto;
-    }
-    .section-header { text-align: center; margin-bottom: 32px; }
+    .pricing-wrap { padding: 64px 32px; max-width: 900px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 36px; }
     .section-header h2 {
-      font-size: 1.375rem; font-weight: var(--fw-semibold);
-      color: var(--black); letter-spacing: -0.02em; margin-bottom: 4px;
+      font-size: 1.5rem; font-weight: var(--fw-bold);
+      color: var(--white); letter-spacing: -0.03em; margin-bottom: 6px;
     }
-    .section-header p { font-size: var(--fs-sm); color: var(--gray-400); }
+    .section-header p { font-size: var(--fs-sm); color: var(--text-faint); }
 
-    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
     .plan {
-      border: 1px solid var(--gray-200); border-radius: 10px;
-      padding: 20px; background: var(--white);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 24px; background: var(--bg2);
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.2s;
     }
-    .plan.featured { border-color: var(--black); }
-    .plan-name { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
-    .plan-price { font-size: 1.5rem; font-weight: var(--fw-semibold); letter-spacing: -0.03em; color: var(--black); margin-bottom: 3px; }
-    .plan-price sub { font-size: var(--fs-xs); font-weight: var(--fw-normal); color: var(--gray-400); vertical-align: baseline; }
-    .plan-desc { font-size: var(--fs-xs); color: var(--gray-400); margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200); }
-    .plan-feats { list-style: none; margin-bottom: 16px; display: flex; flex-direction: column; gap: 7px; }
-    .plan-feats li { font-size: var(--fs-xs); color: var(--gray-600); display: flex; gap: 8px; align-items: flex-start; }
-    .plan-feats li::before { content: '—'; color: var(--gray-400); flex-shrink: 0; }
+    .plan:hover {
+      border-color: var(--border-gold);
+      box-shadow: 0 0 32px rgba(200,168,75,0.08);
+      transform: translateY(-2px);
+    }
+    .plan.featured {
+      border-color: var(--gold);
+      box-shadow: 0 0 40px rgba(200,168,75,0.15), inset 0 0 40px rgba(200,168,75,0.03);
+    }
+    .plan.featured:hover {
+      box-shadow: 0 0 56px rgba(200,168,75,0.25), inset 0 0 40px rgba(200,168,75,0.05);
+    }
+
+    /* Featured top glow bar */
+    .plan.featured::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+
+    /* Popular badge */
+    .plan-badge {
+      position: absolute; top: -1px; right: 20px;
+      background: var(--gold); color: #000;
+      font-size: 0.6rem; font-weight: var(--fw-bold);
+      padding: 3px 8px; border-radius: 0 0 6px 6px;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      animation: badgeGlow 2s ease-in-out infinite;
+    }
+    @keyframes badgeGlow {
+      0%,100% { box-shadow: 0 2px 8px rgba(200,168,75,0.3); }
+      50% { box-shadow: 0 4px 16px rgba(200,168,75,0.6); }
+    }
+
+    .plan-name { font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+    .plan-price { font-size: 1.625rem; font-weight: var(--fw-bold); letter-spacing: -0.04em; color: var(--white); margin-bottom: 3px; }
+    .plan.featured .plan-price { color: var(--gold); }
+    .plan-price sub { font-size: var(--fs-xs); font-weight: var(--fw-normal); color: var(--text-muted); vertical-align: baseline; }
+    .plan-desc { font-size: var(--fs-xs); color: var(--text-faint); margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .plan-feats { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 9px; }
+    .plan-feats li { font-size: var(--fs-xs); color: var(--text-muted); display: flex; gap: 8px; align-items: flex-start; }
+    .plan-feats li::before { content: '–'; color: var(--text-faint); flex-shrink: 0; }
+    .plan.featured .plan-feats li { color: var(--text); }
+
     .plan-btn {
-      display: block; text-align: center; padding: 7px 0;
-      border-radius: 6px; font-size: var(--fs-xs); font-weight: var(--fw-medium);
-      text-decoration: none; transition: background 0.15s;
+      display: block; text-align: center; padding: 9px 0;
+      border-radius: 7px; font-size: var(--fs-xs); font-weight: var(--fw-semibold);
+      text-decoration: none; transition: all 0.15s; font-family: inherit; border: none; cursor: pointer;
     }
-    .btn-black { background: var(--black); color: var(--white); }
-    .btn-black:hover { background: var(--gray-900); }
-    .btn-border { background: transparent; color: var(--gray-900); border: 1px solid var(--gray-200); }
-    .btn-border:hover { background: var(--gray-100); }
+    .btn-plan-gold { background: var(--gold); color: #000; box-shadow: 0 4px 16px rgba(200,168,75,0.3); }
+    .btn-plan-gold:hover { background: var(--gold-light); box-shadow: 0 4px 24px rgba(200,168,75,0.5); }
+    .btn-plan-border { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-plan-border:hover { border-color: var(--border-gold); color: var(--text); }
 
     /* ── CTA ── */
     .cta {
-      background: var(--black); padding: 56px 24px;
-      text-align: center;
+      margin: 0 32px 32px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--bg2) 0%, #1a1508 50%, var(--bg2) 100%);
+      border: 1px solid var(--border-gold);
+      padding: 56px 32px; text-align: center;
+      position: relative; overflow: hidden;
     }
-    .cta h2 { font-size: 1.375rem; font-weight: var(--fw-semibold); color: var(--white); letter-spacing: -0.02em; margin-bottom: 6px; }
-    .cta p { font-size: var(--fs-sm); color: rgba(255,255,255,0.4); margin-bottom: 20px; }
-    .cta-btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
-    .btn-cta-w { height: 38px; padding: 0 16px; background: var(--white); color: var(--black); border-radius: 7px; font-size: var(--fs-sm); font-weight: var(--fw-medium); text-decoration: none; display: inline-flex; align-items: center; transition: background 0.15s; }
-    .btn-cta-w:hover { background: #f3f4f6; }
-    .btn-cta-o { height: 38px; padding: 0 16px; background: transparent; color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; font-size: var(--fs-sm); font-weight: var(--fw-normal); text-decoration: none; display: inline-flex; align-items: center; transition: all 0.15s; }
-    .btn-cta-o:hover { color: white; border-color: rgba(255,255,255,0.25); }
+    .cta::before {
+      content: '';
+      position: absolute; top: -60%; left: 50%; transform: translateX(-50%);
+      width: 400px; height: 300px;
+      background: radial-gradient(ellipse, rgba(200,168,75,0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .cta > * { position: relative; z-index: 1; }
+    .cta h2 { font-size: 1.625rem; font-weight: var(--fw-bold); color: var(--white); letter-spacing: -0.03em; margin-bottom: 8px; }
+    .cta p { font-size: var(--fs-sm); color: var(--text-faint); margin-bottom: 24px; }
+    .cta-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    /* ── TRUST BADGES ── */
+    .trust {
+      display: flex; align-items: center; justify-content: center;
+      gap: 24px; padding: 16px 32px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .trust-item { display: flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--text-faint); }
+    .trust-icon { font-size: 0.875rem; }
 
     /* ── FOOTER ── */
     footer {
-      padding: 16px 24px;
+      padding: 20px 32px;
       display: flex; align-items: center; justify-content: space-between;
-      border-top: 1px solid var(--gray-200); flex-wrap: wrap; gap: 10px;
+      border-top: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
     }
-    .footer-logo { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--black); text-decoration: none; }
-    .footer-logo em { font-style: normal; color: var(--blue); }
-    .footer-links { display: flex; gap: 16px; }
-    .footer-links a { font-size: var(--fs-xs); color: var(--gray-400); text-decoration: none; transition: color 0.15s; }
-    .footer-links a:hover { color: var(--gray-600); }
-    .footer-copy { font-size: var(--fs-xs); color: var(--gray-400); }
+    .footer-logo { font-size: var(--fs-sm); font-weight: var(--fw-bold); color: var(--text); text-decoration: none; }
+    .footer-logo em { font-style: normal; color: var(--gold); }
+    .footer-links { display: flex; gap: 20px; }
+    .footer-links a { font-size: var(--fs-xs); color: var(--text-faint); text-decoration: none; transition: color 0.15s; }
+    .footer-links a:hover { color: var(--text-muted); }
+    .footer-copy { font-size: var(--fs-xs); color: var(--text-faint); }
 
     /* ── RESPONSIVE ── */
     @media (max-width: 640px) {
-      h1 { font-size: 1.625rem; }
-      .nfc-card:nth-child(1), .nfc-card:nth-child(3) { display: none; }
-      .nfc-card:nth-child(2) { transform: none; margin: 0; }
+      nav { padding: 0 16px; }
+      h1 { font-size: 1.75rem; }
+      .hero { padding: 100px 16px 56px; }
+      .card-wrap:nth-child(1), .card-wrap:nth-child(3) { display: none; }
+      .card-wrap:nth-child(2) { margin: 0; }
       .stats { flex-wrap: wrap; }
-      .stat { border-right: none !important; border-bottom: 1px solid var(--gray-200); }
+      .stat { border-right: none !important; border-bottom: 1px solid var(--border); }
       .features { grid-template-columns: 1fr; }
       .feat { border-right: none !important; }
       .pricing-grid { grid-template-columns: 1fr; }
+      .cta { margin: 0 16px 16px; }
       footer { flex-direction: column; text-align: center; }
     }
     @media (max-width: 900px) and (min-width: 641px) {
       .features { grid-template-columns: 1fr 1fr; }
-      .feat:nth-child(3n) { border-right: 1px solid var(--gray-200); }
+      .feat:nth-child(3n) { border-right: 1px solid var(--border); }
       .feat:nth-child(2n) { border-right: none; }
       .pricing-grid { grid-template-columns: 1fr; }
     }
@@ -279,35 +438,57 @@
   <a href="/" class="logo">NFC<em>Kartify</em></a>
   <div class="nav-right">
     <a href="/firma/giris" class="btn btn-ghost">Giriş</a>
-    <a href="/firma/kayit" class="btn btn-solid">Başla</a>
+    <a href="/firma/kayit" class="btn btn-gold">Başla →</a>
   </div>
 </nav>
 
 <!-- HERO -->
 <div class="hero">
-  <div class="tag"><span class="tag-dot"></span>NFC &amp; Dijital Kartvizit Platformu</div>
-  <h1>Çalışanlarınıza dijital kimlik verin</h1>
-  <p class="hero-desc">Tek panelden tüm ekibi yönetin. NFC kart, QR kod ve link ile anında paylaşım. Tıklamaları takip edin.</p>
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    Şu an <span class="ticker" id="ticker">142</span> kişi profil görüntülüyor
+  </div>
+  <h1>Çalışanlarınıza<br><span class="gold-text">dijital kimlik</span> verin</h1>
+  <p class="hero-desc">Tek panelden tüm ekibi yönetin. NFC kart, QR kod ve link ile anında paylaşım. Her tıklamayı takip edin.</p>
   <div class="hero-actions">
-    <a href="/firma/kayit" class="btn btn-solid btn-hero">Ücretsiz Başla</a>
-    <a href="/firma/giris" class="btn btn-outline btn-hero">Giriş Yap</a>
+    <a href="/firma/kayit" class="btn btn-gold btn-hero">Ücretsiz Başla</a>
+    <a href="/firma/giris" class="btn-outline-hero">Giriş Yap</a>
   </div>
 
-  <div class="cards">
-    <div class="nfc-card card-black">
-      <div class="card-chip"></div>
-      <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
-      <div class="card-footer"><div class="card-name">Ayşe Kaya</div><div class="card-role">Ürün Müdürü · Abdi İbrahim</div></div>
+  <!-- NFC CARDS -->
+  <div class="cards-scene" id="cardsScene">
+    <!-- Siyah Kart -->
+    <div class="card-wrap" id="card0">
+      <div class="nfc-card card-black">
+        <div class="card-chip"></div>
+        <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
+        <div class="card-nfc-ring"></div>
+        <div class="card-holo"></div>
+        <div class="card-footer"><div class="card-name">Ayşe Kaya</div><div class="card-role">Ürün Müdürü · Abdi İbrahim</div></div>
+        <div class="card-sheen" id="sheen0"></div>
+      </div>
     </div>
-    <div class="nfc-card card-white">
-      <div class="card-chip"></div>
-      <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
-      <div class="card-footer"><div class="card-name">Murat Özdemir</div><div class="card-role">Satış Temsilcisi · Pfizer</div></div>
+    <!-- Gold Kart (ORTADA) -->
+    <div class="card-wrap" id="card1">
+      <div class="nfc-card card-gold-card">
+        <div class="card-chip"></div>
+        <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
+        <div class="card-nfc-ring"></div>
+        <div class="card-holo"></div>
+        <div class="card-footer"><div class="card-name">Murat Özdemir</div><div class="card-role">Satış Temsilcisi · Pfizer</div></div>
+        <div class="card-sheen" id="sheen1"></div>
+      </div>
     </div>
-    <div class="nfc-card card-gold">
-      <div class="card-chip"></div>
-      <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
-      <div class="card-footer"><div class="card-name">Kerem Arslan</div><div class="card-role">Bölge Müdürü · MSD</div></div>
+    <!-- Beyaz Kart -->
+    <div class="card-wrap" id="card2">
+      <div class="nfc-card card-white-card">
+        <div class="card-chip"></div>
+        <svg class="card-nfc" viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 12c0 4.69-3.81 8.5-8.5 8.5S3.5 16.69 3.5 12 7.31 3.5 12 3.5s8.5 3.81 8.5 8.5zM22 12C22 6.48 17.52 2 12 2S2 6.48 2 12s4.48 10 10 10 10-4.48 10-10zm-8 0c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm3 0c0 2.76-2.24 5-5 5s-5-2.24-5-5 2.24-5 5-5 5 2.24 5 5z"/></svg>
+        <div class="card-nfc-ring"></div>
+        <div class="card-holo"></div>
+        <div class="card-footer"><div class="card-name">Kerem Arslan</div><div class="card-role">Bölge Müdürü · MSD</div></div>
+        <div class="card-sheen" id="sheen2"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -316,41 +497,41 @@
 
 <!-- STATS -->
 <div class="stats">
-  <div class="stat"><div class="stat-n">500+</div><div class="stat-l">Aktif profil</div></div>
-  <div class="stat"><div class="stat-n">10k+</div><div class="stat-l">Görüntülenme</div></div>
-  <div class="stat"><div class="stat-n">%98</div><div class="stat-l">Memnuniyet</div></div>
-  <div class="stat"><div class="stat-n">3 dk</div><div class="stat-l">Kurulum</div></div>
+  <div class="stat"><div class="stat-n" data-target="500">0</div><div class="stat-l">Aktif profil</div></div>
+  <div class="stat"><div class="stat-n" data-target="10000">0</div><div class="stat-l">Aylık görüntülenme</div></div>
+  <div class="stat"><div class="stat-n" data-target="98">0</div><div class="stat-l">% Memnuniyet</div></div>
+  <div class="stat"><div class="stat-n">3 dk</div><div class="stat-l">Kurulum süresi</div></div>
 </div>
 
 <!-- FEATURES -->
-<div class="features">
+<div class="features" id="features">
   <div class="feat">
-    <span class="feat-icon">📱</span>
+    <div class="feat-icon">📱</div>
     <div class="feat-title">Dijital Profil</div>
-    <div class="feat-desc">Her çalışana özel URL. Telefon, e-posta, sosyal medya.</div>
+    <div class="feat-desc">Her çalışana özel URL. Telefon, e-posta, sosyal medya tek sayfada.</div>
   </div>
   <div class="feat">
-    <span class="feat-icon">⚡</span>
+    <div class="feat-icon">⚡</div>
     <div class="feat-title">NFC &amp; QR</div>
-    <div class="feat-desc">Tek dokunuş veya QR kod ile anında paylaşım.</div>
+    <div class="feat-desc">Tek dokunuş veya QR kod ile anında paylaşım. Uygulama gerekmez.</div>
   </div>
   <div class="feat">
-    <span class="feat-icon">📊</span>
+    <div class="feat-icon">📊</div>
     <div class="feat-title">Analitik</div>
     <div class="feat-desc">Gerçek zamanlı tıklama ve görüntülenme verileri.</div>
   </div>
   <div class="feat">
-    <span class="feat-icon">📋</span>
+    <div class="feat-icon">📋</div>
     <div class="feat-title">Toplu Yükleme</div>
     <div class="feat-desc">Excel ile 100 çalışanı saniyeler içinde sisteme al.</div>
   </div>
   <div class="feat">
-    <span class="feat-icon">✉️</span>
+    <div class="feat-icon">✉️</div>
     <div class="feat-title">E-posta İmzası</div>
-    <div class="feat-desc">Otomatik HTML imzası. Kopyala, yapıştır.</div>
+    <div class="feat-desc">Otomatik HTML imzası. Kopyala, yapıştır. Hepsi bu.</div>
   </div>
   <div class="feat">
-    <span class="feat-icon">🏢</span>
+    <div class="feat-icon">🏢</div>
     <div class="feat-title">White-label</div>
     <div class="feat-desc">Marka rengi ve logo. Bayi sistemi ile alt firma yönetimi.</div>
   </div>
@@ -360,7 +541,7 @@
 <div class="pricing-wrap">
   <div class="section-header">
     <h2>Fiyatlandırma</h2>
-    <p>Şeffaf, gizli ücret yok</p>
+    <p>Şeffaf, gizli ücret yok. İstediğiniz zaman iptal.</p>
   </div>
   <div class="pricing-grid">
     <div class="plan">
@@ -372,9 +553,10 @@
         <li>QR kod paylaşımı</li>
         <li>vCard indirme</li>
       </ul>
-      <a href="/firma/kayit" class="plan-btn btn-border">Başla</a>
+      <a href="/firma/kayit" class="plan-btn btn-plan-border">Başla</a>
     </div>
     <div class="plan featured">
+      <div class="plan-badge">En Popüler</div>
       <div class="plan-name">Kurumsal</div>
       <div class="plan-price">₺990 <sub>/ ay</sub></div>
       <div class="plan-desc">Büyüyen ekipler için</div>
@@ -385,7 +567,7 @@
         <li>E-posta imzası</li>
         <li>Marka özelleştirme</li>
       </ul>
-      <a href="/firma/kayit" class="plan-btn btn-black">Başla</a>
+      <a href="/firma/kayit" class="plan-btn btn-plan-gold">Başla →</a>
     </div>
     <div class="plan">
       <div class="plan-name">Bayi</div>
@@ -396,7 +578,7 @@
         <li>Alt firma yönetimi</li>
         <li>SLA garantisi</li>
       </ul>
-      <a href="mailto:info@nfckartify.com" class="plan-btn btn-border">Teklif Al</a>
+      <a href="mailto:info@nfckartify.com" class="plan-btn btn-plan-border">Teklif Al</a>
     </div>
   </div>
 </div>
@@ -404,11 +586,20 @@
 <!-- CTA -->
 <div class="cta">
   <h2>Bugün başlayın</h2>
-  <p>Ücretsiz deneyin, beğenirseniz devam edin.</p>
+  <p>Ücretsiz deneyin. Kart gelmeden önce sistemi kurun.</p>
   <div class="cta-btns">
-    <a href="/firma/kayit" class="btn-cta-w">Ücretsiz Hesap Oluştur</a>
-    <a href="/firma/giris" class="btn-cta-o">Giriş Yap</a>
+    <a href="/firma/kayit" class="btn btn-gold btn-hero">Ücretsiz Hesap Oluştur</a>
+    <a href="/firma/giris" class="btn-outline-hero">Giriş Yap</a>
   </div>
+</div>
+
+<!-- TRUST -->
+<div class="trust">
+  <div class="trust-item"><span class="trust-icon">🔒</span> SSL Şifreleme</div>
+  <div class="trust-item"><span class="trust-icon">🇹🇷</span> KVKK Uyumlu</div>
+  <div class="trust-item"><span class="trust-icon">📡</span> NFC Forum Sertifikalı</div>
+  <div class="trust-item"><span class="trust-icon">⚡</span> %99.9 Uptime</div>
+  <div class="trust-item"><span class="trust-icon">🎧</span> 7/24 Destek</div>
 </div>
 
 <!-- FOOTER -->
@@ -422,5 +613,85 @@
   <div class="footer-copy">© 2026 NFCKartify</div>
 </footer>
 
+<script>
+  /* ── 3D CARD TILT ── */
+  const cardWraps = document.querySelectorAll('.card-wrap');
+  const baseTransforms = [
+    'rotate(-5deg) translateY(10px)',
+    'rotate(0deg) translateY(0)',
+    'rotate(5deg) translateY(10px)'
+  ];
+
+  cardWraps.forEach((wrap, i) => {
+    const card = wrap.querySelector('.nfc-card');
+    const sheen = wrap.querySelector('.card-sheen');
+
+    wrap.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      const rotX = -y * 18;
+      const rotY = x * 18;
+      card.style.transform = `perspective(600px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(1.04)`;
+      if (sheen) {
+        sheen.style.left = `${(x + 0.5) * 150 - 20}%`;
+        sheen.style.opacity = '1';
+      }
+    });
+
+    wrap.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      if (sheen) { sheen.style.left = '-100%'; sheen.style.opacity = '0'; }
+    });
+  });
+
+  /* ── TICKER (social proof) ── */
+  const ticker = document.getElementById('ticker');
+  if (ticker) {
+    let base = 138;
+    setInterval(() => {
+      const delta = Math.floor(Math.random() * 5) - 2;
+      base = Math.max(120, Math.min(180, base + delta));
+      ticker.textContent = base;
+    }, 3000);
+  }
+
+  /* ── COUNT-UP STATS ── */
+  const statEls = document.querySelectorAll('.stat-n[data-target]');
+  const countObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const el = entry.target;
+      const target = parseInt(el.dataset.target);
+      const suffix = target >= 10000 ? 'k+' : target >= 500 ? '+' : '%';
+      const display = target >= 10000 ? 10 : target;
+      let start = 0;
+      const step = display / 40;
+      const timer = setInterval(() => {
+        start += step;
+        if (start >= display) {
+          el.textContent = display + suffix;
+          clearInterval(timer);
+        } else {
+          el.textContent = Math.floor(start) + suffix;
+        }
+      }, 30);
+      countObserver.unobserve(el);
+    });
+  }, { threshold: 0.5 });
+  statEls.forEach(el => countObserver.observe(el));
+
+  /* ── FEATURE SCROLL REVEAL ── */
+  const feats = document.querySelectorAll('.feat');
+  const featObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry, idx) => {
+      if (entry.isIntersecting) {
+        setTimeout(() => entry.target.classList.add('visible'), idx * 60);
+        featObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  feats.forEach(f => featObserver.observe(f));
+</script>
 </body>
 </html>
