@@ -5,7 +5,7 @@
   },
   "deploy": {
     "startCommand": "node app.js",
-    "healthcheckPath": "/firma/giris",
+    "healthcheckPath": "/",
     "restartPolicyType": "ON_FAILURE"
   }
 }
