@@ -4,16 +4,15 @@ const router = express.Router();
 const { pool } = require('../db');
 const { firmaSlugOlustur } = require('../utils/slug');
 
-router.get('/kayit', (req, res) => {
-  res.render('auth/kayit', { title: 'Firma Kaydı' });
-});
+router.get('/kayit', (req, res) => res.redirect('/'));
+router.get('/giris', (req, res) => res.redirect('/'));
 
 router.post('/kayit', async (req, res) => {
-  const { ad, sektor, marka_rengi, yetkili_email, sifre } = req.body;
+  const { ad, yetkili_email, sifre } = req.body;
 
   if (!ad || !yetkili_email || !sifre) {
     req.flash('error', 'Tüm alanları doldurun.');
-    return res.redirect('/firma/kayit');
+    return res.redirect('/');
   }
 
   try {
@@ -28,7 +27,7 @@ router.post('/kayit', async (req, res) => {
     const result = await pool.query(
       `INSERT INTO firmalar (ad, slug, sektor, marka_rengi, yetkili_email, yetkili_sifre_hash)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-      [ad, slug, sektor || 'diger', marka_rengi || '#1a73e8', yetkili_email, hash]
+      [ad, slug, 'diger', '#1a73e8', yetkili_email, hash]
     );
 
     req.session.firmaId = result.rows[0].id;
@@ -37,16 +36,12 @@ router.post('/kayit', async (req, res) => {
   } catch (err) {
     if (err.code === '23505') {
       req.flash('error', 'Bu email zaten kayıtlı.');
-      return res.redirect('/firma/kayit');
+      return res.redirect('/');
     }
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
-    res.redirect('/firma/kayit');
+    res.redirect('/');
   }
-});
-
-router.get('/giris', (req, res) => {
-  res.render('auth/giris', { title: 'Firma Girişi' });
 });
 
 router.post('/giris', async (req, res) => {
@@ -54,7 +49,7 @@ router.post('/giris', async (req, res) => {
 
   if (!yetkili_email || !sifre) {
     req.flash('error', 'Email ve şifre gerekli.');
-    return res.redirect('/firma/giris');
+    return res.redirect('/');
   }
 
   try {
@@ -65,7 +60,7 @@ router.post('/giris', async (req, res) => {
 
     if (!result.rows.length) {
       req.flash('error', 'Email veya şifre hatalı.');
-      return res.redirect('/firma/giris');
+      return res.redirect('/');
     }
 
     const firma = result.rows[0];
@@ -73,7 +68,7 @@ router.post('/giris', async (req, res) => {
 
     if (!eslesme) {
       req.flash('error', 'Email veya şifre hatalı.');
-      return res.redirect('/firma/giris');
+      return res.redirect('/');
     }
 
     req.session.firmaId = firma.id;
@@ -81,12 +76,12 @@ router.post('/giris', async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
-    res.redirect('/firma/giris');
+    res.redirect('/');
   }
 });
 
 router.post('/cikis', (req, res) => {
-  req.session.destroy(() => res.redirect('/firma/giris'));
+  req.session.destroy(() => res.redirect('/'));
 });
 
 module.exports = router;
