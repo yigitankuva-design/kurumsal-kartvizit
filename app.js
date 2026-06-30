@@ -53,7 +53,53 @@ app.use('/firma', authRoutes);
 app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
-app.get('/', (req, res) => res.render('public/landing', { title: 'NFCKartify', layout: false, error: req.flash('error'), success: req.flash('success') }));
+
+// Ana sayfa: giriş yapılmışsa dashboard, yoksa landing
+app.get('/', async (req, res) => {
+  const error = req.flash('error');
+  const success = req.flash('success');
+  if (!req.session.firmaId) {
+    return res.render('public/landing', { layout: false, error, success });
+  }
+  try {
+    const firmaResult = await pool.query('SELECT * FROM firmalar WHERE id = $1', [req.session.firmaId]);
+    if (!firmaResult.rows.length) {
+      req.session.destroy(() => {});
+      return res.render('public/landing', { layout: false, error: ['Oturum sona erdi.'], success: [] });
+    }
+    const firma = firmaResult.rows[0];
+    const calisanlarResult = await pool.query(
+      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
+      [req.session.firmaId]
+    );
+    const calisanlar = calisanlarResult.rows;
+    const aktifSayisi = calisanlar.filter(c => c.durum === 'aktif').length;
+    const pasifSayisi = calisanlar.filter(c => c.durum === 'pasif').length;
+    const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
+    const tab = req.query.tab || 'calisanlar';
+
+    let linkAnalytics = [];
+    if (tab === 'analytics' && calisanlar.length) {
+      const aResult = await pool.query(
+        `SELECT c.ad, c.soyad, lt.tip, COUNT(*) as sayi
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1
+         GROUP BY c.ad, c.soyad, lt.tip ORDER BY sayi DESC`,
+        [req.session.firmaId]
+      );
+      linkAnalytics = aResult.rows;
+    }
+
+    res.render('public/dashboard', {
+      layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
+      toplamGoruntulenme, tab, linkAnalytics, error, success
+    });
+  } catch (err) {
+    console.error(err);
+    res.render('public/landing', { layout: false, error: ['Bir hata oluştu.'], success: [] });
+  }
+});
+
 app.use('/', publicRoutes);
 
 const PORT = process.env.PORT || 3000;

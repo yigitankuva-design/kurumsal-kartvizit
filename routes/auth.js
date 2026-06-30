@@ -32,7 +32,7 @@ router.post('/kayit', async (req, res) => {
 
     req.session.firmaId = result.rows[0].id;
     req.flash('success', 'Firma kaydı başarılı!');
-    res.redirect('/firma/panel');
+    res.redirect('/');
   } catch (err) {
     if (err.code === '23505') {
       req.flash('error', 'Bu email zaten kayıtlı.');
@@ -72,7 +72,7 @@ router.post('/giris', async (req, res) => {
     }
 
     req.session.firmaId = firma.id;
-    res.redirect('/firma/panel');
+    res.redirect('/');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
