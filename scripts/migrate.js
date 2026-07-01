@@ -30,6 +30,12 @@ async function migrate() {
       tip         TEXT NOT NULL,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS whatsapp TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS tiktok TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS sahibinden TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS hurriyet_emlak TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS adres TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS google_yorum_link TEXT`,
   ];
 
   for (const sql of migrations) {

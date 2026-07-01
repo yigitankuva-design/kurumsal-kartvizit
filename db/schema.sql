@@ -52,6 +52,12 @@ CREATE TABLE IF NOT EXISTS calisanlar (
   twitter             TEXT,
   youtube             TEXT,
   website             TEXT,
+  whatsapp            TEXT,
+  tiktok              TEXT,
+  sahibinden          TEXT,
+  hurriyet_emlak      TEXT,
+  adres               TEXT,
+  google_yorum_link   TEXT,
   created_at          TIMESTAMP DEFAULT NOW(),
   UNIQUE(firma_id, slug)
 );
