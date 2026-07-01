@@ -1,8 +1,18 @@
 const multer = require('multer');
-const multerS3 = require('multer-s3');
+const sharp = require('sharp');
 const { S3Client } = require('@aws-sdk/client-s3');
+const { Upload } = require('@aws-sdk/lib-storage');
 
 const MAX_FOTO_BOYUTU = 15 * 1024 * 1024;
+const IZINLI_MIME = ['image/jpeg', 'image/png', 'image/webp'];
+
+function mimeKontrol(req, file, cb) {
+  if (IZINLI_MIME.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Sadece JPEG, PNG veya WebP yüklenebilir.'));
+  }
+}
 
 function buildS3Client() {
   return new S3Client({
@@ -16,40 +26,61 @@ function buildS3Client() {
   });
 }
 
-function uploadMiddleware(klasor) {
-  // Object Storage env eksikse memory storage'a düş (development)
-  if (!process.env.RAILWAY_STORAGE_BUCKET) {
-    return multer({
-      storage: multer.memoryStorage(),
-      limits: { fileSize: MAX_FOTO_BOYUTU },
-      fileFilter: mimeKontrol,
-    });
-  }
+async function fotoIsle(buffer) {
+  return sharp(buffer)
+    .rotate()
+    .resize(600, 600, { fit: 'cover', position: sharp.strategy.attention })
+    .jpeg({ quality: 88 })
+    .toBuffer();
+}
 
-  const s3 = buildS3Client();
-  return multer({
-    storage: multerS3({
-      s3,
-      bucket: process.env.RAILWAY_STORAGE_BUCKET,
-      contentType: multerS3.AUTO_CONTENT_TYPE,
-      acl: 'public-read',
-      key: (req, file, cb) => {
-        const ext = file.originalname.split('.').pop();
-        cb(null, `${klasor}/${Date.now()}.${ext}`);
-      },
-    }),
+function uploadMiddleware(klasor) {
+  const multerUpload = multer({
+    storage: multer.memoryStorage(),
     limits: { fileSize: MAX_FOTO_BOYUTU },
     fileFilter: mimeKontrol,
   });
-}
 
-function mimeKontrol(req, file, cb) {
-  const izinli = ['image/jpeg', 'image/png', 'image/webp'];
-  if (izinli.includes(file.mimetype)) {
-    cb(null, true);
-  } else {
-    cb(new Error('Sadece JPEG, PNG veya WebP yüklenebilir.'));
+  function single(alanAdi) {
+    return [
+      multerUpload.single(alanAdi),
+      async (req, res, next) => {
+        if (!req.file) return next();
+        try {
+          const islenmisBuffer = await fotoIsle(req.file.buffer);
+
+          if (!process.env.RAILWAY_STORAGE_BUCKET) {
+            // Object Storage env eksikse (development): dosyayı işlenmiş haliyle
+            // memory'de tut ama URL üretme (mevcut dev-fallback davranışıyla tutarlı).
+            req.file.buffer = islenmisBuffer;
+            req.file.location = null;
+            return next();
+          }
+
+          const anahtar = `${klasor}/${Date.now()}.jpg`;
+          const s3 = buildS3Client();
+          const yukleme = new Upload({
+            client: s3,
+            params: {
+              Bucket: process.env.RAILWAY_STORAGE_BUCKET,
+              Key: anahtar,
+              Body: islenmisBuffer,
+              ContentType: 'image/jpeg',
+              ACL: 'public-read',
+            },
+          });
+          await yukleme.done();
+
+          req.file.location = `${process.env.RAILWAY_STORAGE_ENDPOINT}/${process.env.RAILWAY_STORAGE_BUCKET}/${anahtar}`;
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+    ];
   }
+
+  return { single };
 }
 
-module.exports = { uploadMiddleware, MAX_FOTO_BOYUTU };
+module.exports = { uploadMiddleware, fotoIsle, MAX_FOTO_BOYUTU };
