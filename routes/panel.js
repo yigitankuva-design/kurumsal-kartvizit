@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
-const { calisanSlugOlustur } = require('../utils/slug');
+const { benzersizCalisanSlugOlustur } = require('../utils/slug');
 const XLSX = require('xlsx');
 const multer = require('multer');
 const { excelParse } = require('../utils/excel');
@@ -27,12 +27,7 @@ router.post('/ekle', async (req, res) => {
     return res.redirect('/');
   }
   try {
-    let slug = calisanSlugOlustur();
-    for (let i = 0; i < 5; i++) {
-      const check = await pool.query('SELECT id FROM calisanlar WHERE firma_id = $1 AND slug = $2', [req.session.firmaId, slug]);
-      if (!check.rows.length) break;
-      slug = calisanSlugOlustur();
-    }
+    const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, ad, soyad);
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
     await pool.query(
       `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar, slug)
@@ -75,7 +70,7 @@ router.post('/toplu-yukle', upload.single('excel'), async (req, res) => {
   let eklenen = 0;
   for (const c of calisanlar) {
     try {
-      const slug = calisanSlugOlustur();
+      const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, c.ad, c.soyad);
       await pool.query(
         `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, slug)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
