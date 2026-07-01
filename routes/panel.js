@@ -6,6 +6,7 @@ const XLSX = require('xlsx');
 const multer = require('multer');
 const { excelParse } = require('../utils/excel');
 const { uploadMiddleware } = require('../middleware/upload');
+const { biyografiTemizle } = require('../utils/sanitize');
 
 const fotoUpload = uploadMiddleware('calisanlar');
 
@@ -39,7 +40,7 @@ router.get('/ekle', (req, res) => {
 
 // Çalışan ekleme POST
 router.post('/ekle', async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
@@ -47,13 +48,16 @@ router.post('/ekle', async (req, res) => {
   try {
     const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, ad, soyad);
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
+    const biyografiTemiz = biyografiTemizle(biyografi);
     await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
       [req.session.firmaId, ad, soyad, unvan || null, departman || null,
        telefon || null, email || null, linkedin || null,
        instagram || null, twitter || null, youtube || null, website || null,
-       biyografi || null, ilaclarArray, slug]
+       whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null,
+       adres || null, google_yorum_link || null,
+       biyografiTemiz, ilaclarArray, slug]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
     res.redirect('/');
@@ -129,31 +133,36 @@ router.get('/:id/duzenle', async (req, res) => {
 
 // Çalışan düzenleme — hem POST hem PUT (slide-in panel PUT kullanır)
 async function duzenleHandler(req, res) {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, biyografi, ilaclar } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
   }
   try {
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
+    const biyografiTemiz = biyografiTemizle(biyografi);
     const fotoUrl = req.file ? (req.file.location || null) : undefined;
 
     const baseFields = [ad, soyad, unvan || null, departman || null, telefon || null,
       email || null, linkedin || null, instagram || null, twitter || null,
-      youtube || null, website || null, biyografi || null, ilaclarArray];
+      youtube || null, website || null, whatsapp || null, tiktok || null,
+      sahibinden || null, hurriyet_emlak || null, adres || null, google_yorum_link || null,
+      biyografiTemiz, ilaclarArray];
 
     if (fotoUrl !== undefined) {
       await pool.query(
         `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
          email=$6, linkedin=$7, instagram=$8, twitter=$9, youtube=$10, website=$11,
-         biyografi=$12, ilaclar=$13, foto_url=$14 WHERE id=$15 AND firma_id=$16`,
+         whatsapp=$12, tiktok=$13, sahibinden=$14, hurriyet_emlak=$15, adres=$16, google_yorum_link=$17,
+         biyografi=$18, ilaclar=$19, foto_url=$20 WHERE id=$21 AND firma_id=$22`,
         [...baseFields, fotoUrl, req.params.id, req.session.firmaId]
       );
     } else {
       await pool.query(
         `UPDATE calisanlar SET ad=$1, soyad=$2, unvan=$3, departman=$4, telefon=$5,
          email=$6, linkedin=$7, instagram=$8, twitter=$9, youtube=$10, website=$11,
-         biyografi=$12, ilaclar=$13 WHERE id=$14 AND firma_id=$15`,
+         whatsapp=$12, tiktok=$13, sahibinden=$14, hurriyet_emlak=$15, adres=$16, google_yorum_link=$17,
+         biyografi=$18, ilaclar=$19 WHERE id=$20 AND firma_id=$21`,
         [...baseFields, req.params.id, req.session.firmaId]
       );
     }
