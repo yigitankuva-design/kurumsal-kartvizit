@@ -1,0 +1,670 @@
+# Rehbere Ekleme (Android) + Dil Desteği + Telefon Çerçevesi Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Profil sayfasında Android'de "Rehbere Ekle" butonunun `intent://` deep link ile rehbere yönlendirmesini (başarısızsa `.vcf`'e düşmesini), TR/EN dil desteğini (`?lang=en`) ve masaüstünde profil kartının bir telefon çerçevesi içinde gösterilmesini eklemek.
+
+**Architecture:** `utils/i18n.js`'te basit bir `{tr, en}` sözlük ve `cevirmenOlustur(lang)` fabrika fonksiyonu; `routes/public.js`'teki iki profil render route'u `?lang=en` query param'ını okuyup `lang` ve `t()` fonksiyonunu view'a geçirir. `views/public/profil.ejs`'teki sabit Türkçe metinler `t()` çağrılarıyla değiştirilir. Android intent yönlendirmesi tamamen client-side bir `<script>` ile "Rehbere Ekle" linkinin `click` event'ini yakalar. Telefon çerçevesi sadece CSS (`@media min-width:768px`) ile eklenir, harici görsel/kütüphane gerekmez.
+
+**Bağımlılık:** Bu plan, `docs/superpowers/plans/2026-07-01-profil-alanlari-genisletme.md` planından **SONRA** uygulanmalıdır — o plan `views/public/profil.ejs`'e yeni butonlar (WhatsApp, TikTok, Sahibinden, Hürriyet Emlak, Google Değerlendir) ekliyor ve bu plan, dil desteğini o butonlar da dahil **tüm** profil sayfası metinlerine uygulamak için dosyanın nihai halini hedefliyor. Bu plan çalıştırılmadan önce profil alanları planının tamamlanmış olduğunu doğrulayın (`grep -n "calisan.whatsapp" views/public/profil.ejs` bir sonuç döndürmeli).
+
+**Tech Stack:** EJS, vanilla JS (client-side), CSS
+
+---
+
+## Task 0: Ön Koşul Kontrolü
+
+**Files:** (yok — sadece doğrulama)
+
+- [ ] **Step 1: Bağımlılık planının uygulandığını doğrula**
+
+Run: `grep -n "calisan.whatsapp" views/public/profil.ejs`
+Expected: En az bir satır eşleşme döner (örn. `<% if (calisan.whatsapp) { %>`). Eşleşme yoksa önce `docs/superpowers/plans/2026-07-01-profil-alanlari-genisletme.md` planını uygula, sonra bu plana dön.
+
+---
+
+## Task 1: `utils/i18n.js` — Çeviri Sözlüğü
+
+**Files:**
+- Create: `utils/i18n.js`
+- Test: `tests/i18n.test.js`
+
+- [ ] **Step 1: Failing test yaz**
+
+`tests/i18n.test.js`:
+
+```javascript
+const { cevirmenOlustur } = require('../utils/i18n');
+
+describe('cevirmenOlustur', () => {
+  test('tr için Türkçe metin döner', () => {
+    const t = cevirmenOlustur('tr');
+    expect(t('telefon')).toBe('Telefon');
+  });
+
+  test('en için İngilizce metin döner', () => {
+    const t = cevirmenOlustur('en');
+    expect(t('telefon')).toBe('Phone');
+  });
+
+  test('desteklenmeyen dil kodu için tr\'ye düşer', () => {
+    const t = cevirmenOlustur('fr');
+    expect(t('telefon')).toBe('Telefon');
+  });
+
+  test('olmayan anahtar için anahtarın kendisini döner', () => {
+    const t = cevirmenOlustur('tr');
+    expect(t('olmayan_anahtar')).toBe('olmayan_anahtar');
+  });
+
+  test('en sözlüğünde eksik bir anahtar için tr karşılığına düşer', () => {
+    const t = cevirmenOlustur('en');
+    expect(t('telefon')).not.toBe('telefon');
+  });
+});
+```
+
+- [ ] **Step 2: Testin başarısız olduğunu doğrula**
+
+Run: `npx jest tests/i18n.test.js`
+Expected: FAIL (`utils/i18n.js` henüz yok)
+
+- [ ] **Step 3: utils/i18n.js oluştur**
+
+```javascript
+const CEVIRILER = {
+  tr: {
+    telefon: 'Telefon',
+    eposta: 'E-posta',
+    linkedin_buton: 'Profili Görüntüle',
+    instagram_buton: 'Profili Görüntüle',
+    twitter_buton: 'Profili Görüntüle',
+    youtube_buton: 'Kanalı Görüntüle',
+    website_buton: 'Ziyaret Et',
+    whatsapp_buton: 'Mesaj Gönder',
+    tiktok_buton: 'Profili Görüntüle',
+    sahibinden_buton: 'İlanı Görüntüle',
+    hurriyet_emlak_buton: 'İlanı Görüntüle',
+    rehbere_ekle: 'Rehbere Ekle',
+    google_degerlendir: 'Google\'da Değerlendir',
+    qr_goster: 'QR Kodu Göster',
+    imza_al: 'E-posta İmzası Al',
+    calisilan_urunler: 'Çalışılan Ürünler',
+    qr_modal_baslik: 'QR Kodu',
+    qr_aciklama: 'Telefon kameranızla okutun',
+    qr_indir: 'QR İndir',
+    imza_modal_baslik: 'E-posta İmzası',
+    imza_aciklama: 'Aşağıdaki kodu e-posta istemcinize yapıştırın',
+    kopyala: 'Kopyala',
+    kopyalandi: 'Kopyalandı!',
+    dijital_kartvizit: 'Dijital Kartvizitim',
+  },
+  en: {
+    telefon: 'Phone',
+    eposta: 'Email',
+    linkedin_buton: 'View Profile',
+    instagram_buton: 'View Profile',
+    twitter_buton: 'View Profile',
+    youtube_buton: 'View Channel',
+    website_buton: 'Visit',
+    whatsapp_buton: 'Send Message',
+    tiktok_buton: 'View Profile',
+    sahibinden_buton: 'View Listing',
+    hurriyet_emlak_buton: 'View Listing',
+    rehbere_ekle: 'Add to Contacts',
+    google_degerlendir: 'Leave a Google Review',
+    qr_goster: 'Show QR Code',
+    imza_al: 'Get Email Signature',
+    calisilan_urunler: 'Products',
+    qr_modal_baslik: 'QR Code',
+    qr_aciklama: 'Scan with your phone camera',
+    qr_indir: 'Download QR',
+    imza_modal_baslik: 'Email Signature',
+    imza_aciklama: 'Paste this code into your email client',
+    kopyala: 'Copy',
+    kopyalandi: 'Copied!',
+    dijital_kartvizit: 'My Digital Business Card',
+  },
+};
+
+function cevirmenOlustur(lang) {
+  const sozluk = CEVIRILER[lang] || CEVIRILER.tr;
+  return function t(anahtar) {
+    return sozluk[anahtar] || CEVIRILER.tr[anahtar] || anahtar;
+  };
+}
+
+module.exports = { cevirmenOlustur };
+```
+
+- [ ] **Step 4: Testi çalıştır ve geçtiğini doğrula**
+
+Run: `npx jest tests/i18n.test.js`
+Expected: PASS (5 test)
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add utils/i18n.js tests/i18n.test.js
+git commit -m "feat: TR/EN ceviri sozlugu (utils/i18n.js)"
+```
+
+---
+
+## Task 2: `routes/public.js` — `lang`/`t` Değişkenlerini Render'a Geçir
+
+**Files:**
+- Modify: `routes/public.js`
+
+- [ ] **Step 1: Import ekle**
+
+`routes/public.js` dosyasının başındaki require'ların yanına ekle:
+
+```javascript
+const { cevirmenOlustur } = require('../utils/i18n');
+```
+
+- [ ] **Step 2: Bayi-markalı profil route'unu güncelle**
+
+Mevcut:
+
+```javascript
+    await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    const vcfUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}/vcf`;
+    const profilUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}`;
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
+```
+
+şu şekilde değiştir:
+
+```javascript
+    await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    const vcfUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}/vcf`;
+    const profilUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}`;
+    const lang = req.query.lang === 'en' ? 'en' : 'tr';
+    const t = cevirmenOlustur(lang);
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
+```
+
+- [ ] **Step 3: Standart profil route'unu güncelle**
+
+Mevcut:
+
+```javascript
+    await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    const vcfUrl = `/${req.params.firmaSlug}/${calisan.slug}/vcf`;
+    const profilUrl = `/${req.params.firmaSlug}/${calisan.slug}`;
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
+```
+
+şu şekilde değiştir:
+
+```javascript
+    await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    const vcfUrl = `/${req.params.firmaSlug}/${calisan.slug}/vcf`;
+    const profilUrl = `/${req.params.firmaSlug}/${calisan.slug}`;
+    const lang = req.query.lang === 'en' ? 'en' : 'tr';
+    const t = cevirmenOlustur(lang);
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
+```
+
+- [ ] **Step 4: Tüm testleri çalıştır**
+
+Run: `npx jest`
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add routes/public.js
+git commit -m "feat: profil route'larina dil (lang/t) destegi ekle"
+```
+
+---
+
+## Task 3: `views/public/profil.ejs` — Tam Güncelleme (i18n, Android Intent, Dil Seçici)
+
+**Files:**
+- Modify: `views/public/profil.ejs`
+
+- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+
+`views/public/profil.ejs` dosyasının tamamını şu içerikle değiştir (bu, Profil Alanları Genişletme planındaki tüm butonları da içerir — Task 0'daki ön koşul kontrolü bu yüzden gerekliydi):
+
+```html
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= calisan.ad %> <%= calisan.soyad %> — <%= calisan.firma_ad %></title>
+  <meta name="description" content="<%= calisan.unvan ? calisan.unvan + ', ' : '' %><%= calisan.firma_ad %>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/style.css">
+  <% const marka = branding ? branding.marka_rengi : (calisan.marka_rengi || '#1a73e8'); %>
+  <style>
+    .profil-header { background: <%= marka %>; }
+    .btn-vcf { background: <%= marka %>; }
+    .btn-vcf:hover { filter: brightness(0.88); }
+    .ilac-etiket { background: <%= marka %>15; color: <%= marka %>; border-color: <%= marka %>35; }
+  </style>
+</head>
+<body class="profil-body">
+  <div class="dil-secici">
+    <a href="?lang=tr" class="<%= lang === 'tr' ? 'aktif' : '' %>">TR</a>
+    <a href="?lang=en" class="<%= lang === 'en' ? 'aktif' : '' %>">EN</a>
+  </div>
+  <div class="profil-kart">
+    <div class="profil-header">
+      <% const logoUrl = branding ? branding.logo_url : calisan.logo_url; %>
+      <% const firmaAd = branding ? branding.ad : calisan.firma_ad; %>
+      <% if (logoUrl) { %>
+        <img src="<%= logoUrl %>" class="firma-logo" alt="<%= firmaAd %>">
+      <% } else { %>
+        <div class="firma-ad-text"><%= firmaAd %></div>
+      <% } %>
+      <div class="profil-foto-wrap">
+        <% if (calisan.foto_url) { %>
+          <img src="<%= calisan.foto_url %>" class="profil-foto" alt="<%= calisan.ad %> <%= calisan.soyad %>">
+        <% } else { %>
+          <div class="profil-initials"><%= calisan.ad[0] %><%= calisan.soyad[0] %></div>
+        <% } %>
+      </div>
+    </div>
+
+    <div class="profil-icerik">
+      <h1 class="profil-isim"><%= calisan.ad %> <%= calisan.soyad %></h1>
+      <% if (calisan.unvan) { %>
+        <p class="profil-unvan"><%= calisan.unvan %></p>
+      <% } %>
+      <% if (calisan.departman) { %>
+        <p class="profil-departman"><%= calisan.departman %></p>
+      <% } %>
+
+      <% if (calisan.biyografi) { %>
+        <p class="profil-bio"><%- calisan.biyografi %></p>
+      <% } %>
+
+      <% if (calisan.sektor === 'ilac' && calisan.ilaclar && calisan.ilaclar.length) { %>
+        <div style="margin-bottom:20px">
+          <p class="ilac-baslik"><%= t('calisilan_urunler') %></p>
+          <div class="ilac-etiketler">
+            <% calisan.ilaclar.forEach(ilac => { %>
+              <span class="ilac-etiket"><%= ilac %></span>
+            <% }); %>
+          </div>
+        </div>
+      <% } %>
+
+      <% const base = profilUrl || ('/' + calisan.firma_slug + '/' + calisan.slug); %>
+
+      <div class="iletisim-butonlar">
+        <% if (calisan.telefon) { %>
+          <a href="<%= base %>/t/telefon" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-telefon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.45 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label"><%= t('telefon') %></span>
+              <%= calisan.telefon %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.email) { %>
+          <a href="<%= base %>/t/email" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-email">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label"><%= t('eposta') %></span>
+              <%= calisan.email %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.linkedin) { %>
+          <a href="<%= base %>/t/linkedin" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-linkedin">
+              <svg viewBox="0 0 24 24" fill="#0a66c2"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect width="4" height="12" x="2" y="9"/><circle cx="4" cy="4" r="2"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">LinkedIn</span>
+              <%= t('linkedin_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.instagram) { %>
+          <a href="<%= base %>/t/instagram" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-instagram">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:url(#ig-grad)">
+                <defs><linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f09433"/><stop offset="50%" stop-color="#dc2743"/><stop offset="100%" stop-color="#bc1888"/></linearGradient></defs>
+                <rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>
+              </svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Instagram</span>
+              <%= t('instagram_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.twitter) { %>
+          <a href="<%= base %>/t/twitter" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-twitter">
+              <svg viewBox="0 0 24 24" fill="#000"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">X / Twitter</span>
+              <%= t('twitter_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.youtube) { %>
+          <a href="<%= base %>/t/youtube" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-youtube">
+              <svg viewBox="0 0 24 24" fill="#ff0000"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46A2.78 2.78 0 0 0 1.46 6.42 29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58A2.78 2.78 0 0 0 3.41 19.6C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.95A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon fill="#fff" points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">YouTube</span>
+              <%= t('youtube_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.website) { %>
+          <a href="<%= base %>/t/website" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-website">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Web Sitesi</span>
+              <%= t('website_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.whatsapp) { %>
+          <a href="<%= base %>/t/whatsapp" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-whatsapp">
+              <svg viewBox="0 0 24 24" fill="#25D366"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.35 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.6 0-3.1-.44-4.38-1.2l-.31-.19-3.01.79.8-2.94-.2-.31A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">WhatsApp</span>
+              <%= t('whatsapp_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.tiktok) { %>
+          <a href="<%= base %>/t/tiktok" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-tiktok">
+              <svg viewBox="0 0 24 24" fill="#000"><path d="M16.5 2h-3v13.5a2.5 2.5 0 1 1-2.5-2.5c.17 0 .34.02.5.05V9.9a5.5 5.5 0 1 0 5 5.48V8.2a7.44 7.44 0 0 0 4 1.17V6.37A4.5 4.5 0 0 1 16.5 2z"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">TikTok</span>
+              <%= t('tiktok_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.sahibinden) { %>
+          <a href="<%= base %>/t/sahibinden" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-sahibinden">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Sahibinden</span>
+              <%= t('sahibinden_buton') %>
+            </span>
+          </a>
+        <% } %>
+        <% if (calisan.hurriyet_emlak) { %>
+          <a href="<%= base %>/t/hurriyet_emlak" target="_blank" rel="noopener" class="btn-iletisim">
+            <span class="btn-iletisim-icon icon-hurriyet-emlak">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 21v-4h6v4"/><path d="M9 8h1M14 8h1M9 12h1M14 12h1"/></svg>
+            </span>
+            <span class="btn-iletisim-metin">
+              <span class="btn-iletisim-label">Hürriyet Emlak</span>
+              <%= t('hurriyet_emlak_buton') %>
+            </span>
+          </a>
+        <% } %>
+      </div>
+
+      <a href="<%= vcfUrl %>" class="btn-vcf" id="rehbere-ekle-btn" download>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <%= t('rehbere_ekle') %>
+      </a>
+
+      <% if (calisan.google_yorum_link) { %>
+        <a href="<%= base %>/degerlendir" target="_blank" rel="noopener" class="btn-qr" style="margin-bottom:10px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 17.75 5.8 21l1.2-7L2 9.24l7.1-1.02L12 2l2.9 6.22L22 9.24l-5 4.76 1.2 7Z"/></svg>
+          <%= t('google_degerlendir') %>
+        </a>
+      <% } %>
+
+      <!-- QR Kod -->
+      <div class="qr-bolum">
+        <button class="btn-qr" onclick="document.getElementById('qr-modal').classList.add('aktif')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+          <%= t('qr_goster') %>
+        </button>
+      </div>
+
+      <!-- E-posta İmzası -->
+      <button class="btn-imza" onclick="document.getElementById('imza-modal').classList.add('aktif')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <%= t('imza_al') %>
+      </button>
+
+      <div class="profil-divider"></div>
+      <p class="profil-footer"><%= firmaAd %></p>
+    </div>
+  </div>
+
+  <!-- QR Modal -->
+  <div id="qr-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
+    <div class="modal-kart">
+      <button class="modal-kapat" onclick="document.getElementById('qr-modal').classList.remove('aktif')">✕</button>
+      <h3 style="margin-bottom:16px;font-size:16px;font-weight:700"><%= t('qr_modal_baslik') %></h3>
+      <% const fullUrl = 'https://' + (process.env.DOMAIN || (typeof req !== 'undefined' ? req.hostname : 'nfckart.com')) + profilUrl; %>
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<%= encodeURIComponent(fullUrl) %>" alt="QR Kod" style="width:220px;height:220px;border-radius:8px">
+      <p style="margin-top:12px;font-size:12px;color:#6b7280;text-align:center"><%= t('qr_aciklama') %></p>
+      <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=<%= encodeURIComponent(fullUrl) %>" download="qr-kod.png" class="btn" style="margin-top:14px;width:100%;justify-content:center;font-size:14px">
+        ⬇ <%= t('qr_indir') %>
+      </a>
+    </div>
+  </div>
+
+  <!-- E-posta İmzası Modal -->
+  <div id="imza-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
+    <div class="modal-kart" style="max-width:500px">
+      <button class="modal-kapat" onclick="document.getElementById('imza-modal').classList.remove('aktif')">✕</button>
+      <h3 style="margin-bottom:4px;font-size:16px;font-weight:700"><%= t('imza_modal_baslik') %></h3>
+      <p style="font-size:12px;color:#6b7280;margin-bottom:16px"><%= t('imza_aciklama') %></p>
+
+      <div class="imza-onizleme">
+        <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937">
+          <tr>
+            <% if (calisan.foto_url) { %>
+            <td style="padding-right:14px;vertical-align:top">
+              <img src="<%= calisan.foto_url %>" width="60" height="60" style="border-radius:50%;object-fit:cover" alt="">
+            </td>
+            <% } %>
+            <td style="vertical-align:top;border-left:3px solid <%= marka %>;padding-left:14px">
+              <div style="font-weight:700;font-size:15px;color:#111827"><%= calisan.ad %> <%= calisan.soyad %></div>
+              <% if (calisan.unvan) { %><div style="color:<%= marka %>;font-size:12px;margin-top:2px"><%= calisan.unvan %></div><% } %>
+              <div style="color:#6b7280;font-size:12px;margin-top:2px"><%= calisan.firma_ad %></div>
+              <div style="margin-top:8px;font-size:12px">
+                <% if (calisan.telefon) { %><div>📞 <a href="tel:<%= calisan.telefon %>" style="color:#1f2937;text-decoration:none"><%= calisan.telefon %></a></div><% } %>
+                <% if (calisan.email) { %><div>✉️ <a href="mailto:<%= calisan.email %>" style="color:#1f2937;text-decoration:none"><%= calisan.email %></a></div><% } %>
+              </div>
+              <div style="margin-top:8px">
+                <a href="<%= fullUrl %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600"><%= t('dijital_kartvizit') %></a>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <textarea id="imza-html" class="imza-textarea" readonly></textarea>
+      <button class="btn" onclick="copyImza()" style="width:100%;justify-content:center;margin-top:10px"><%= t('kopyala') %></button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      var marka = '<%= marka %>';
+      var ad = '<%= calisan.ad %> <%= calisan.soyad %>';
+      var unvan = '<%= calisan.unvan || "" %>';
+      var firmaAd = '<%= calisan.firma_ad %>';
+      var tel = '<%= calisan.telefon || "" %>';
+      var email = '<%= calisan.email || "" %>';
+      var foto = '<%= calisan.foto_url || "" %>';
+      var link = '<%= fullUrl %>';
+      var dijitalKartvizitMetni = '<%= t("dijital_kartvizit") %>';
+
+      var html = '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><tr>';
+      if (foto) html += '<td style="padding-right:14px;vertical-align:top"><img src="' + foto + '" width="60" height="60" style="border-radius:50%;object-fit:cover" alt=""></td>';
+      html += '<td style="vertical-align:top;border-left:3px solid ' + marka + ';padding-left:14px">';
+      html += '<div style="font-weight:700;font-size:15px;color:#111827">' + ad + '</div>';
+      if (unvan) html += '<div style="color:' + marka + ';font-size:12px;margin-top:2px">' + unvan + '</div>';
+      html += '<div style="color:#6b7280;font-size:12px;margin-top:2px">' + firmaAd + '</div>';
+      html += '<div style="margin-top:8px;font-size:12px">';
+      if (tel) html += '<div>📞 <a href="tel:' + tel + '" style="color:#1f2937;text-decoration:none">' + tel + '</a></div>';
+      if (email) html += '<div>✉️ <a href="mailto:' + email + '" style="color:#1f2937;text-decoration:none">' + email + '</a></div>';
+      html += '</div>';
+      html += '<div style="margin-top:8px"><a href="' + link + '" style="display:inline-block;padding:5px 12px;background:' + marka + ';color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">' + dijitalKartvizitMetni + '</a></div>';
+      html += '</td></tr></table>';
+
+      document.getElementById('imza-html').value = html;
+    })();
+
+    function copyImza() {
+      var el = document.getElementById('imza-html');
+      el.select();
+      document.execCommand('copy');
+      var btn = event.target;
+      var kopyalandiMetni = '<%= t("kopyalandi") %>';
+      var kopyalaMetni = '<%= t("kopyala") %>';
+      btn.textContent = '✓ ' + kopyalandiMetni;
+      setTimeout(function() { btn.textContent = kopyalaMetni; }, 2000);
+    }
+
+    // Android: "Rehbere Ekle" butonu icin intent:// yonlendirmesi, basarisizsa .vcf'e duser
+    (function() {
+      var btn = document.getElementById('rehbere-ekle-btn');
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      if (btn && isAndroid) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var vcfHref = btn.getAttribute('href');
+          var fallbackUrl = window.location.origin + vcfHref;
+          var intentUrl = 'intent://contacts/add#Intent;scheme=content;type=text/x-vcard;S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
+          window.location.href = intentUrl;
+          setTimeout(function() {
+            window.location.href = vcfHref;
+          }, 1500);
+        });
+      }
+    })();
+  </script>
+</body>
+</html>
+```
+
+- [ ] **Step 2: Tüm testleri çalıştır**
+
+Run: `npx jest`
+Expected: PASS
+
+- [ ] **Step 3: Manuel test — masaüstü tarayıcı**
+
+```bash
+npm run dev
+```
+
+Bir profil sayfasını (`/:firmaSlug/:calisanSlug`) aç. Sağ üstte TR/EN dil seçici linklerinin göründüğünü doğrula. `?lang=en` ekleyerek sayfayı yeniden yükle — buton etiketlerinin (Rehbere Ekle → Add to Contacts, Profili Görüntüle → View Profile vb.) İngilizce'ye döndüğünü doğrula. `?lang=tr` ile geri dönünce Türkçe'ye döndüğünü doğrula.
+
+- [ ] **Step 4: Manuel test — Android**
+
+Gerçek bir Android telefonda (veya Chrome DevTools'un mobil emülasyonunda, User-Agent'ı Android olarak ayarlayarak) profil sayfasını aç, "Rehbere Ekle"ye dokun. Beklenen: rehbere ekleme ekranı açılmaya çalışılmalı; desteklenmiyorsa/başarısız olursa 1.5 saniye içinde `.vcf` dosyası indirilmeye düşmeli. **Not:** Android intent davranışı tarayıcıya/cihaza göre değişebilir — bu adım gerçek bir cihazda/emülatörde doğrulanmalı, otomatik test kapsamı dışındadır.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add views/public/profil.ejs
+git commit -m "feat: profil sayfasinda TR/EN dil destegi ve android rehbere ekleme"
+```
+
+---
+
+## Task 4: Telefon Çerçevesi (Masaüstü) ve Dil Seçici CSS
+
+**Files:**
+- Modify: `public/css/style.css`
+
+- [ ] **Step 1: Dosyanın sonuna yeni stil bloklarını ekle**
+
+`public/css/style.css` dosyasının en sonuna (`.hata-kart p { ... }` satırından sonra) ekle:
+
+```css
+/* Dil seçici */
+.dil-secici {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.dil-secici a {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #6b7280;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+.dil-secici a.aktif {
+  color: #fff;
+  background: #111827;
+  border-color: #111827;
+}
+
+/* Masaüstünde telefon çerçevesi görünümü */
+@media (min-width: 768px) {
+  .profil-body {
+    background: linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%);
+    padding-top: 48px;
+  }
+  .profil-kart {
+    border: 10px solid #1f2937;
+    border-radius: 44px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .profil-kart::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 6px;
+    background: #1f2937;
+    border-radius: 4px;
+    z-index: 10;
+  }
+}
+```
+
+- [ ] **Step 2: Manuel test**
+
+```bash
+npm run dev
+```
+
+Tarayıcı penceresini 768px'den geniş yap (masaüstü boyutu) — profil kartının koyu bir telefon çerçevesi (üstte küçük bir "notch" çubuğuyla) içinde göründüğünü doğrula. Pencereyi 768px'den dar yap (mobil boyutu) — çerçevenin kaybolup kartın tam ekran/normal göründüğünü doğrula.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add public/css/style.css
+git commit -m "feat: masaustunde telefon cercevesi gorunumu ve dil secici stili"
+```
