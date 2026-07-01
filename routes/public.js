@@ -105,10 +105,11 @@ router.get('/:firmaSlug/:calisanSlug/vcf', async (req, res) => {
 // Link tıklama takibi
 router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
   const { tip } = req.params;
-  const izinliTipler = ['telefon', 'email', 'linkedin', 'instagram', 'twitter', 'youtube', 'website', 'vcf', 'qr'];
+  const izinliTipler = ['telefon', 'email', 'linkedin', 'instagram', 'twitter', 'youtube', 'website', 'whatsapp', 'tiktok', 'sahibinden', 'hurriyet_emlak', 'google_yorum', 'vcf', 'qr'];
   try {
     const result = await pool.query(
-      `SELECT c.id, c.telefon, c.email, c.linkedin, c.instagram, c.twitter, c.youtube, c.website
+      `SELECT c.id, c.telefon, c.email, c.linkedin, c.instagram, c.twitter, c.youtube, c.website,
+              c.whatsapp, c.tiktok, c.sahibinden, c.hurriyet_emlak, c.google_yorum_link
        FROM calisanlar c JOIN firmalar f ON f.id = c.firma_id
        WHERE f.slug = $1 AND c.slug = $2 AND c.durum = 'aktif'`,
       [req.params.firmaSlug, req.params.calisanSlug]
@@ -128,6 +129,11 @@ router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
       twitter: calisan.twitter,
       youtube: calisan.youtube,
       website: calisan.website,
+      whatsapp: calisan.whatsapp ? `https://wa.me/${calisan.whatsapp.replace(/\D/g, '')}` : null,
+      tiktok: calisan.tiktok,
+      sahibinden: calisan.sahibinden,
+      hurriyet_emlak: calisan.hurriyet_emlak,
+      google_yorum: calisan.google_yorum_link,
       vcf: `/${req.params.firmaSlug}/${req.params.calisanSlug}/vcf`,
     };
 
@@ -137,6 +143,25 @@ router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.redirect(`/${req.params.firmaSlug}/${req.params.calisanSlug}`);
+  }
+});
+
+// Google Yorum yönlendirme
+router.get('/:firmaSlug/:calisanSlug/degerlendir', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT c.google_yorum_link
+       FROM calisanlar c JOIN firmalar f ON f.id = c.firma_id
+       WHERE f.slug = $1 AND c.slug = $2 AND c.durum = 'aktif'`,
+      [req.params.firmaSlug, req.params.calisanSlug]
+    );
+    if (!result.rows.length || !result.rows[0].google_yorum_link) {
+      return res.status(404).render('public/404', { title: '404', mesaj: 'Değerlendirme linki bulunamadı.', layout: false });
+    }
+    res.redirect(result.rows[0].google_yorum_link);
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
   }
 });
 
