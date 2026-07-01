@@ -5,6 +5,7 @@ const PgSession = require('connect-pg-simple')(session);
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const ejsLayouts = require('express-ejs-layouts');
+const helmet = require('helmet');
 const path = require('path');
 const { pool } = require('./db');
 
@@ -16,6 +17,10 @@ const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
 
 const app = express();
+
+app.use(helmet({
+  contentSecurityPolicy: false, // Landing/dashboard/profil sayfalarındaki inline <style>/<script> kullanımı nedeniyle bu fazda kapalı
+}));
 
 app.set('trust proxy', 1);
 app.set('view engine', 'ejs');
