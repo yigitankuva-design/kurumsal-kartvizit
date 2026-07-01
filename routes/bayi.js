@@ -5,8 +5,10 @@ const { pool } = require('../db');
 const { requireBayi } = require('../middleware/authMiddleware');
 const { firmaSlugOlustur, calisanSlugOlustur } = require('../utils/slug');
 const { uploadMiddleware } = require('../middleware/upload');
+const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimiter');
 
 const fotoUpload = uploadMiddleware('calisanlar');
+const bayiGirisLimiter = createLoginLimiter('/bayi/giris');
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
@@ -14,7 +16,7 @@ router.get('/giris', (req, res) => {
   res.render('bayi/giris', { title: 'Bayi Girişi', layout: 'layout' });
 });
 
-router.post('/giris', async (req, res) => {
+router.post('/giris', bayiGirisLimiter, async (req, res) => {
   const { email, sifre } = req.body;
   if (!email || !sifre) {
     req.flash('error', 'Email ve şifre zorunlu.');
@@ -77,7 +79,7 @@ router.get('/panel/firma-ekle', requireBayi, (req, res) => {
   res.render('bayi/firma-ekle', { title: 'Yeni Müşteri Ekle' });
 });
 
-router.post('/panel/firma-ekle', requireBayi, async (req, res) => {
+router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res) => {
   const { ad, sektor, marka_rengi } = req.body;
   if (!ad) {
     req.flash('error', 'Müşteri adı zorunlu.');

@@ -4,12 +4,14 @@ const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { requireSuperadmin } = require('../middleware/authMiddleware');
 const { firmaSlugOlustur } = require('../utils/slug');
+const { createLoginLimiter } = require('../middleware/rateLimiter');
+const superadminGirisLimiter = createLoginLimiter('/superadmin/giris');
 
 router.get('/giris', (req, res) => {
   res.render('superadmin/giris', { title: 'Süper Admin Girişi', layout: 'layout' });
 });
 
-router.post('/giris', (req, res) => {
+router.post('/giris', superadminGirisLimiter, (req, res) => {
   const { sifre } = req.body;
   if (sifre && sifre.trim() === (process.env.SUPERADMIN_PASSWORD || '').trim()) {
     req.session.superadmin = true;
