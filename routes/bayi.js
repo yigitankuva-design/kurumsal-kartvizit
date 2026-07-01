@@ -10,6 +10,26 @@ const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimi
 const fotoUpload = uploadMiddleware('calisanlar');
 const bayiGirisLimiter = createLoginLimiter('/bayi/giris');
 
+// fotoUpload.single() bir dizi middleware döner (multer + sharp işleme) — hata
+// olursa çökmek yerine flash mesajıyla forma geri döner.
+function fotoUploadGuvenli(redirectYolu) {
+  return (req, res, next) => {
+    const [multerMw, isleMw] = fotoUpload.single('foto');
+    const hataYakala = (err) => {
+      console.error(err);
+      req.flash('error', err.message || 'Fotoğraf yüklenemedi.');
+      res.redirect(redirectYolu(req));
+    };
+    multerMw(req, res, (err) => {
+      if (err) return hataYakala(err);
+      isleMw(req, res, (err2) => {
+        if (err2) return hataYakala(err2);
+        next();
+      });
+    });
+  };
+}
+
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 router.get('/giris', (req, res) => {
@@ -162,7 +182,9 @@ router.get('/panel/:firmaId/calisan-ekle', requireBayi, async (req, res) => {
   res.render('bayi/calisan-ekle', { title: 'Yeni Çalışan', firma: firmaResult.rows[0] });
 });
 
-router.post('/panel/:firmaId/calisan-ekle', requireBayi, fotoUpload.single('foto'), async (req, res) => {
+router.post('/panel/:firmaId/calisan-ekle', requireBayi,
+  fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan-ekle`),
+  async (req, res) => {
   const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
@@ -222,7 +244,9 @@ router.get('/panel/:firmaId/calisan/:id/duzenle', requireBayi, async (req, res) 
   }
 });
 
-router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi, fotoUpload.single('foto'), async (req, res) => {
+router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
+  fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`),
+  async (req, res) => {
   const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');

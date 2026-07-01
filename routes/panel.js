@@ -11,6 +11,24 @@ const fotoUpload = uploadMiddleware('calisanlar');
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
+// fotoUpload.single() bir dizi middleware döner (multer + sharp işleme) — hata
+// olursa çökmek yerine flash mesajıyla forma geri döner.
+function fotoUploadGuvenli(req, res, next) {
+  const [multerMw, isleMw] = fotoUpload.single('foto');
+  const hataYakala = (err) => {
+    console.error(err);
+    req.flash('error', err.message || 'Fotoğraf yüklenemedi.');
+    res.redirect(`/firma/panel/${req.params.id}/duzenle`);
+  };
+  multerMw(req, res, (err) => {
+    if (err) return hataYakala(err);
+    isleMw(req, res, (err2) => {
+      if (err2) return hataYakala(err2);
+      next();
+    });
+  });
+}
+
 // Ana panel → dashboard'a yönlendir
 router.get('/', (req, res) => res.redirect('/'));
 
@@ -148,8 +166,8 @@ async function duzenleHandler(req, res) {
     res.redirect('/');
   }
 }
-router.post('/:id/duzenle', fotoUpload.single('foto'), duzenleHandler);
-router.put('/:id/duzenle', fotoUpload.single('foto'), duzenleHandler);
+router.post('/:id/duzenle', fotoUploadGuvenli, duzenleHandler);
+router.put('/:id/duzenle', fotoUploadGuvenli, duzenleHandler);
 
 // Durum değiştirme
 router.patch('/:id/durum', async (req, res) => {
