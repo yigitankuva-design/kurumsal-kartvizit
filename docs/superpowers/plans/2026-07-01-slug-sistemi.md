@@ -1,6 +1,6 @@
 # Çalışan Slug Sistemi Değişikliği Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Yeni oluşturulan çalışanlar için slug'ı rastgele `nanoid(8)` yerine ad-soyad temelli, Türkçe normalize edilmiş, çakışmada `-2/-3` sıralı numaralı ve 80 karakter sınırlı hale getirmek. Mevcut (zaten oluşturulmuş, muhtemelen NFC kartlara yazılmış) çalışan slug'ları değiştirilmez.
 
@@ -16,7 +16,7 @@
 - Modify: `utils/slug.js`
 - Test: `tests/slug.test.js` (yeni dosya — mevcut `tests/utils.test.js`'teki slug testleri buraya taşınacak)
 
-- [ ] **Step 1: Failing testleri yaz**
+- [x] **Step 1: Failing testleri yaz**
 
 `tests/slug.test.js` oluştur:
 
@@ -57,12 +57,12 @@ describe('calisanSlugTabanOlustur', () => {
 });
 ```
 
-- [ ] **Step 2: Testin başarısız olduğunu doğrula**
+- [x] **Step 2: Testin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/slug.test.js`
 Expected: FAIL (`normalizeSlug` ve `calisanSlugTabanOlustur` henüz export edilmiyor)
 
-- [ ] **Step 3: utils/slug.js'i güncelle**
+- [x] **Step 3: utils/slug.js'i güncelle**
 
 `utils/slug.js` dosyasının tamamını şu içerikle değiştir:
 
@@ -108,12 +108,12 @@ module.exports = { normalizeSlug, firmaSlugOlustur, calisanSlugTabanOlustur, ben
 
 **Not:** `require('../db')` fonksiyon içine alındı (dosya tepesine değil) — döngüsel import riskini önlemek için (`db/index.js` şu an `utils/`'a bağımlı değil ama ileride olursa diye).
 
-- [ ] **Step 4: Testi çalıştır ve geçtiğini doğrula**
+- [x] **Step 4: Testi çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/slug.test.js`
 Expected: PASS (6 test)
 
-- [ ] **Step 5: Eski tests/utils.test.js'teki slug testlerini kaldır**
+- [x] **Step 5: Eski tests/utils.test.js'teki slug testlerini kaldır**
 
 `tests/utils.test.js` dosyasını aç. `describe('slug utils', ...)` bloğunun tamamını (satır 1'deki `firmaSlugOlustur, calisanSlugOlustur` import'undan, bloğun kapanışına kadar) sil — bu testler artık `tests/slug.test.js`'te. Dosyanın en üstündeki import satırını:
 
@@ -125,12 +125,12 @@ const { firmaSlugOlustur, calisanSlugOlustur } = require('../utils/slug');
 
 Kalan dosya sadece `vcf utils` describe bloğunu ve onun import'unu (`const { vcfOlustur } = require('../utils/vcf');`) içermeli.
 
-- [ ] **Step 6: Tüm testleri çalıştır**
+- [x] **Step 6: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS, `calisanSlugOlustur` artık hiçbir yerde tanımlı olmadığı için henüz onu çağıran route'lar hata verecektir — bu beklenen, Task 2'de düzeltilecek. (Eğer bu noktada `routes/panel.js` veya `routes/bayi.js` testleri FAIL oluyorsa bu normal, bir sonraki task'ta giderilecek.)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add utils/slug.js tests/slug.test.js tests/utils.test.js
@@ -144,7 +144,7 @@ git commit -m "feat: ad-soyad tabanli calisan slug uretimi ve ortak normalize fo
 **Files:**
 - Test: `tests/slug.test.js` (genişletilir)
 
-- [ ] **Step 1: Failing testleri ekle**
+- [x] **Step 1: Failing testleri ekle**
 
 `tests/slug.test.js` dosyasının başına, diğer import'ların yanına ekle:
 
@@ -201,12 +201,12 @@ describe('benzersizCalisanSlugOlustur', () => {
 
 **Not:** Bu test gerçek `DATABASE_URL`'e bağlanır (mevcut `tests/auth.test.js` ve `tests/public.test.js` ile aynı desen) ve kullandığı test firmasını `afterAll`'da siler (CASCADE ile ilişkili çalışanlar da silinir).
 
-- [ ] **Step 2: Testleri çalıştır ve geçtiğini doğrula**
+- [x] **Step 2: Testleri çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/slug.test.js`
 Expected: PASS (9 test toplam)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/slug.test.js
@@ -220,7 +220,7 @@ git commit -m "test: cakisma numaralandirmasi icin entegrasyon testleri"
 **Files:**
 - Modify: `routes/panel.js`
 
-- [ ] **Step 1: Import satırını güncelle**
+- [x] **Step 1: Import satırını güncelle**
 
 `routes/panel.js` dosyasının başındaki:
 
@@ -234,7 +234,7 @@ satırını şu şekilde değiştir:
 const { benzersizCalisanSlugOlustur } = require('../utils/slug');
 ```
 
-- [ ] **Step 2: `/ekle` POST route'unu güncelle**
+- [x] **Step 2: `/ekle` POST route'unu güncelle**
 
 Mevcut:
 
@@ -253,7 +253,7 @@ satırlarını şu şekilde değiştir:
 const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, ad, soyad);
 ```
 
-- [ ] **Step 3: `/toplu-yukle` POST route'unu güncelle**
+- [x] **Step 3: `/toplu-yukle` POST route'unu güncelle**
 
 Mevcut:
 
@@ -267,12 +267,12 @@ satırını (Excel toplu yükleme döngüsü içindeki) şu şekilde değiştir:
 const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, c.ad, c.soyad);
 ```
 
-- [ ] **Step 4: tests/auth.test.js ve tests/public.test.js'in hâlâ geçtiğini doğrula**
+- [x] **Step 4: tests/auth.test.js ve tests/public.test.js'in hâlâ geçtiğini doğrula**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 5: Manuel test**
+- [x] **Step 5: Manuel test**
 
 ```bash
 npm run dev
@@ -280,7 +280,7 @@ npm run dev
 
 `/firma/panel/ekle`'den iki farklı çalışanı **aynı ad-soyadla** ekle (örn. "Test Kullanıcı" iki kez). İkinci eklenenin profil URL'sinin `.../test-kullanici-2` şeklinde bittiğini panelde doğrula.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/panel.js
@@ -294,7 +294,7 @@ git commit -m "feat: firma panelinde ad-soyad tabanli slug uretimine gec"
 **Files:**
 - Modify: `routes/bayi.js`
 
-- [ ] **Step 1: Import satırını güncelle**
+- [x] **Step 1: Import satırını güncelle**
 
 Mevcut:
 
@@ -308,7 +308,7 @@ satırını şu şekilde değiştir:
 const { firmaSlugOlustur, benzersizCalisanSlugOlustur } = require('../utils/slug');
 ```
 
-- [ ] **Step 2: `/panel/:firmaId/calisan-ekle` POST route'unu güncelle**
+- [x] **Step 2: `/panel/:firmaId/calisan-ekle` POST route'unu güncelle**
 
 Mevcut:
 
@@ -330,12 +330,12 @@ satırlarını şu şekilde değiştir:
 const slug = await benzersizCalisanSlugOlustur(req.params.firmaId, ad, soyad);
 ```
 
-- [ ] **Step 3: Tüm testleri çalıştır**
+- [x] **Step 3: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 4: Manuel test**
+- [x] **Step 4: Manuel test**
 
 ```bash
 npm run dev
@@ -343,7 +343,7 @@ npm run dev
 
 Bir bayi hesabıyla giriş yap, bir müşteri firma altında iki çalışanı aynı ad-soyadla ekle, ikincisinin slug'ının `-2` ile bittiğini doğrula.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add routes/bayi.js
@@ -357,23 +357,23 @@ git commit -m "feat: bayi panelinde ad-soyad tabanli slug uretimine gec"
 **Files:**
 - Modify: `package.json`
 
-- [ ] **Step 1: nanoid'in başka hiçbir yerde kullanılmadığını doğrula**
+- [x] **Step 1: nanoid'in başka hiçbir yerde kullanılmadığını doğrula**
 
 Run: `grep -rn "nanoid" --include="*.js" . --exclude-dir=node_modules`
 Expected: Hiçbir sonuç dönmemeli (Task 1-4 sonrası `utils/slug.js`, `routes/panel.js`, `routes/bayi.js` içinde `nanoid` referansı kalmamış olmalı)
 
-- [ ] **Step 2: Paketi kaldır**
+- [x] **Step 2: Paketi kaldır**
 
 ```bash
 npm uninstall nanoid
 ```
 
-- [ ] **Step 3: Tüm testleri çalıştır**
+- [x] **Step 3: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add package.json package-lock.json
