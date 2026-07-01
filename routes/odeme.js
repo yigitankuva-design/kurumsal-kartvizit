@@ -4,11 +4,11 @@ const { pool } = require('../db');
 const { requireBayi } = require('../middleware/authMiddleware');
 const { tokenHashOlustur, callbackHashDogrula } = require('../utils/paytr');
 
+const KREDI_BIRIM_FIYAT = 30; // TL/kredi — "elle gir" ile özel miktar girişinde kullanılır
 const KREDI_PAKETLERI = [
-  { kredi: 10, tutar: 500 },
-  { kredi: 25, tutar: 1000 },
-  { kredi: 50, tutar: 1750 },
   { kredi: 100, tutar: 3000 },
+  { kredi: 250, tutar: 7500 },
+  { kredi: 1000, tutar: 30000 },
 ];
 
 // Kredi yükleme sayfası
@@ -19,6 +19,7 @@ router.get('/panel/kredi-yukle', requireBayi, async (req, res) => {
       title: 'Kredi Yükle',
       krediBakiyesi: bayiSonuc.rows[0].kredi_bakiyesi,
       paketler: KREDI_PAKETLERI,
+      birimFiyat: KREDI_BIRIM_FIYAT,
     });
   } catch (err) {
     console.error(err);
@@ -30,11 +31,12 @@ router.get('/panel/kredi-yukle', requireBayi, async (req, res) => {
 // Paket seçimi -> PayTR token isteği -> iframe sayfası
 router.post('/panel/kredi-yukle', requireBayi, async (req, res) => {
   const kredi = parseInt(req.body.kredi, 10);
-  const paket = KREDI_PAKETLERI.find((p) => p.kredi === kredi);
-  if (!paket) {
-    req.flash('error', 'Geçersiz paket seçimi.');
+  if (!Number.isInteger(kredi) || kredi < 1 || kredi > 1000000) {
+    req.flash('error', 'Geçersiz kredi miktarı.');
     return res.redirect('/bayi/panel/kredi-yukle');
   }
+  const paket = KREDI_PAKETLERI.find((p) => p.kredi === kredi);
+  const tutar = paket ? paket.tutar : kredi * KREDI_BIRIM_FIYAT;
 
   try {
     const bayiSonuc = await pool.query('SELECT * FROM bayiler WHERE id = $1', [req.session.bayiId]);
@@ -44,12 +46,12 @@ router.post('/panel/kredi-yukle', requireBayi, async (req, res) => {
     await pool.query(
       `INSERT INTO odemeler (bayi_id, paytr_merchant_oid, kredi_miktari, tutar, durum)
        VALUES ($1, $2, $3, $4, 'beklemede')`,
-      [req.session.bayiId, merchantOid, paket.kredi, paket.tutar]
+      [req.session.bayiId, merchantOid, kredi, tutar]
     );
 
-    const paymentAmount = Math.round(paket.tutar * 100); // kuruş cinsinden
+    const paymentAmount = Math.round(tutar * 100); // kuruş cinsinden
     const userBasket = Buffer.from(
-      JSON.stringify([[`${paket.kredi} Kredi Paketi`, paket.tutar.toFixed(2), 1]])
+      JSON.stringify([[`${kredi} Kredi Paketi`, tutar.toFixed(2), 1]])
     ).toString('base64');
     const userIp = req.ip;
     const noInstallment = 1;

@@ -211,13 +211,14 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Bayi</th><th>Email</th><th>Durum</th><th>Kayıt</th><th></th></tr>
+          <tr><th>Bayi</th><th>Email</th><th>Kredi</th><th>Durum</th><th>Kayıt</th><th></th></tr>
         </thead>
         <tbody>
           <% bayiler.forEach(b => { %>
           <tr>
             <td><div class="td-name"><%= b.ad %></div><div class="td-sub"><%= b.slug %></div></td>
             <td><%= b.email %></td>
+            <td><span style="color:var(--gold);font-weight:700"><%= b.kredi_bakiyesi %></span></td>
             <td><span class="badge <%= b.aktif ? 'badge-aktif' : 'badge-pasif' %>"><%= b.aktif ? 'Aktif' : 'Pasif' %></span></td>
             <td class="td-sub"><%= new Date(b.created_at).toLocaleDateString('tr-TR') %></td>
             <td>
