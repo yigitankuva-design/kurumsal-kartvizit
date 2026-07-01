@@ -1,6 +1,6 @@
 # Rehbere Ekleme (Android) + Dil Desteği + Telefon Çerçevesi Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Profil sayfasında Android'de "Rehbere Ekle" butonunun `intent://` deep link ile rehbere yönlendirmesini (başarısızsa `.vcf`'e düşmesini), TR/EN dil desteğini (`?lang=en`) ve masaüstünde profil kartının bir telefon çerçevesi içinde gösterilmesini eklemek.
 
@@ -16,7 +16,7 @@
 
 **Files:** (yok — sadece doğrulama)
 
-- [ ] **Step 1: Bağımlılık planının uygulandığını doğrula**
+- [x] **Step 1: Bağımlılık planının uygulandığını doğrula**
 
 Run: `grep -n "calisan.whatsapp" views/public/profil.ejs`
 Expected: En az bir satır eşleşme döner (örn. `<% if (calisan.whatsapp) { %>`). Eşleşme yoksa önce `docs/superpowers/plans/2026-07-01-profil-alanlari-genisletme.md` planını uygula, sonra bu plana dön.
@@ -29,7 +29,7 @@ Expected: En az bir satır eşleşme döner (örn. `<% if (calisan.whatsapp) { %
 - Create: `utils/i18n.js`
 - Test: `tests/i18n.test.js`
 
-- [ ] **Step 1: Failing test yaz**
+- [x] **Step 1: Failing test yaz**
 
 `tests/i18n.test.js`:
 
@@ -64,12 +64,12 @@ describe('cevirmenOlustur', () => {
 });
 ```
 
-- [ ] **Step 2: Testin başarısız olduğunu doğrula**
+- [x] **Step 2: Testin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/i18n.test.js`
 Expected: FAIL (`utils/i18n.js` henüz yok)
 
-- [ ] **Step 3: utils/i18n.js oluştur**
+- [x] **Step 3: utils/i18n.js oluştur**
 
 ```javascript
 const CEVIRILER = {
@@ -137,12 +137,12 @@ function cevirmenOlustur(lang) {
 module.exports = { cevirmenOlustur };
 ```
 
-- [ ] **Step 4: Testi çalıştır ve geçtiğini doğrula**
+- [x] **Step 4: Testi çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/i18n.test.js`
 Expected: PASS (5 test)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add utils/i18n.js tests/i18n.test.js
@@ -156,7 +156,7 @@ git commit -m "feat: TR/EN ceviri sozlugu (utils/i18n.js)"
 **Files:**
 - Modify: `routes/public.js`
 
-- [ ] **Step 1: Import ekle**
+- [x] **Step 1: Import ekle**
 
 `routes/public.js` dosyasının başındaki require'ların yanına ekle:
 
@@ -164,7 +164,7 @@ git commit -m "feat: TR/EN ceviri sozlugu (utils/i18n.js)"
 const { cevirmenOlustur } = require('../utils/i18n');
 ```
 
-- [ ] **Step 2: Bayi-markalı profil route'unu güncelle**
+- [x] **Step 2: Bayi-markalı profil route'unu güncelle**
 
 Mevcut:
 
@@ -186,7 +186,7 @@ Mevcut:
     res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
 ```
 
-- [ ] **Step 3: Standart profil route'unu güncelle**
+- [x] **Step 3: Standart profil route'unu güncelle**
 
 Mevcut:
 
@@ -208,12 +208,12 @@ Mevcut:
     res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
 ```
 
-- [ ] **Step 4: Tüm testleri çalıştır**
+- [x] **Step 4: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add routes/public.js
@@ -227,7 +227,7 @@ git commit -m "feat: profil route'larina dil (lang/t) destegi ekle"
 **Files:**
 - Modify: `views/public/profil.ejs`
 
-- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+- [x] **Step 1: Dosyanın tam içeriğini güncelle**
 
 `views/public/profil.ejs` dosyasının tamamını şu içerikle değiştir (bu, Profil Alanları Genişletme planındaki tüm butonları da içerir — Task 0'daki ön koşul kontrolü bu yüzden gerekliydi):
 
@@ -568,12 +568,12 @@ git commit -m "feat: profil route'larina dil (lang/t) destegi ekle"
 </html>
 ```
 
-- [ ] **Step 2: Tüm testleri çalıştır**
+- [x] **Step 2: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 3: Manuel test — masaüstü tarayıcı**
+- [x] **Step 3: Manuel test — masaüstü tarayıcı**
 
 ```bash
 npm run dev
@@ -581,11 +581,11 @@ npm run dev
 
 Bir profil sayfasını (`/:firmaSlug/:calisanSlug`) aç. Sağ üstte TR/EN dil seçici linklerinin göründüğünü doğrula. `?lang=en` ekleyerek sayfayı yeniden yükle — buton etiketlerinin (Rehbere Ekle → Add to Contacts, Profili Görüntüle → View Profile vb.) İngilizce'ye döndüğünü doğrula. `?lang=tr` ile geri dönünce Türkçe'ye döndüğünü doğrula.
 
-- [ ] **Step 4: Manuel test — Android**
+- [x] **Step 4: Manuel test — Android**
 
 Gerçek bir Android telefonda (veya Chrome DevTools'un mobil emülasyonunda, User-Agent'ı Android olarak ayarlayarak) profil sayfasını aç, "Rehbere Ekle"ye dokun. Beklenen: rehbere ekleme ekranı açılmaya çalışılmalı; desteklenmiyorsa/başarısız olursa 1.5 saniye içinde `.vcf` dosyası indirilmeye düşmeli. **Not:** Android intent davranışı tarayıcıya/cihaza göre değişebilir — bu adım gerçek bir cihazda/emülatörde doğrulanmalı, otomatik test kapsamı dışındadır.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add views/public/profil.ejs
@@ -599,7 +599,7 @@ git commit -m "feat: profil sayfasinda TR/EN dil destegi ve android rehbere ekle
 **Files:**
 - Modify: `public/css/style.css`
 
-- [ ] **Step 1: Dosyanın sonuna yeni stil bloklarını ekle**
+- [x] **Step 1: Dosyanın sonuna yeni stil bloklarını ekle**
 
 `public/css/style.css` dosyasının en sonuna (`.hata-kart p { ... }` satırından sonra) ekle:
 
@@ -654,7 +654,7 @@ git commit -m "feat: profil sayfasinda TR/EN dil destegi ve android rehbere ekle
 }
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -662,7 +662,7 @@ npm run dev
 
 Tarayıcı penceresini 768px'den geniş yap (masaüstü boyutu) — profil kartının koyu bir telefon çerçevesi (üstte küçük bir "notch" çubuğuyla) içinde göründüğünü doğrula. Pencereyi 768px'den dar yap (mobil boyutu) — çerçevenin kaybolup kartın tam ekran/normal göründüğünü doğrula.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add public/css/style.css
