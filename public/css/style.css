@@ -437,3 +437,52 @@ body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: 
 .hata-kart { text-align: center; padding: 64px 32px; background: var(--surface); border-radius: var(--radius-lg); max-width: 400px; width: 100%; }
 .hata-kart h1 { font-size: 72px; font-weight: 800; color: var(--border); margin-bottom: 8px; letter-spacing: -4px; }
 .hata-kart p { color: var(--text-muted); font-size: 15px; }
+
+/* Dil seçici */
+.dil-secici {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.dil-secici a {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  color: #6b7280;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+}
+.dil-secici a.aktif {
+  color: #fff;
+  background: #111827;
+  border-color: #111827;
+}
+
+/* Masaüstünde telefon çerçevesi görünümü */
+@media (min-width: 768px) {
+  .profil-body {
+    background: linear-gradient(160deg, #e5e7eb 0%, #d1d5db 100%);
+    padding-top: 48px;
+  }
+  .profil-kart {
+    border: 10px solid #1f2937;
+    border-radius: 44px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.06);
+    position: relative;
+  }
+  .profil-kart::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 6px;
+    background: #1f2937;
+    border-radius: 4px;
+    z-index: 10;
+  }
+}
