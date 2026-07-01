@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth');
 const panelRoutes = require('./routes/panel');
 const superadminRoutes = require('./routes/superadmin');
 const bayiRoutes = require('./routes/bayi');
+const { router: odemeRoutes } = require('./routes/odeme');
 const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
 
@@ -58,6 +59,7 @@ app.use('/firma', authRoutes);
 app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
+app.use('/bayi', odemeRoutes);
 
 // Ana sayfa: giriş yapılmışsa dashboard, yoksa landing
 app.get('/', async (req, res) => {

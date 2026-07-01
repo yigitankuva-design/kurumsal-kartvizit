@@ -1,0 +1,9 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <h2>Ödeme</h2>
+    <a href="/bayi/panel/kredi-yukle" class="btn-link">← Vazgeç</a>
+  </header>
+  <iframe src="https://www.paytr.com/odeme/guvenli/<%= iframeToken %>" id="paytr-iframe" frameborder="0" scrolling="no" style="width:100%;min-height:600px"></iframe>
+  <script src="https://www.paytr.com/js/iframeResizer.min.js"></script>
+  <script>iFrameResize({}, '#paytr-iframe');</script>
+</div>

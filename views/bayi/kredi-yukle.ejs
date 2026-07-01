@@ -1,0 +1,22 @@
+<div class="panel-container">
+  <header class="panel-header">
+    <h2>Kredi Yükle</h2>
+    <a href="/bayi/panel" class="btn-link">← Panele Dön</a>
+  </header>
+
+  <div class="stat-kart" style="max-width:260px;margin-bottom:24px">
+    <div class="stat-sayi"><%= krediBakiyesi %></div>
+    <div class="stat-label">Mevcut Kredi</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+    <% paketler.forEach(paket => { %>
+      <form method="POST" action="/bayi/panel/kredi-yukle" style="border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);padding:20px;display:flex;flex-direction:column;gap:8px">
+        <input type="hidden" name="kredi" value="<%= paket.kredi %>">
+        <div style="font-size:28px;font-weight:800"><%= paket.kredi %> <span style="font-size:14px;font-weight:600;color:var(--text-secondary)">Kredi</span></div>
+        <div style="font-size:15px;color:var(--text-secondary)"><%= paket.tutar.toLocaleString('tr-TR') %> ₺</div>
+        <button type="submit" class="btn" style="width:100%;justify-content:center;margin-top:8px">Satın Al</button>
+      </form>
+    <% }); %>
+  </div>
+</div>
