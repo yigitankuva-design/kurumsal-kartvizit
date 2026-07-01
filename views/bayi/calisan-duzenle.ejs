@@ -26,11 +26,33 @@
     <label>Email</label>
     <input type="email" name="email" value="<%= calisan.email || '' %>">
 
+    <label>Adres</label>
+    <input type="text" name="adres" id="adres-input" value="<%= calisan.adres || '' %>" autocomplete="off">
+
+    <label>Biyografi <small style="color:#888">(temel HTML desteklenir)</small></label>
+    <textarea name="biyografi" rows="3"><%= calisan.biyografi || '' %></textarea>
+
+    <div class="form-section-title">Sosyal Medya & Linkler</div>
     <label>LinkedIn URL</label>
     <input type="url" name="linkedin" value="<%= calisan.linkedin || '' %>">
-
-    <label>Biyografi</label>
-    <textarea name="biyografi" rows="3"><%= calisan.biyografi || '' %></textarea>
+    <label>Instagram URL</label>
+    <input type="url" name="instagram" value="<%= calisan.instagram || '' %>">
+    <label>Twitter / X URL</label>
+    <input type="url" name="twitter" value="<%= calisan.twitter || '' %>">
+    <label>YouTube URL</label>
+    <input type="url" name="youtube" value="<%= calisan.youtube || '' %>">
+    <label>Web Sitesi</label>
+    <input type="url" name="website" value="<%= calisan.website || '' %>">
+    <label>WhatsApp Numarası</label>
+    <input type="tel" name="whatsapp" value="<%= calisan.whatsapp || '' %>" placeholder="+905001112233">
+    <label>TikTok URL</label>
+    <input type="url" name="tiktok" value="<%= calisan.tiktok || '' %>">
+    <label>Sahibinden İlan URL</label>
+    <input type="url" name="sahibinden" value="<%= calisan.sahibinden || '' %>">
+    <label>Hürriyet Emlak İlan URL</label>
+    <input type="url" name="hurriyet_emlak" value="<%= calisan.hurriyet_emlak || '' %>">
+    <label>Google Yorum Linki</label>
+    <input type="url" name="google_yorum_link" value="<%= calisan.google_yorum_link || '' %>">
 
     <label>Fotoğraf</label>
     <% if (calisan.foto_url) { %>
@@ -47,3 +69,14 @@
     <button type="submit" class="btn" style="margin-top:16px">Kaydet</button>
   </form>
 </div>
+
+<% if (process.env.GOOGLE_MAPS_API_KEY) { %>
+<script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
+<script>
+  function adresAutocompleteBaslat() {
+    const input = document.getElementById('adres-input');
+    if (!input || !window.google) return;
+    new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
+  }
+</script>
+<% } %>
