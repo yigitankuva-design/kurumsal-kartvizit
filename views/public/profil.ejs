@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="<%= lang %>">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,6 +17,10 @@
   </style>
 </head>
 <body class="profil-body">
+  <div class="dil-secici">
+    <a href="?lang=tr" class="<%= lang === 'tr' ? 'aktif' : '' %>">TR</a>
+    <a href="?lang=en" class="<%= lang === 'en' ? 'aktif' : '' %>">EN</a>
+  </div>
   <div class="profil-kart">
     <div class="profil-header">
       <% const logoUrl = branding ? branding.logo_url : calisan.logo_url; %>
@@ -50,7 +54,7 @@
 
       <% if (calisan.sektor === 'ilac' && calisan.ilaclar && calisan.ilaclar.length) { %>
         <div style="margin-bottom:20px">
-          <p class="ilac-baslik">Çalışılan Ürünler</p>
+          <p class="ilac-baslik"><%= t('calisilan_urunler') %></p>
           <div class="ilac-etiketler">
             <% calisan.ilaclar.forEach(ilac => { %>
               <span class="ilac-etiket"><%= ilac %></span>
@@ -68,7 +72,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.45 2 2 0 0 1 3.58 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 6.29 6.29l1.62-1.62a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             </span>
             <span class="btn-iletisim-metin">
-              <span class="btn-iletisim-label">Telefon</span>
+              <span class="btn-iletisim-label"><%= t('telefon') %></span>
               <%= calisan.telefon %>
             </span>
           </a>
@@ -79,7 +83,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
             </span>
             <span class="btn-iletisim-metin">
-              <span class="btn-iletisim-label">E-posta</span>
+              <span class="btn-iletisim-label"><%= t('eposta') %></span>
               <%= calisan.email %>
             </span>
           </a>
@@ -91,7 +95,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">LinkedIn</span>
-              Profili Görüntüle
+              <%= t('linkedin_buton') %>
             </span>
           </a>
         <% } %>
@@ -105,7 +109,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">Instagram</span>
-              Profili Görüntüle
+              <%= t('instagram_buton') %>
             </span>
           </a>
         <% } %>
@@ -116,7 +120,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">X / Twitter</span>
-              Profili Görüntüle
+              <%= t('twitter_buton') %>
             </span>
           </a>
         <% } %>
@@ -127,7 +131,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">YouTube</span>
-              Kanalı Görüntüle
+              <%= t('youtube_buton') %>
             </span>
           </a>
         <% } %>
@@ -138,7 +142,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">Web Sitesi</span>
-              Ziyaret Et
+              <%= t('website_buton') %>
             </span>
           </a>
         <% } %>
@@ -149,7 +153,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">WhatsApp</span>
-              Mesaj Gönder
+              <%= t('whatsapp_buton') %>
             </span>
           </a>
         <% } %>
@@ -160,7 +164,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">TikTok</span>
-              Profili Görüntüle
+              <%= t('tiktok_buton') %>
             </span>
           </a>
         <% } %>
@@ -171,7 +175,7 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">Sahibinden</span>
-              İlanı Görüntüle
+              <%= t('sahibinden_buton') %>
             </span>
           </a>
         <% } %>
@@ -182,21 +186,21 @@
             </span>
             <span class="btn-iletisim-metin">
               <span class="btn-iletisim-label">Hürriyet Emlak</span>
-              İlanı Görüntüle
+              <%= t('hurriyet_emlak_buton') %>
             </span>
           </a>
         <% } %>
       </div>
 
-      <a href="<%= vcfUrl %>" class="btn-vcf" download>
+      <a href="<%= vcfUrl %>" class="btn-vcf" id="rehbere-ekle-btn" download>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        Rehbere Ekle
+        <%= t('rehbere_ekle') %>
       </a>
 
       <% if (calisan.google_yorum_link) { %>
         <a href="<%= base %>/degerlendir" target="_blank" rel="noopener" class="btn-qr" style="margin-bottom:10px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 17.75 5.8 21l1.2-7L2 9.24l7.1-1.02L12 2l2.9 6.22L22 9.24l-5 4.76 1.2 7Z"/></svg>
-          Google'da Değerlendir
+          <%= t('google_degerlendir') %>
         </a>
       <% } %>
 
@@ -204,14 +208,14 @@
       <div class="qr-bolum">
         <button class="btn-qr" onclick="document.getElementById('qr-modal').classList.add('aktif')">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
-          QR Kodu Göster
+          <%= t('qr_goster') %>
         </button>
       </div>
 
       <!-- E-posta İmzası -->
       <button class="btn-imza" onclick="document.getElementById('imza-modal').classList.add('aktif')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        E-posta İmzası Al
+        <%= t('imza_al') %>
       </button>
 
       <div class="profil-divider"></div>
@@ -223,12 +227,12 @@
   <div id="qr-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
     <div class="modal-kart">
       <button class="modal-kapat" onclick="document.getElementById('qr-modal').classList.remove('aktif')">✕</button>
-      <h3 style="margin-bottom:16px;font-size:16px;font-weight:700">QR Kodu</h3>
+      <h3 style="margin-bottom:16px;font-size:16px;font-weight:700"><%= t('qr_modal_baslik') %></h3>
       <% const fullUrl = 'https://' + (process.env.DOMAIN || (typeof req !== 'undefined' ? req.hostname : 'nfckart.com')) + profilUrl; %>
       <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<%= encodeURIComponent(fullUrl) %>" alt="QR Kod" style="width:220px;height:220px;border-radius:8px">
-      <p style="margin-top:12px;font-size:12px;color:#6b7280;text-align:center">Telefon kameranızla okutun</p>
+      <p style="margin-top:12px;font-size:12px;color:#6b7280;text-align:center"><%= t('qr_aciklama') %></p>
       <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=<%= encodeURIComponent(fullUrl) %>" download="qr-kod.png" class="btn" style="margin-top:14px;width:100%;justify-content:center;font-size:14px">
-        ⬇ QR İndir
+        ⬇ <%= t('qr_indir') %>
       </a>
     </div>
   </div>
@@ -237,8 +241,8 @@
   <div id="imza-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('aktif')">
     <div class="modal-kart" style="max-width:500px">
       <button class="modal-kapat" onclick="document.getElementById('imza-modal').classList.remove('aktif')">✕</button>
-      <h3 style="margin-bottom:4px;font-size:16px;font-weight:700">E-posta İmzası</h3>
-      <p style="font-size:12px;color:#6b7280;margin-bottom:16px">Aşağıdaki kodu e-posta istemcinize yapıştırın</p>
+      <h3 style="margin-bottom:4px;font-size:16px;font-weight:700"><%= t('imza_modal_baslik') %></h3>
+      <p style="font-size:12px;color:#6b7280;margin-bottom:16px"><%= t('imza_aciklama') %></p>
 
       <div class="imza-onizleme">
         <table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937">
@@ -257,7 +261,7 @@
                 <% if (calisan.email) { %><div>✉️ <a href="mailto:<%= calisan.email %>" style="color:#1f2937;text-decoration:none"><%= calisan.email %></a></div><% } %>
               </div>
               <div style="margin-top:8px">
-                <a href="<%= fullUrl %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">Dijital Kartvizitim</a>
+                <a href="<%= fullUrl %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600"><%= t('dijital_kartvizit') %></a>
               </div>
             </td>
           </tr>
@@ -265,7 +269,7 @@
       </div>
 
       <textarea id="imza-html" class="imza-textarea" readonly></textarea>
-      <button class="btn" onclick="copyImza()" style="width:100%;justify-content:center;margin-top:10px">Kopyala</button>
+      <button class="btn" onclick="copyImza()" style="width:100%;justify-content:center;margin-top:10px"><%= t('kopyala') %></button>
     </div>
   </div>
 
@@ -279,6 +283,7 @@
       var email = '<%= calisan.email || "" %>';
       var foto = '<%= calisan.foto_url || "" %>';
       var link = '<%= fullUrl %>';
+      var dijitalKartvizitMetni = '<%= t("dijital_kartvizit") %>';
 
       var html = '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><tr>';
       if (foto) html += '<td style="padding-right:14px;vertical-align:top"><img src="' + foto + '" width="60" height="60" style="border-radius:50%;object-fit:cover" alt=""></td>';
@@ -290,7 +295,7 @@
       if (tel) html += '<div>📞 <a href="tel:' + tel + '" style="color:#1f2937;text-decoration:none">' + tel + '</a></div>';
       if (email) html += '<div>✉️ <a href="mailto:' + email + '" style="color:#1f2937;text-decoration:none">' + email + '</a></div>';
       html += '</div>';
-      html += '<div style="margin-top:8px"><a href="' + link + '" style="display:inline-block;padding:5px 12px;background:' + marka + ';color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">Dijital Kartvizitim</a></div>';
+      html += '<div style="margin-top:8px"><a href="' + link + '" style="display:inline-block;padding:5px 12px;background:' + marka + ';color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600">' + dijitalKartvizitMetni + '</a></div>';
       html += '</td></tr></table>';
 
       document.getElementById('imza-html').value = html;
@@ -301,9 +306,29 @@
       el.select();
       document.execCommand('copy');
       var btn = event.target;
-      btn.textContent = '✓ Kopyalandı!';
-      setTimeout(function() { btn.textContent = 'Kopyala'; }, 2000);
+      var kopyalandiMetni = '<%= t("kopyalandi") %>';
+      var kopyalaMetni = '<%= t("kopyala") %>';
+      btn.textContent = '✓ ' + kopyalandiMetni;
+      setTimeout(function() { btn.textContent = kopyalaMetni; }, 2000);
     }
+
+    // Android: "Rehbere Ekle" butonu icin intent:// yonlendirmesi, basarisizsa .vcf'e duser
+    (function() {
+      var btn = document.getElementById('rehbere-ekle-btn');
+      var isAndroid = /Android/i.test(navigator.userAgent);
+      if (btn && isAndroid) {
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          var vcfHref = btn.getAttribute('href');
+          var fallbackUrl = window.location.origin + vcfHref;
+          var intentUrl = 'intent://contacts/add#Intent;scheme=content;type=text/x-vcard;S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
+          window.location.href = intentUrl;
+          setTimeout(function() {
+            window.location.href = vcfHref;
+          }, 1500);
+        });
+      }
+    })();
   </script>
 </body>
 </html>
