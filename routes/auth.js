@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const { pool } = require('../db');
 const { firmaSlugOlustur } = require('../utils/slug');
+const { createLoginLimiter } = require('../middleware/rateLimiter');
+const girisLimiter = createLoginLimiter('/');
 
 router.get('/kayit', (req, res) => res.redirect('/'));
 router.get('/giris', (req, res) => res.redirect('/'));
@@ -44,7 +46,7 @@ router.post('/kayit', async (req, res) => {
   }
 });
 
-router.post('/giris', async (req, res) => {
+router.post('/giris', girisLimiter, async (req, res) => {
   const { yetkili_email, sifre } = req.body;
 
   if (!yetkili_email || !sifre) {
