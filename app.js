@@ -61,10 +61,31 @@ app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
 app.use('/bayi', odemeRoutes);
 
-// Ana sayfa: giriş yapılmışsa dashboard, yoksa landing
+// Ana sayfa: giriş yapılmışsa dashboard (firma ya da süperadmin), yoksa landing
 app.get('/', async (req, res) => {
   const error = req.flash('error');
   const success = req.flash('success');
+
+  if (req.session.superadmin) {
+    try {
+      const firmalarResult = await pool.query(`
+        SELECT f.*, COUNT(c.id) as calisan_sayisi, b.ad as bayi_ad
+        FROM firmalar f
+        LEFT JOIN calisanlar c ON c.firma_id = f.id
+        LEFT JOIN bayiler b ON b.id = f.bayi_id
+        GROUP BY f.id, b.ad ORDER BY f.created_at DESC
+      `);
+      const bayilerResult = await pool.query('SELECT * FROM bayiler ORDER BY created_at DESC');
+      const tab = req.query.tab || 'firmalar';
+      return res.render('public/admin-dashboard', {
+        layout: false, firmalar: firmalarResult.rows, bayiler: bayilerResult.rows, tab, error, success
+      });
+    } catch (err) {
+      console.error(err);
+      return res.render('public/landing', { layout: false, error: ['Bir hata oluştu.'], success: [] });
+    }
+  }
+
   if (!req.session.firmaId) {
     return res.render('public/landing', { layout: false, error, success });
   }

@@ -8,7 +8,8 @@ function requireFirma(req, res, next) {
 
 function requireSuperadmin(req, res, next) {
   if (!req.session.superadmin) {
-    return res.redirect('/superadmin/giris');
+    req.flash('error', 'Lütfen yönetici girişi yapın.');
+    return res.redirect('/');
   }
   next();
 }

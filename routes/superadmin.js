@@ -7,47 +7,30 @@ const { firmaSlugOlustur } = require('../utils/slug');
 const { createLoginLimiter } = require('../middleware/rateLimiter');
 const superadminGirisLimiter = createLoginLimiter('/superadmin/giris');
 
-router.get('/giris', (req, res) => {
-  res.render('superadmin/giris', { title: 'Süper Admin Girişi', layout: 'layout' });
-});
+router.get('/giris', (req, res) => res.redirect('/'));
 
 router.post('/giris', superadminGirisLimiter, (req, res) => {
-  const { sifre } = req.body;
-  if (sifre && sifre.trim() === (process.env.SUPERADMIN_PASSWORD || '').trim()) {
+  const { kullanici_adi, sifre } = req.body;
+  const dogruKullaniciAdi = (process.env.SUPERADMIN_USERNAME || '').trim();
+  const dogruSifre = (process.env.SUPERADMIN_PASSWORD || '').trim();
+  if (
+    kullanici_adi && sifre &&
+    kullanici_adi.trim() === dogruKullaniciAdi &&
+    sifre.trim() === dogruSifre
+  ) {
     req.session.superadmin = true;
-    res.redirect('/superadmin');
+    res.redirect('/');
   } else {
-    req.flash('error', 'Şifre hatalı.');
-    res.redirect('/superadmin/giris');
+    req.flash('error', 'Kullanıcı adı veya şifre hatalı.');
+    res.redirect('/');
   }
 });
 
 router.post('/cikis', (req, res) => {
-  req.session.destroy(() => res.redirect('/superadmin/giris'));
+  req.session.destroy(() => res.redirect('/'));
 });
 
-router.get('/', requireSuperadmin, async (req, res) => {
-  try {
-    const firmalarResult = await pool.query(`
-      SELECT f.*, COUNT(c.id) as calisan_sayisi, b.ad as bayi_ad
-      FROM firmalar f
-      LEFT JOIN calisanlar c ON c.firma_id = f.id
-      LEFT JOIN bayiler b ON b.id = f.bayi_id
-      GROUP BY f.id, b.ad ORDER BY f.created_at DESC
-    `);
-    const bayilerResult = await pool.query('SELECT * FROM bayiler ORDER BY created_at DESC');
-    const tab = req.query.tab || 'firmalar';
-    res.render('superadmin/index', {
-      title: 'Süper Admin',
-      firmalar: firmalarResult.rows,
-      bayiler: bayilerResult.rows,
-      tab
-    });
-  } catch (err) {
-    console.error(err);
-    res.send('Hata.');
-  }
-});
+router.get('/', requireSuperadmin, (req, res) => res.redirect('/'));
 
 router.post('/firma-sil/:id', requireSuperadmin, async (req, res) => {
   try {
@@ -57,7 +40,7 @@ router.post('/firma-sil/:id', requireSuperadmin, async (req, res) => {
     console.error(err);
     req.flash('error', 'Silinemedi.');
   }
-  res.redirect('/superadmin');
+  res.redirect('/');
 });
 
 // Bayi ekleme
@@ -65,7 +48,7 @@ router.post('/bayi-ekle', requireSuperadmin, async (req, res) => {
   const { ad, email, sifre, marka_rengi } = req.body;
   if (!ad || !email || !sifre) {
     req.flash('error', 'Ad, email ve şifre zorunlu.');
-    return res.redirect('/superadmin?tab=bayiler');
+    return res.redirect('/?tab=bayiler');
   }
   try {
     const hash = await bcrypt.hash(sifre, 12);
@@ -82,7 +65,7 @@ router.post('/bayi-ekle', requireSuperadmin, async (req, res) => {
     console.error(err);
     req.flash('error', err.code === '23505' ? 'Bu email zaten kayıtlı.' : 'Bayi eklenemedi.');
   }
-  res.redirect('/superadmin?tab=bayiler');
+  res.redirect('/?tab=bayiler');
 });
 
 // Bayi sil
@@ -94,7 +77,7 @@ router.post('/bayi-sil/:id', requireSuperadmin, async (req, res) => {
     console.error(err);
     req.flash('error', 'Silinemedi.');
   }
-  res.redirect('/superadmin?tab=bayiler');
+  res.redirect('/?tab=bayiler');
 });
 
 module.exports = router;
