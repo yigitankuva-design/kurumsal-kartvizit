@@ -106,26 +106,52 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res)
     req.flash('error', 'Müşteri adı zorunlu.');
     return res.redirect('/bayi/panel/firma-ekle');
   }
+  const client = await pool.connect();
   try {
+    await client.query('BEGIN');
+
+    const bayiSonuc = await client.query(
+      'SELECT kredi_bakiyesi FROM bayiler WHERE id = $1 FOR UPDATE',
+      [req.session.bayiId]
+    );
+    if (!bayiSonuc.rows.length || bayiSonuc.rows[0].kredi_bakiyesi < 1) {
+      await client.query('ROLLBACK');
+      req.flash('error', 'Krediniz kalmadı, lütfen kredi yükleyin.');
+      return res.redirect('/bayi/panel/kredi-yukle');
+    }
+
     let slug = firmaSlugOlustur(ad);
-    const check = await pool.query('SELECT id FROM firmalar WHERE slug = $1', [slug]);
+    const check = await client.query('SELECT id FROM firmalar WHERE slug = $1', [slug]);
     if (check.rows.length) slug = `${slug}-${Date.now()}`;
 
     // Firma girişi olmayacak — dummy email/sifre
     const dummyEmail = `${slug}-${Date.now()}@bayi.local`;
     const dummyHash = await bcrypt.hash(Math.random().toString(36), 8);
 
-    await pool.query(
+    const firmaSonuc = await client.query(
       `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, sektor, marka_rengi, bayi_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
       [ad, slug, dummyEmail, dummyHash, sektor || 'diger', marka_rengi || '#1a73e8', req.session.bayiId]
     );
+
+    await client.query('UPDATE bayiler SET kredi_bakiyesi = kredi_bakiyesi - 1 WHERE id = $1', [req.session.bayiId]);
+
+    await client.query(
+      `INSERT INTO kredi_hareketleri (bayi_id, tip, miktar, aciklama, firma_id)
+       VALUES ($1, 'harcama', -1, $2, $3)`,
+      [req.session.bayiId, `Firma eklendi: ${ad}`, firmaSonuc.rows[0].id]
+    );
+
+    await client.query('COMMIT');
     req.flash('success', `${ad} eklendi.`);
     res.redirect('/bayi/panel');
   } catch (err) {
+    await client.query('ROLLBACK');
     console.error(err);
     req.flash('error', 'Eklenemedi.');
     res.redirect('/bayi/panel/firma-ekle');
+  } finally {
+    client.release();
   }
 });
 
