@@ -6,6 +6,7 @@ const { requireBayi } = require('../middleware/authMiddleware');
 const { firmaSlugOlustur, benzersizCalisanSlugOlustur } = require('../utils/slug');
 const { uploadMiddleware } = require('../middleware/upload');
 const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimiter');
+const { biyografiTemizle } = require('../utils/sanitize');
 
 const fotoUpload = uploadMiddleware('calisanlar');
 const bayiGirisLimiter = createLoginLimiter('/bayi/giris');
@@ -185,7 +186,7 @@ router.get('/panel/:firmaId/calisan-ekle', requireBayi, async (req, res) => {
 router.post('/panel/:firmaId/calisan-ekle', requireBayi,
   fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan-ekle`),
   async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
@@ -201,12 +202,16 @@ router.post('/panel/:firmaId/calisan-ekle', requireBayi,
     const slug = await benzersizCalisanSlugOlustur(req.params.firmaId, ad, soyad);
 
     const fotoUrl = req.file?.location || null;
+    const biyografiTemiz = biyografiTemizle(biyografi);
 
     await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, foto_url, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, foto_url, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
       [req.params.firmaId, ad, soyad, unvan || null, departman || null,
-       telefon || null, email || null, linkedin || null, biyografi || null, fotoUrl, slug]
+       telefon || null, email || null, linkedin || null, instagram || null, twitter || null,
+       youtube || null, website || null, whatsapp || null, tiktok || null, sahibinden || null,
+       hurriyet_emlak || null, adres || null, google_yorum_link || null,
+       biyografiTemiz, fotoUrl, slug]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
     res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
@@ -247,7 +252,7 @@ router.get('/panel/:firmaId/calisan/:id/duzenle', requireBayi, async (req, res) 
 router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
   fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`),
   async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, biyografi } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`);
@@ -260,23 +265,32 @@ router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
     if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
 
     const fotoUrl = req.file?.location || null;
+    const biyografiTemiz = biyografiTemizle(biyografi);
 
     if (fotoUrl) {
       await pool.query(
         `UPDATE calisanlar SET ad=$1,soyad=$2,unvan=$3,departman=$4,telefon=$5,
-         email=$6,linkedin=$7,biyografi=$8,foto_url=$9
-         WHERE id=$10 AND firma_id=$11`,
+         email=$6,linkedin=$7,instagram=$8,twitter=$9,youtube=$10,website=$11,
+         whatsapp=$12,tiktok=$13,sahibinden=$14,hurriyet_emlak=$15,adres=$16,google_yorum_link=$17,
+         biyografi=$18,foto_url=$19
+         WHERE id=$20 AND firma_id=$21`,
         [ad, soyad, unvan||null, departman||null, telefon||null,
-         email||null, linkedin||null, biyografi||null, fotoUrl,
+         email||null, linkedin||null, instagram||null, twitter||null, youtube||null, website||null,
+         whatsapp||null, tiktok||null, sahibinden||null, hurriyet_emlak||null, adres||null, google_yorum_link||null,
+         biyografiTemiz, fotoUrl,
          req.params.id, req.params.firmaId]
       );
     } else {
       await pool.query(
         `UPDATE calisanlar SET ad=$1,soyad=$2,unvan=$3,departman=$4,telefon=$5,
-         email=$6,linkedin=$7,biyografi=$8
-         WHERE id=$9 AND firma_id=$10`,
+         email=$6,linkedin=$7,instagram=$8,twitter=$9,youtube=$10,website=$11,
+         whatsapp=$12,tiktok=$13,sahibinden=$14,hurriyet_emlak=$15,adres=$16,google_yorum_link=$17,
+         biyografi=$18
+         WHERE id=$19 AND firma_id=$20`,
         [ad, soyad, unvan||null, departman||null, telefon||null,
-         email||null, linkedin||null, biyografi||null,
+         email||null, linkedin||null, instagram||null, twitter||null, youtube||null, website||null,
+         whatsapp||null, tiktok||null, sahibinden||null, hurriyet_emlak||null, adres||null, google_yorum_link||null,
+         biyografiTemiz,
          req.params.id, req.params.firmaId]
       );
     }
