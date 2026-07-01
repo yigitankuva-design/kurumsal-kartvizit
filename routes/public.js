@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
+const { cevirmenOlustur } = require('../utils/i18n');
 
 async function profilGetir(firmaSlug, calisanSlug, bayiSlug = null) {
   let query, params;
@@ -73,7 +74,9 @@ router.get('/bayi/:bayiSlug/:firmaSlug/:calisanSlug', async (req, res) => {
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
     const vcfUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}/vcf`;
     const profilUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}`;
-    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
+    const lang = req.query.lang === 'en' ? 'en' : 'tr';
+    const t = cevirmenOlustur(lang);
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
@@ -179,7 +182,9 @@ router.get('/:firmaSlug/:calisanSlug', async (req, res) => {
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
     const vcfUrl = `/${req.params.firmaSlug}/${calisan.slug}/vcf`;
     const profilUrl = `/${req.params.firmaSlug}/${calisan.slug}`;
-    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, layout: false });
+    const lang = req.query.lang === 'en' ? 'en' : 'tr';
+    const t = cevirmenOlustur(lang);
+    res.render('public/profil', { title: `${calisan.ad} ${calisan.soyad}`, calisan, branding, vcfUrl, profilUrl, lang, t, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
