@@ -1,6 +1,6 @@
 # Profil Kartı Yeni Alanları + HTML Bio Güvenliği Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Çalışan profiline WhatsApp, TikTok, Sahibinden, Hürriyet Emlak, Adres (Google Maps autocomplete ile), Google Yorum Linki alanlarını eklemek; biyografi alanına güvenli (sanitize edilmiş) HTML desteği getirmek. Hem `/firma/panel` hem `/bayi/panel` çalışan formlarına ve public profil sayfasına yansıtmak.
 
@@ -19,13 +19,13 @@
 - Create: `utils/sanitize.js`
 - Test: `tests/sanitize.test.js`
 
-- [ ] **Step 1: Paketi yükle**
+- [x] **Step 1: Paketi yükle**
 
 ```bash
 npm install sanitize-html
 ```
 
-- [ ] **Step 2: Failing test yaz**
+- [x] **Step 2: Failing test yaz**
 
 `tests/sanitize.test.js`:
 
@@ -57,12 +57,12 @@ describe('biyografiTemizle', () => {
 });
 ```
 
-- [ ] **Step 3: Testin başarısız olduğunu doğrula**
+- [x] **Step 3: Testin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/sanitize.test.js`
 Expected: FAIL (`utils/sanitize.js` henüz yok)
 
-- [ ] **Step 4: utils/sanitize.js oluştur**
+- [x] **Step 4: utils/sanitize.js oluştur**
 
 ```javascript
 const sanitizeHtml = require('sanitize-html');
@@ -79,12 +79,12 @@ function biyografiTemizle(biyografi) {
 module.exports = { biyografiTemizle };
 ```
 
-- [ ] **Step 5: Testi çalıştır ve geçtiğini doğrula**
+- [x] **Step 5: Testi çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/sanitize.test.js`
 Expected: PASS (5 test)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add package.json package-lock.json utils/sanitize.js tests/sanitize.test.js
@@ -99,7 +99,7 @@ git commit -m "feat: biyografi icin sanitize-html tabanli HTML temizleme"
 - Modify: `scripts/migrate.js`
 - Modify: `db/schema.sql`
 
-- [ ] **Step 1: scripts/migrate.js'e yeni migration satırları ekle**
+- [x] **Step 1: scripts/migrate.js'e yeni migration satırları ekle**
 
 `scripts/migrate.js` dosyasındaki `migrations` dizisinin sonuna (son elemandan sonra, dizinin kapanışından önce) ekle:
 
@@ -112,7 +112,7 @@ git commit -m "feat: biyografi icin sanitize-html tabanli HTML temizleme"
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS google_yorum_link TEXT`,
 ```
 
-- [ ] **Step 2: db/schema.sql'i güncelle (referans şema — yeni kurulumlar için)**
+- [x] **Step 2: db/schema.sql'i güncelle (referans şema — yeni kurulumlar için)**
 
 `db/schema.sql` içindeki `calisanlar` tablosu tanımında `ilaclar TEXT[],` satırından hemen sonra ekle:
 
@@ -125,7 +125,7 @@ git commit -m "feat: biyografi icin sanitize-html tabanli HTML temizleme"
   google_yorum_link   TEXT,
 ```
 
-- [ ] **Step 3: Migration'ı çalıştır**
+- [x] **Step 3: Migration'ı çalıştır**
 
 ```bash
 node scripts/migrate.js
@@ -133,7 +133,7 @@ node scripts/migrate.js
 
 Expected çıktı: her yeni `ALTER TABLE` satırı için `OK: ALTER TABLE calisanlar ADD COLUMN...` satırı, sonunda `Migration tamamlandı.`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/migrate.js db/schema.sql
@@ -147,7 +147,7 @@ git commit -m "feat: calisanlar tablosuna yeni profil alanlari ekle (whatsapp, t
 **Files:**
 - Modify: `routes/panel.js`
 
-- [ ] **Step 1: Import ekle**
+- [x] **Step 1: Import ekle**
 
 `routes/panel.js` dosyasının başındaki require'ların yanına ekle:
 
@@ -155,7 +155,7 @@ git commit -m "feat: calisanlar tablosuna yeni profil alanlari ekle (whatsapp, t
 const { biyografiTemizle } = require('../utils/sanitize');
 ```
 
-- [ ] **Step 2: `/ekle` POST route'unun destructure satırını güncelle**
+- [x] **Step 2: `/ekle` POST route'unun destructure satırını güncelle**
 
 Mevcut:
 
@@ -169,7 +169,7 @@ satırını (bu satır `router.post('/ekle', async (req, res) => {` bloğunun il
   const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar } = req.body;
 ```
 
-- [ ] **Step 3: `/ekle` POST route'undaki INSERT bloğunu güncelle**
+- [x] **Step 3: `/ekle` POST route'undaki INSERT bloğunu güncelle**
 
 Mevcut (slug üretim satırlarından SONRA gelen blok — slug satırlarına dokunma):
 
@@ -202,7 +202,7 @@ Mevcut (slug üretim satırlarından SONRA gelen blok — slug satırlarına dok
     );
 ```
 
-- [ ] **Step 4: `/:id/duzenle` POST route'unun içeriğini güncelle**
+- [x] **Step 4: `/:id/duzenle` POST route'unun içeriğini güncelle**
 
 Mevcut (route kayıt satırının `fotoUpload.single('foto')` kısmına dokunma, sadece handler gövdesini hedefle):
 
@@ -275,12 +275,12 @@ Mevcut (route kayıt satırının `fotoUpload.single('foto')` kısmına dokunma,
     }
 ```
 
-- [ ] **Step 5: Tüm testleri çalıştır**
+- [x] **Step 5: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/panel.js
@@ -294,7 +294,7 @@ git commit -m "feat: firma panelinde yeni profil alanlari ve biyografi temizleme
 **Files:**
 - Modify: `views/panel/ekle.ejs`
 
-- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+- [x] **Step 1: Dosyanın tam içeriğini güncelle**
 
 `views/panel/ekle.ejs` dosyasının tamamını şu içerikle değiştir:
 
@@ -341,7 +341,7 @@ git commit -m "feat: firma panelinde yeni profil alanlari ve biyografi temizleme
 <% } %>
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -349,7 +349,7 @@ npm run dev
 
 `/firma/panel/ekle` sayfasını aç, yeni alanların (Adres, WhatsApp, TikTok, Sahibinden, Hürriyet Emlak, Google Yorum Linki) göründüğünü doğrula. `GOOGLE_MAPS_API_KEY` `.env`'de tanımlıysa adres alanına yazarken otomatik tamamlama önerilerinin çıktığını doğrula; tanımlı değilse alan normal bir metin kutusu olarak çalışmaya devam etmeli (hata vermemeli).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add views/panel/ekle.ejs
@@ -363,7 +363,7 @@ git commit -m "feat: firma panelinde yeni cikan alanlarin formu"
 **Files:**
 - Modify: `views/panel/duzenle.ejs`
 
-- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+- [x] **Step 1: Dosyanın tam içeriğini güncelle**
 
 `views/panel/duzenle.ejs` dosyasının tamamını şu içerikle değiştir:
 
@@ -419,7 +419,7 @@ git commit -m "feat: firma panelinde yeni cikan alanlarin formu"
 <% } %>
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -427,7 +427,7 @@ npm run dev
 
 Var olan bir çalışanı düzenleme sayfasını aç, yeni alanların mevcut değerleriyle dolu geldiğini (varsa) doğrula, birkaçını değiştirip kaydet, panelde/profilde yansıdığını kontrol et.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add views/panel/duzenle.ejs
@@ -443,7 +443,7 @@ git commit -m "feat: firma panelinde duzenleme formuna yeni alanlar"
 **Files:**
 - Modify: `routes/bayi.js`
 
-- [ ] **Step 1: Import ekle**
+- [x] **Step 1: Import ekle**
 
 `routes/bayi.js` dosyasının başındaki require'ların yanına ekle:
 
@@ -451,7 +451,7 @@ git commit -m "feat: firma panelinde duzenleme formuna yeni alanlar"
 const { biyografiTemizle } = require('../utils/sanitize');
 ```
 
-- [ ] **Step 2: `/panel/:firmaId/calisan-ekle` POST route'unun destructure satırını güncelle**
+- [x] **Step 2: `/panel/:firmaId/calisan-ekle` POST route'unun destructure satırını güncelle**
 
 Mevcut:
 
@@ -465,7 +465,7 @@ Mevcut:
   const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
 ```
 
-- [ ] **Step 3: `/panel/:firmaId/calisan-ekle` POST route'undaki INSERT bloğunu güncelle**
+- [x] **Step 3: `/panel/:firmaId/calisan-ekle` POST route'undaki INSERT bloğunu güncelle**
 
 Mevcut (firma-bayi sahiplik kontrolü ve slug üretim satırlarından SONRA gelen blok — onlara dokunma):
 
@@ -497,7 +497,7 @@ Mevcut (firma-bayi sahiplik kontrolü ve slug üretim satırlarından SONRA gele
     );
 ```
 
-- [ ] **Step 4: `/panel/:firmaId/calisan/:id/duzenle` POST route'unun destructure satırını güncelle**
+- [x] **Step 4: `/panel/:firmaId/calisan/:id/duzenle` POST route'unun destructure satırını güncelle**
 
 Mevcut (bu route'un ilk satırı — `/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle` redirect'inin bulunduğu bloğun hemen üstünde):
 
@@ -511,7 +511,7 @@ Mevcut (bu route'un ilk satırı — `/bayi/panel/${req.params.firmaId}/calisan/
   const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
 ```
 
-- [ ] **Step 5: `/panel/:firmaId/calisan/:id/duzenle` POST route'undaki UPDATE bloğunu güncelle**
+- [x] **Step 5: `/panel/:firmaId/calisan/:id/duzenle` POST route'undaki UPDATE bloğunu güncelle**
 
 Mevcut:
 
@@ -574,12 +574,12 @@ Mevcut:
     }
 ```
 
-- [ ] **Step 6: Tüm testleri çalıştır**
+- [x] **Step 6: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add routes/bayi.js
@@ -593,7 +593,7 @@ git commit -m "feat: bayi panelinde yeni profil alanlari, eksik sosyal medya ala
 **Files:**
 - Modify: `views/bayi/calisan-ekle.ejs`
 
-- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+- [x] **Step 1: Dosyanın tam içeriğini güncelle**
 
 `views/bayi/calisan-ekle.ejs` dosyasının tamamını şu içerikle değiştir:
 
@@ -673,7 +673,7 @@ git commit -m "feat: bayi panelinde yeni profil alanlari, eksik sosyal medya ala
 <% } %>
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -681,7 +681,7 @@ npm run dev
 
 Bir bayi hesabıyla giriş yap, "Kart Oluştur" formunun yeni alanları içerdiğini doğrula.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add views/bayi/calisan-ekle.ejs
@@ -695,7 +695,7 @@ git commit -m "feat: bayi panelinde yeni alanlarin formu"
 **Files:**
 - Modify: `views/bayi/calisan-duzenle.ejs`
 
-- [ ] **Step 1: Dosyanın tam içeriğini güncelle**
+- [x] **Step 1: Dosyanın tam içeriğini güncelle**
 
 `views/bayi/calisan-duzenle.ejs` dosyasının tamamını şu içerikle değiştir:
 
@@ -784,7 +784,7 @@ git commit -m "feat: bayi panelinde yeni alanlarin formu"
 <% } %>
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -792,7 +792,7 @@ npm run dev
 
 Var olan bir bayi çalışanını düzenle, yeni alanların mevcut değerlerle geldiğini doğrula.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add views/bayi/calisan-duzenle.ejs
@@ -806,7 +806,7 @@ git commit -m "feat: bayi panelinde duzenleme formuna yeni alanlar"
 **Files:**
 - Modify: `routes/public.js`
 
-- [ ] **Step 1: `/t/:tip` route'undaki SELECT sorgusunu genişlet**
+- [x] **Step 1: `/t/:tip` route'undaki SELECT sorgusunu genişlet**
 
 Mevcut:
 
@@ -831,7 +831,7 @@ Mevcut:
     );
 ```
 
-- [ ] **Step 2: `izinliTipler` listesini genişlet**
+- [x] **Step 2: `izinliTipler` listesini genişlet**
 
 Mevcut:
 
@@ -845,7 +845,7 @@ Mevcut:
   const izinliTipler = ['telefon', 'email', 'linkedin', 'instagram', 'twitter', 'youtube', 'website', 'whatsapp', 'tiktok', 'sahibinden', 'hurriyet_emlak', 'google_yorum', 'vcf', 'qr'];
 ```
 
-- [ ] **Step 3: `hedefler` objesini genişlet**
+- [x] **Step 3: `hedefler` objesini genişlet**
 
 Mevcut:
 
@@ -882,7 +882,7 @@ Mevcut:
     };
 ```
 
-- [ ] **Step 4: `/degerlendir` route'unu ekle**
+- [x] **Step 4: `/degerlendir` route'unu ekle**
 
 `router.get('/:firmaSlug/:calisanSlug/t/:tip', ...)` route bloğunun bittiği yerden (kapanış `});`'den) hemen sonra, `// Profil sayfası — standart URL` yorumundan ÖNCE ekle:
 
@@ -908,12 +908,12 @@ router.get('/:firmaSlug/:calisanSlug/degerlendir', async (req, res) => {
 
 ```
 
-- [ ] **Step 5: Tüm testleri çalıştır**
+- [x] **Step 5: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/public.js
@@ -927,7 +927,7 @@ git commit -m "feat: yeni tiklama tipleri ve google yorum yonlendirme route'u"
 **Files:**
 - Modify: `views/public/profil.ejs`
 
-- [ ] **Step 1: Biyografi render satırını güncelle (unescaped — zaten sanitize edildi)**
+- [x] **Step 1: Biyografi render satırını güncelle (unescaped — zaten sanitize edildi)**
 
 Mevcut:
 
@@ -945,7 +945,7 @@ Mevcut:
       <% } %>
 ```
 
-- [ ] **Step 2: Website butonundan sonra yeni sosyal/link butonlarını ekle**
+- [x] **Step 2: Website butonundan sonra yeni sosyal/link butonlarını ekle**
 
 Mevcut (website butonu bloğu ve `.iletisim-butonlar` kapanışı):
 
@@ -1025,7 +1025,7 @@ Mevcut (website butonu bloğu ve `.iletisim-butonlar` kapanışı):
       </div>
 ```
 
-- [ ] **Step 3: "Rehbere Ekle" butonundan sonra "Google'da Değerlendir" butonunu ekle**
+- [x] **Step 3: "Rehbere Ekle" butonundan sonra "Google'da Değerlendir" butonunu ekle**
 
 Mevcut:
 
@@ -1056,7 +1056,7 @@ Mevcut:
       <!-- QR Kod -->
 ```
 
-- [ ] **Step 4: Manuel test**
+- [x] **Step 4: Manuel test**
 
 ```bash
 npm run dev
@@ -1064,7 +1064,7 @@ npm run dev
 
 Bir çalışanı düzenleyip WhatsApp, TikTok, Sahibinden, Hürriyet Emlak ve Google Yorum Linki alanlarını doldur; biyografiye `<b>kalın metin</b>` gibi basit HTML gir. Profil sayfasında (`/:firmaSlug/:calisanSlug`) yeni butonların göründüğünü, tıklandığında doğru linke gittiğini, biyografinin **kalın** göründüğünü (HTML olarak render edildiğini, escape edilmiş `&lt;b&gt;` olarak değil) doğrula. Biyografiye `<script>alert(1)</script>` girmeyi dene — hiçbir alert çıkmamalı (temizlenmiş olmalı).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add views/public/profil.ejs
