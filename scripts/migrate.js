@@ -36,6 +36,27 @@ async function migrate() {
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS hurriyet_emlak TEXT`,
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS adres TEXT`,
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS google_yorum_link TEXT`,
+    `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS kredi_bakiyesi INTEGER DEFAULT 0`,
+    `CREATE TABLE IF NOT EXISTS odemeler (
+      id                  SERIAL PRIMARY KEY,
+      bayi_id             INTEGER REFERENCES bayiler(id) ON DELETE CASCADE,
+      paytr_merchant_oid  TEXT UNIQUE NOT NULL,
+      kredi_miktari       INTEGER NOT NULL,
+      tutar               NUMERIC(10,2) NOT NULL,
+      durum               TEXT DEFAULT 'beklemede',
+      created_at          TIMESTAMP DEFAULT NOW(),
+      onaylanma_tarihi    TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS kredi_hareketleri (
+      id           SERIAL PRIMARY KEY,
+      bayi_id      INTEGER REFERENCES bayiler(id) ON DELETE CASCADE,
+      tip          TEXT NOT NULL,
+      miktar       INTEGER NOT NULL,
+      aciklama     TEXT,
+      firma_id     INTEGER REFERENCES firmalar(id) ON DELETE SET NULL,
+      odeme_id     INTEGER REFERENCES odemeler(id) ON DELETE SET NULL,
+      created_at   TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {

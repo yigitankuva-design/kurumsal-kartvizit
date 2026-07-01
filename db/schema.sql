@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS bayiler (
   email         TEXT UNIQUE NOT NULL,
   sifre_hash    TEXT NOT NULL,
   aktif         BOOLEAN DEFAULT true,
+  kredi_bakiyesi INTEGER DEFAULT 0,
   created_at    TIMESTAMP DEFAULT NOW()
 );
 
@@ -67,4 +68,26 @@ CREATE TABLE IF NOT EXISTS link_tiklama (
   calisan_id  INTEGER REFERENCES calisanlar(id) ON DELETE CASCADE,
   tip         TEXT NOT NULL,
   created_at  TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS odemeler (
+  id                  SERIAL PRIMARY KEY,
+  bayi_id             INTEGER REFERENCES bayiler(id) ON DELETE CASCADE,
+  paytr_merchant_oid  TEXT UNIQUE NOT NULL,
+  kredi_miktari       INTEGER NOT NULL,
+  tutar               NUMERIC(10,2) NOT NULL,
+  durum               TEXT DEFAULT 'beklemede',
+  created_at          TIMESTAMP DEFAULT NOW(),
+  onaylanma_tarihi    TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS kredi_hareketleri (
+  id           SERIAL PRIMARY KEY,
+  bayi_id      INTEGER REFERENCES bayiler(id) ON DELETE CASCADE,
+  tip          TEXT NOT NULL,
+  miktar       INTEGER NOT NULL,
+  aciklama     TEXT,
+  firma_id     INTEGER REFERENCES firmalar(id) ON DELETE SET NULL,
+  odeme_id     INTEGER REFERENCES odemeler(id) ON DELETE SET NULL,
+  created_at   TIMESTAMP DEFAULT NOW()
 );
