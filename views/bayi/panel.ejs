@@ -14,11 +14,15 @@
   <div style="display:flex;gap:16px;margin-bottom:24px">
     <div class="stat-kart"><div class="stat-sayi"><%= firmalar.length %></div><div class="stat-label">Müşteri</div></div>
     <div class="stat-kart"><div class="stat-sayi"><%= firmalar.reduce((s,f)=>s+parseInt(f.calisan_sayisi||0),0) %></div><div class="stat-label">Toplam Kart</div></div>
+    <div class="stat-kart"><div class="stat-sayi"><%= bayi.kredi_bakiyesi %></div><div class="stat-label">Kalan Kredi</div></div>
   </div>
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
     <h3>Müşteriler</h3>
-    <a href="/bayi/panel/firma-ekle" class="btn">+ Müşteri Ekle</a>
+    <div style="display:flex;gap:8px">
+      <a href="/bayi/panel/kredi-yukle" class="btn btn-secondary">+ Kredi Yükle</a>
+      <a href="/bayi/panel/firma-ekle" class="btn">+ Müşteri Ekle</a>
+    </div>
   </div>
 
   <% if (!firmalar.length) { %>
