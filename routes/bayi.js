@@ -3,7 +3,7 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { requireBayi } = require('../middleware/authMiddleware');
-const { firmaSlugOlustur, calisanSlugOlustur } = require('../utils/slug');
+const { firmaSlugOlustur, benzersizCalisanSlugOlustur } = require('../utils/slug');
 const { uploadMiddleware } = require('../middleware/upload');
 const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimiter');
 
@@ -176,15 +176,7 @@ router.post('/panel/:firmaId/calisan-ekle', requireBayi, fotoUpload.single('foto
     );
     if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
 
-    let slug = calisanSlugOlustur();
-    for (let i = 0; i < 5; i++) {
-      const check = await pool.query(
-        'SELECT id FROM calisanlar WHERE firma_id = $1 AND slug = $2',
-        [req.params.firmaId, slug]
-      );
-      if (!check.rows.length) break;
-      slug = calisanSlugOlustur();
-    }
+    const slug = await benzersizCalisanSlugOlustur(req.params.firmaId, ad, soyad);
 
     const fotoUrl = req.file?.location || null;
 
