@@ -1,6 +1,6 @@
 # Fotoğraf İşleme (sharp) Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Çalışan/firma fotoğraf yüklemelerini `sharp` ile işlemek — EXIF yönünü düzeltmek ve yüz odaklı 600×600 kareye kırpmak — böylece profil sayfasındaki avatar her zaman tutarlı boyutta ve doğru yönde görünür.
 
@@ -19,7 +19,7 @@
 - Modify: `middleware/upload.js`
 - Modify: `tests/upload.test.js` (yoksa oluşturulur)
 
-- [ ] **Step 1: Paketleri yükle**
+- [x] **Step 1: Paketleri yükle**
 
 ```bash
 npm install sharp @aws-sdk/lib-storage
@@ -27,7 +27,7 @@ npm install sharp @aws-sdk/lib-storage
 
 (`@aws-sdk/lib-storage` zaten `@aws-sdk/client-s3`'e bağımlı bir paket olarak `package.json`'da varsa `npm install` bunu no-op geçer; yoksa ekler.)
 
-- [ ] **Step 2: Failing test yaz**
+- [x] **Step 2: Failing test yaz**
 
 `tests/upload.test.js` dosyasının **tam içeriğini** şu şekilde oluştur (dosya zaten varsa üzerine yaz, `MAX_FOTO_BOYUTU` testi de dahil edilmiş durumda):
 
@@ -80,12 +80,12 @@ describe('fotoIsle', () => {
 });
 ```
 
-- [ ] **Step 3: Testin başarısız olduğunu doğrula**
+- [x] **Step 3: Testin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/upload.test.js`
 Expected: FAIL (`fotoIsle` henüz export edilmiyor)
 
-- [ ] **Step 4: middleware/upload.js'i güncelle**
+- [x] **Step 4: middleware/upload.js'i güncelle**
 
 Dosyanın **tam içeriğini** şu şekilde değiştir:
 
@@ -178,12 +178,12 @@ function uploadMiddleware(klasor) {
 module.exports = { uploadMiddleware, fotoIsle, MAX_FOTO_BOYUTU };
 ```
 
-- [ ] **Step 5: Testi çalıştır ve geçtiğini doğrula**
+- [x] **Step 5: Testi çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/upload.test.js`
 Expected: PASS (4 test)
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add package.json package-lock.json middleware/upload.js tests/upload.test.js
@@ -200,7 +200,7 @@ Yeni middleware zincirinde `sharp` veya S3 yükleme hatası `next(err)` ile Expr
 - Modify: `routes/panel.js`
 - Modify: `routes/bayi.js`
 
-- [ ] **Step 1: routes/panel.js'teki `/:id/duzenle` POST route'unu güncelle**
+- [x] **Step 1: routes/panel.js'teki `/:id/duzenle` POST route'unu güncelle**
 
 Mevcut:
 
@@ -235,7 +235,7 @@ router.post('/:id/duzenle', (req, res, next) => {
 }, async (req, res) => {
 ```
 
-- [ ] **Step 2: routes/bayi.js'teki iki foto-upload route'unu aynı şekilde güncelle**
+- [x] **Step 2: routes/bayi.js'teki iki foto-upload route'unu aynı şekilde güncelle**
 
 `routes/bayi.js` dosyasının başına (`const fotoUpload = uploadMiddleware('calisanlar');` satırından hemen sonra) ekle:
 
@@ -278,12 +278,12 @@ router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
   async (req, res) => {
 ```
 
-- [ ] **Step 3: Tüm testleri çalıştır**
+- [x] **Step 3: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 4: Manuel test — geçersiz dosya tipi**
+- [x] **Step 4: Manuel test — geçersiz dosya tipi**
 
 ```bash
 npm run dev
@@ -291,11 +291,11 @@ npm run dev
 
 `/firma/panel/:id/duzenle` sayfasından bir `.pdf` veya `.gif` dosyası "Fotoğraf" alanına yüklemeyi dene. Beklenen: sayfa çökmeden, flash hata mesajıyla (`Sadece JPEG, PNG veya WebP yüklenebilir.`) aynı forma geri dönmeli.
 
-- [ ] **Step 5: Manuel test — geçerli fotoğraf**
+- [x] **Step 5: Manuel test — geçerli fotoğraf**
 
 Aynı formdan gerçek bir `.jpg` fotoğraf yükle (yatay, dikdörtgen bir fotoğraf tercih et). Kaydettikten sonra panelde ve public profil sayfasında (`/:firmaSlug/:calisanSlug`) fotoğrafın kare (600×600 oranında) ve doğru yönde göründüğünü doğrula.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/panel.js routes/bayi.js
