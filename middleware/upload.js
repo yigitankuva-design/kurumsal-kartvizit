@@ -2,6 +2,8 @@ const multer = require('multer');
 const multerS3 = require('multer-s3');
 const { S3Client } = require('@aws-sdk/client-s3');
 
+const MAX_FOTO_BOYUTU = 15 * 1024 * 1024;
+
 function buildS3Client() {
   return new S3Client({
     endpoint: process.env.RAILWAY_STORAGE_ENDPOINT,
@@ -19,7 +21,7 @@ function uploadMiddleware(klasor) {
   if (!process.env.RAILWAY_STORAGE_BUCKET) {
     return multer({
       storage: multer.memoryStorage(),
-      limits: { fileSize: 5 * 1024 * 1024 },
+      limits: { fileSize: MAX_FOTO_BOYUTU },
       fileFilter: mimeKontrol,
     });
   }
@@ -36,7 +38,7 @@ function uploadMiddleware(klasor) {
         cb(null, `${klasor}/${Date.now()}.${ext}`);
       },
     }),
-    limits: { fileSize: 5 * 1024 * 1024 },
+    limits: { fileSize: MAX_FOTO_BOYUTU },
     fileFilter: mimeKontrol,
   });
 }
@@ -50,4 +52,4 @@ function mimeKontrol(req, file, cb) {
   }
 }
 
-module.exports = { uploadMiddleware };
+module.exports = { uploadMiddleware, MAX_FOTO_BOYUTU };
