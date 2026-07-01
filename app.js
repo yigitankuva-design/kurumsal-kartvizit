@@ -14,6 +14,7 @@ const panelRoutes = require('./routes/panel');
 const superadminRoutes = require('./routes/superadmin');
 const bayiRoutes = require('./routes/bayi');
 const { router: odemeRoutes } = require('./routes/odeme');
+const basvuruRoutes = require('./routes/basvuru');
 const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
 
@@ -130,6 +131,7 @@ app.get('/', async (req, res) => {
 
 app.get('/health', (req, res) => res.sendStatus(200));
 
+app.use('/', basvuruRoutes);
 app.use('/', publicRoutes);
 
 const PORT = process.env.PORT || 3000;
