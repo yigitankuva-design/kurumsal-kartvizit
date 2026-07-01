@@ -1,6 +1,6 @@
 # Bayi Kredi Sistemi & PayTR Ödeme Entegrasyonu Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Matbaa bayilerinin kredi/jeton satın alarak (PayTR üzerinden gerçek online ödeme) müşteri firma ekleyebildiği bir kredi sistemi kurmak. 1 kredi = 1 firma kaydı. Kredi tükenince bayi ekleyemez; `/bayi/panel/kredi-yukle`'den paket satın alabilir.
 
@@ -18,7 +18,7 @@
 - Modify: `scripts/migrate.js`
 - Modify: `db/schema.sql`
 
-- [ ] **Step 1: scripts/migrate.js'e yeni migration satırlarını ekle**
+- [x] **Step 1: scripts/migrate.js'e yeni migration satırlarını ekle**
 
 `scripts/migrate.js` dosyasındaki `migrations` dizisinin sonuna ekle (dizi kapanışından önce):
 
@@ -46,7 +46,7 @@
     )`,
 ```
 
-- [ ] **Step 2: db/schema.sql'i güncelle (referans şema — yeni kurulumlar için)**
+- [x] **Step 2: db/schema.sql'i güncelle (referans şema — yeni kurulumlar için)**
 
 `db/schema.sql` içindeki `bayiler` tablosu tanımında `aktif BOOLEAN DEFAULT true,` satırından hemen sonra ekle:
 
@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS kredi_hareketleri (
 );
 ```
 
-- [ ] **Step 3: Migration'ı çalıştır**
+- [x] **Step 3: Migration'ı çalıştır**
 
 ```bash
 node scripts/migrate.js
@@ -89,7 +89,7 @@ node scripts/migrate.js
 
 Expected: `OK: ALTER TABLE bayiler ADD COLUMN...`, `OK: CREATE TABLE IF NOT EXISTS odemeler...`, `OK: CREATE TABLE IF NOT EXISTS kredi_hareketleri...`, sonunda `Migration tamamlandı.`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add scripts/migrate.js db/schema.sql
@@ -104,7 +104,7 @@ git commit -m "feat: bayi kredi bakiyesi, odemeler ve kredi_hareketleri tablolar
 - Create: `utils/paytr.js`
 - Test: `tests/paytr.test.js`
 
-- [ ] **Step 1: Failing testleri yaz**
+- [x] **Step 1: Failing testleri yaz**
 
 `tests/paytr.test.js`:
 
@@ -173,12 +173,12 @@ describe('callbackHashDogrula', () => {
 });
 ```
 
-- [ ] **Step 2: Testin başarısız olduğunu doğrula**
+- [x] **Step 2: Testin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/paytr.test.js`
 Expected: FAIL (`utils/paytr.js` henüz yok)
 
-- [ ] **Step 3: utils/paytr.js oluştur**
+- [x] **Step 3: utils/paytr.js oluştur**
 
 ```javascript
 const crypto = require('crypto');
@@ -206,12 +206,12 @@ function callbackHashDogrula({ merchantOid, status, totalAmount, merchantSalt, m
 module.exports = { tokenHashOlustur, callbackHashDogrula };
 ```
 
-- [ ] **Step 4: Testi çalıştır ve geçtiğini doğrula**
+- [x] **Step 4: Testi çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/paytr.test.js`
 Expected: PASS (6 test)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add utils/paytr.js tests/paytr.test.js
@@ -226,7 +226,7 @@ git commit -m "feat: paytr token ve callback hash yardimcilari"
 - Modify: `routes/bayi.js`
 - Test: `tests/kredi.test.js`
 
-- [ ] **Step 1: Failing entegrasyon testleri yaz**
+- [x] **Step 1: Failing entegrasyon testleri yaz**
 
 `tests/kredi.test.js`:
 
@@ -296,12 +296,12 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
 });
 ```
 
-- [ ] **Step 2: Testlerin başarısız olduğunu doğrula**
+- [x] **Step 2: Testlerin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/kredi.test.js`
 Expected: FAIL (kredi kontrolü henüz yok, ilk test büyük ihtimalle firma eklenmesine izin verdiği için başarısız olur)
 
-- [ ] **Step 3: `/panel/firma-ekle` POST route'unun gövdesini güncelle**
+- [x] **Step 3: `/panel/firma-ekle` POST route'unun gövdesini güncelle**
 
 Mevcut (route kayıt satırına — `router.post('/panel/firma-ekle', requireBayi, ...)` — dokunma, sadece handler gövdesini hedefle):
 
@@ -391,17 +391,17 @@ Mevcut (route kayıt satırına — `router.post('/panel/firma-ekle', requireBay
   }
 ```
 
-- [ ] **Step 4: Testleri çalıştır ve geçtiğini doğrula**
+- [x] **Step 4: Testleri çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/kredi.test.js`
 Expected: PASS (2 test)
 
-- [ ] **Step 5: Tüm testleri çalıştır**
+- [x] **Step 5: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add routes/bayi.js tests/kredi.test.js
@@ -419,7 +419,7 @@ git commit -m "feat: firma eklerken bayi kredi kontrolu ve transactional dusurme
 - Modify: `app.js`
 - Modify: `.env.example`
 
-- [ ] **Step 1: .env.example'a PayTR değişkenlerini ekle**
+- [x] **Step 1: .env.example'a PayTR değişkenlerini ekle**
 
 `.env.example` dosyasının sonuna ekle:
 
@@ -430,7 +430,7 @@ PAYTR_MERCHANT_SALT=xxx
 GOOGLE_MAPS_API_KEY=xxx
 ```
 
-- [ ] **Step 2: routes/odeme.js oluştur**
+- [x] **Step 2: routes/odeme.js oluştur**
 
 ```javascript
 const express = require('express');
@@ -554,7 +554,7 @@ module.exports = { router, KREDI_PAKETLERI };
 
 **Not:** `module.exports` hem router'ı hem `KREDI_PAKETLERI`'yi export ediyor (paket listesi Task 5'te eklenecek başarılı sayfasında da referans olarak kullanılabilir ve testlerde paket fiyatlarına erişim sağlar).
 
-- [ ] **Step 3: app.js'i güncelle**
+- [x] **Step 3: app.js'i güncelle**
 
 `app.js` dosyasının başındaki require'ların yanına ekle:
 
@@ -568,7 +568,7 @@ const { router: odemeRoutes } = require('./routes/odeme');
 app.use('/bayi', odemeRoutes);
 ```
 
-- [ ] **Step 4: views/bayi/kredi-yukle.ejs oluştur**
+- [x] **Step 4: views/bayi/kredi-yukle.ejs oluştur**
 
 ```html
 <div class="panel-container">
@@ -595,7 +595,7 @@ app.use('/bayi', odemeRoutes);
 </div>
 ```
 
-- [ ] **Step 5: views/bayi/odeme-iframe.ejs oluştur**
+- [x] **Step 5: views/bayi/odeme-iframe.ejs oluştur**
 
 ```html
 <div class="panel-container">
@@ -609,7 +609,7 @@ app.use('/bayi', odemeRoutes);
 </div>
 ```
 
-- [ ] **Step 6: Manuel test — kredi paketleri sayfası**
+- [x] **Step 6: Manuel test — kredi paketleri sayfası**
 
 ```bash
 npm run dev
@@ -617,7 +617,7 @@ npm run dev
 
 Bir bayi hesabıyla giriş yap, `/bayi/panel/kredi-yukle` sayfasını aç, 4 paketin (10/25/50/100 kredi) göründüğünü doğrula. `.env`'de `PAYTR_MERCHANT_ID` vb. tanımlı değilse "Satın Al" butonuna basınca PayTR API'sinden hata dönmesi beklenir (flash mesajıyla aynı sayfaya geri döner) — bu, kimlik bilgileri olmadan beklenen davranıştır; gerçek test için PayTR mağaza hesabı gerekir (bkz. plan başındaki Ön Koşul notu).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add routes/odeme.js views/bayi/kredi-yukle.ejs views/bayi/odeme-iframe.ejs app.js .env.example
@@ -633,7 +633,7 @@ git commit -m "feat: paytr ile kredi paketi satin alma akisi"
 - Create: `views/bayi/odeme-basarili.ejs`
 - Test: `tests/odeme.test.js`
 
-- [ ] **Step 1: Failing entegrasyon testlerini yaz**
+- [x] **Step 1: Failing entegrasyon testlerini yaz**
 
 `tests/odeme.test.js`:
 
@@ -724,12 +724,12 @@ describe('POST /bayi/odeme/paytr-callback', () => {
 
 **Not:** Bu testler `.env`'de `PAYTR_MERCHANT_SALT`/`PAYTR_MERCHANT_KEY` tanımlı değilse `'test-salt'`/`'test-key'` varsayılan değerlerini kullanır (route tarafında da aynı `process.env.PAYTR_MERCHANT_SALT`/`KEY` okunuyor, tanımlı değilse `undefined` olur ve `crypto.createHmac` bununla da çalışır ama tutarlı olması için test ortamında `.env`'e bu değerleri eklemeniz önerilir — gerçek PayTR hesabı olmasa bile rastgele bir test değeri yeterli).
 
-- [ ] **Step 2: Testlerin başarısız olduğunu doğrula**
+- [x] **Step 2: Testlerin başarısız olduğunu doğrula**
 
 Run: `npx jest tests/odeme.test.js`
 Expected: FAIL (`/bayi/odeme/paytr-callback` route'u henüz yok, 404 döner)
 
-- [ ] **Step 3: routes/odeme.js'e callback ve başarılı route'larını ekle**
+- [x] **Step 3: routes/odeme.js'e callback ve başarılı route'larını ekle**
 
 `routes/odeme.js` dosyasındaki `module.exports = { router, KREDI_PAKETLERI };` satırından HEMEN ÖNCE ekle:
 
@@ -803,7 +803,7 @@ router.get('/odeme/basarili', requireBayi, (req, res) => {
 
 ```
 
-- [ ] **Step 4: views/bayi/odeme-basarili.ejs oluştur**
+- [x] **Step 4: views/bayi/odeme-basarili.ejs oluştur**
 
 ```html
 <div class="panel-container">
@@ -815,17 +815,17 @@ router.get('/odeme/basarili', requireBayi, (req, res) => {
 </div>
 ```
 
-- [ ] **Step 5: Testleri çalıştır ve geçtiğini doğrula**
+- [x] **Step 5: Testleri çalıştır ve geçtiğini doğrula**
 
 Run: `npx jest tests/odeme.test.js`
 Expected: PASS (3 test)
 
-- [ ] **Step 6: Tüm testleri çalıştır**
+- [x] **Step 6: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add routes/odeme.js views/bayi/odeme-basarili.ejs tests/odeme.test.js
@@ -839,7 +839,7 @@ git commit -m "feat: paytr callback ile kredi onaylama (idempotent, transactiona
 **Files:**
 - Modify: `views/bayi/panel.ejs`
 
-- [ ] **Step 1: Stat kartlarına kredi bakiyesini ekle**
+- [x] **Step 1: Stat kartlarına kredi bakiyesini ekle**
 
 Mevcut:
 
@@ -873,7 +873,7 @@ Mevcut:
   </div>
 ```
 
-- [ ] **Step 2: Manuel test**
+- [x] **Step 2: Manuel test**
 
 ```bash
 npm run dev
@@ -881,12 +881,12 @@ npm run dev
 
 Bir bayi hesabıyla giriş yap, `/bayi/panel` sayfasında "Kalan Kredi" kartının ve "+ Kredi Yükle" butonunun göründüğünü doğrula.
 
-- [ ] **Step 3: Tüm testleri çalıştır**
+- [x] **Step 3: Tüm testleri çalıştır**
 
 Run: `npx jest`
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add views/bayi/panel.ejs
@@ -899,7 +899,7 @@ git commit -m "feat: bayi panelinde kredi bakiyesi gosterimi"
 
 **Files:** (yok — sadece doğrulama)
 
-- [ ] **Step 1: Tam akışı gözden geçir**
+- [x] **Step 1: Tam akışı gözden geçir**
 
 ```bash
 npm run dev
@@ -911,7 +911,7 @@ npm run dev
 4. Kredi 0'a inince "Krediniz kalmadı" mesajıyla `/bayi/panel/kredi-yukle`'ye yönlendirildiğini doğrula.
 5. PayTR mağaza hesabı varsa test modunda bir paket satın al, iframe'in açıldığını, test kartıyla ödeme sonrası kredi bakiyesinin arttığını doğrula. Hesap yoksa bu adımı atla, bir sonraki fazda gerçek hesap tanımlandığında tekrar doğrulanmalı.
 
-- [ ] **Step 2: Tüm test paketini son kez çalıştır**
+- [x] **Step 2: Tüm test paketini son kez çalıştır**
 
 Run: `npx jest`
 Expected: Tüm testler PASS
