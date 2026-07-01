@@ -8,7 +8,8 @@
     <div class="form-group"><label>Departman</label><input type="text" name="departman"></div>
     <div class="form-group"><label>Telefon</label><input type="tel" name="telefon"></div>
     <div class="form-group"><label>Email</label><input type="email" name="email"></div>
-    <div class="form-group"><label>Biyografi</label><textarea name="biyografi" rows="3" placeholder="Kısa tanıtım yazısı..."></textarea></div>
+    <div class="form-group"><label>Adres</label><input type="text" name="adres" id="adres-input" placeholder="Adres aramaya başlayın..." autocomplete="off"></div>
+    <div class="form-group"><label>Biyografi <small style="color:#888">(temel HTML desteklenir: &lt;b&gt;, &lt;i&gt;, &lt;a&gt;)</small></label><textarea name="biyografi" rows="3" placeholder="Kısa tanıtım yazısı..."></textarea></div>
     <div class="form-group"><label>Çalışılan İlaçlar <small style="color:#888">(virgülle ayır)</small></label><input type="text" name="ilaclar" placeholder="Cardura, Norvasc, Beloc"></div>
 
     <div class="form-section-title">Sosyal Medya & Linkler</div>
@@ -17,7 +18,23 @@
     <div class="form-group"><label>Twitter / X URL</label><input type="url" name="twitter" placeholder="https://x.com/..."></div>
     <div class="form-group"><label>YouTube URL</label><input type="url" name="youtube" placeholder="https://youtube.com/@..."></div>
     <div class="form-group"><label>Web Sitesi</label><input type="url" name="website" placeholder="https://..."></div>
+    <div class="form-group"><label>WhatsApp Numarası</label><input type="tel" name="whatsapp" placeholder="+905001112233"></div>
+    <div class="form-group"><label>TikTok URL</label><input type="url" name="tiktok" placeholder="https://tiktok.com/@..."></div>
+    <div class="form-group"><label>Sahibinden İlan URL</label><input type="url" name="sahibinden" placeholder="https://sahibinden.com/..."></div>
+    <div class="form-group"><label>Hürriyet Emlak İlan URL</label><input type="url" name="hurriyet_emlak" placeholder="https://hurriyetemlak.com/..."></div>
+    <div class="form-group"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link" placeholder="https://g.page/r/.../review"></div>
 
     <button type="submit" class="btn">Ekle</button>
   </form>
 </div>
+
+<% if (process.env.GOOGLE_MAPS_API_KEY) { %>
+<script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
+<script>
+  function adresAutocompleteBaslat() {
+    const input = document.getElementById('adres-input');
+    if (!input || !window.google) return;
+    new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
+  }
+</script>
+<% } %>
