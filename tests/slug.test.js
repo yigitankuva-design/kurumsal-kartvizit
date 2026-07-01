@@ -1,4 +1,6 @@
-const { normalizeSlug, firmaSlugOlustur, calisanSlugTabanOlustur } = require('../utils/slug');
+require('dotenv').config();
+const { pool } = require('../db');
+const { normalizeSlug, firmaSlugOlustur, calisanSlugTabanOlustur, benzersizCalisanSlugOlustur } = require('../utils/slug');
 
 describe('normalizeSlug', () => {
   test('Türkçe karakterleri normalize eder', () => {
@@ -30,5 +32,46 @@ describe('calisanSlugTabanOlustur', () => {
 
   test('Türkçe karakterli ad-soyad normalize edilir', () => {
     expect(calisanSlugTabanOlustur('Ömer', 'Çağlar')).toBe('omer-caglar');
+  });
+});
+
+describe('benzersizCalisanSlugOlustur', () => {
+  let firmaId;
+
+  beforeAll(async () => {
+    const sonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash)
+       VALUES ('Test Firma Slug Kontrol', 'test-firma-slug-kontrol', 'test-slug-kontrol@test.com', 'x')
+       RETURNING id`
+    );
+    firmaId = sonuc.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+    await pool.end();
+  });
+
+  test('çakışma yoksa taban slug döner', async () => {
+    const slug = await benzersizCalisanSlugOlustur(firmaId, 'Ali', 'Yilmaz');
+    expect(slug).toBe('ali-yilmaz');
+  });
+
+  test('çakışma varsa -2 eklenir', async () => {
+    await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Ali', 'Yilmaz', 'ali-yilmaz')`,
+      [firmaId]
+    );
+    const slug = await benzersizCalisanSlugOlustur(firmaId, 'Ali', 'Yilmaz');
+    expect(slug).toBe('ali-yilmaz-2');
+  });
+
+  test('art arda iki çakışma varsa -3 eklenir', async () => {
+    await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Ali', 'Yilmaz', 'ali-yilmaz-2')`,
+      [firmaId]
+    );
+    const slug = await benzersizCalisanSlugOlustur(firmaId, 'Ali', 'Yilmaz');
+    expect(slug).toBe('ali-yilmaz-3');
   });
 });
