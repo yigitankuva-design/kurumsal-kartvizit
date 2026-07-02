@@ -3,19 +3,18 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { requireBayi } = require('../middleware/authMiddleware');
-const { firmaSlugOlustur, benzersizCalisanSlugOlustur } = require('../utils/slug');
+const { benzersizCalisanSlugOlustur } = require('../utils/slug');
 const { uploadMiddleware } = require('../middleware/upload');
 const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimiter');
 const { biyografiTemizle } = require('../utils/sanitize');
+const {
+  profilOlustur,
+  GecersizProfilHatasi,
+  AbonelikSuresiDolmusHatasi,
+} = require('../services/musteriService');
 
 const fotoUpload = uploadMiddleware('calisanlar');
 const bayiGirisLimiter = createLoginLimiter('/bayi/giris');
-
-function adSoyadAyir(adSoyad) {
-  const parcalar = adSoyad.trim().split(/\s+/);
-  if (parcalar.length === 1) return { ad: parcalar[0], soyad: '' };
-  return { ad: parcalar.slice(0, -1).join(' '), soyad: parcalar[parcalar.length - 1] };
-}
 
 // fotoUpload.single() bir dizi middleware döner (multer + sharp işleme) — hata
 // olursa çökmek yerine flash mesajıyla forma geri döner.
@@ -87,87 +86,18 @@ router.get('/panel', requireBayi, (req, res) => res.redirect('/'));
 router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
   fotoUploadGuvenli(() => '/'),
   async (req, res) => {
-  const {
-    isletme_adi, sektor, marka_rengi,
-    ad_soyad, unvan, departman, telefon, email, adres, biyografi,
-    linkedin, instagram, twitter, youtube, website, whatsapp, tiktok,
-    sahibinden, hurriyet_emlak, google_yorum_link, kvkk,
-  } = req.body;
-
-  if (!ad_soyad || !ad_soyad.trim()) {
-    req.flash('error', 'Ad soyad zorunlu.');
-    return res.redirect('/');
-  }
-  if (!kvkk) {
-    req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
-    return res.redirect('/');
-  }
-  const { ad, soyad } = adSoyadAyir(ad_soyad);
-  if (!soyad) {
-    req.flash('error', 'Lütfen ad ve soyadı birlikte yazın.');
-    return res.redirect('/');
-  }
-
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-
-    const bayiSonuc = await client.query(
-      'SELECT abonelik_bitis_tarihi FROM bayiler WHERE id = $1 FOR UPDATE',
-      [req.session.bayiId]
-    );
-    if (!bayiSonuc.rows.length) {
-      await client.query('ROLLBACK');
-      return res.redirect('/');
-    }
-    const bitisTarihi = bayiSonuc.rows[0].abonelik_bitis_tarihi;
-    if (bitisTarihi && new Date(bitisTarihi) < new Date()) {
-      await client.query('ROLLBACK');
-      req.flash('error', 'Aboneliğinizin süresi dolmuş. Lütfen bizimle iletişime geçin.');
-      return res.redirect('/');
-    }
-
-    const firmaAd = (isletme_adi && isletme_adi.trim()) || `${ad} ${soyad}`;
-    let slug = firmaSlugOlustur(firmaAd);
-    const check = await client.query('SELECT id FROM firmalar WHERE slug = $1', [slug]);
-    if (check.rows.length) slug = `${slug}-${Date.now()}`;
-
-    // Firma girişi olmayacak — dummy email/sifre
-    const dummyEmail = `${slug}-${Date.now()}@bayi.local`;
-    const dummyHash = await bcrypt.hash(Math.random().toString(36), 8);
-
-    const firmaSonuc = await client.query(
-      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, sektor, marka_rengi, bayi_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [firmaAd, slug, dummyEmail, dummyHash, sektor || 'diger', marka_rengi || '#1a73e8', req.session.bayiId]
-    );
-    const firmaId = firmaSonuc.rows[0].id;
-
-    const calisanSlug = await benzersizCalisanSlugOlustur(firmaId, ad, soyad);
-    const fotoUrl = req.file?.location || null;
-    const biyografiTemiz = biyografiTemizle(biyografi);
-
-    await client.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, adres,
-        linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden,
-        hurriyet_emlak, google_yorum_link, biyografi, foto_url, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
-      [firmaId, ad, soyad, unvan || null, departman || null, telefon || null, email || null, adres || null,
-       linkedin || null, instagram || null, twitter || null, youtube || null, website || null,
-       whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null, google_yorum_link || null,
-       biyografiTemiz, fotoUrl, calisanSlug]
-    );
-
-    await client.query('COMMIT');
-    req.flash('success', `${ad} ${soyad} eklendi.`);
-    res.redirect(`/?firma=${firmaId}`);
+    const sonuc = await profilOlustur(req.session.bayiId, req.body, req.file?.location || null);
+    req.flash('success', `${sonuc.ad} ${sonuc.soyad} eklendi.`);
+    res.redirect(`/?firma=${sonuc.firmaId}`);
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (err instanceof GecersizProfilHatasi || err instanceof AbonelikSuresiDolmusHatasi) {
+      req.flash('error', err.message);
+      return res.redirect('/');
+    }
     console.error(err);
     req.flash('error', 'Eklenemedi.');
     res.redirect('/');
-  } finally {
-    client.release();
   }
 });
 
