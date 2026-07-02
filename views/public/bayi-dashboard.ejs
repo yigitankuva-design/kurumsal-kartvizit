@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFCKartify — <%= bayi.ad %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #1c1c20;
+      --bg2: #222227;
+      --bg3: #28282e;
+      --bg4: #2e2e35;
+      --border: rgba(255,255,255,0.07);
+      --border-gold: rgba(200,168,75,0.3);
+      --gold: #c8a84b;
+      --gold-light: #e5c46a;
+      --gold-dim: rgba(200,168,75,0.1);
+      --text: #f1f0ee;
+      --text-muted: #888880;
+      --text-faint: #444440;
+      --danger: #ef4444;
+      --danger-dim: rgba(239,68,68,0.1);
+      --success: #22c55e;
+      --success-dim: rgba(34,197,94,0.1);
+      --fs-xs: 0.72rem;
+      --fs-sm: 0.8rem;
+      --fs-base: 0.875rem;
+      --fw-normal: 400;
+      --fw-medium: 500;
+      --fw-semibold: 600;
+      --fw-bold: 700;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+
+    .dash-nav {
+      position: sticky; top: 0; z-index: 50;
+      height: 52px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px;
+      background: rgba(13,13,15,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo { font-size: var(--fs-base); font-weight: var(--fw-bold); color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
+    .nav-logo em { font-style: normal; color: var(--gold); }
+    .nav-center { font-size: var(--fs-sm); color: var(--text-muted); font-weight: var(--fw-medium); }
+    .nav-right { display: flex; align-items: center; gap: 8px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 6px; font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; border: none; font-family: inherit; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+    .btn-ghost { background: transparent; color: var(--text-muted); }
+    .btn-ghost:hover { background: var(--bg3); color: var(--text); }
+    .btn-gold { background: var(--gold); color: #000; font-weight: var(--fw-semibold); box-shadow: 0 0 16px rgba(200,168,75,0.2); }
+    .btn-gold:hover { background: var(--gold-light); }
+    .btn-border { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+    .btn-border:hover { border-color: var(--border-gold); color: var(--text); }
+    .btn-danger-sm { background: var(--danger-dim); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+    .btn-danger-sm:hover { background: rgba(239,68,68,0.18); }
+    .btn-sm { height: 28px; padding: 0 10px; font-size: var(--fs-xs); }
+
+    .flash-bar { padding: 10px 24px; font-size: var(--fs-sm); font-weight: var(--fw-medium); display: flex; align-items: center; gap: 8px; }
+    .flash-success { background: var(--success-dim); color: var(--success); border-bottom: 1px solid rgba(34,197,94,0.15); }
+    .flash-error { background: var(--danger-dim); color: var(--danger); border-bottom: 1px solid rgba(239,68,68,0.15); }
+
+    .dash-main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 64px; }
+
+    .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; gap: 12px; flex-wrap: wrap; }
+    .dash-title { font-size: 1.125rem; font-weight: var(--fw-bold); color: var(--text); letter-spacing: -0.02em; }
+    .dash-subtitle { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
+
+    .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+    .stat-card-n { font-size: 1.5rem; font-weight: var(--fw-bold); color: var(--gold); letter-spacing: -0.04em; }
+    .stat-card-l { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
+
+    .table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    thead th { padding: 10px 16px; text-align: left; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text-faint); background: var(--bg2); border-bottom: 1px solid var(--border); }
+    tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg2); }
+    tbody td { padding: 12px 16px; font-size: var(--fs-sm); vertical-align: middle; }
+    .td-name { font-weight: var(--fw-semibold); color: var(--text); }
+    .td-sub { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 1px; }
+    .td-url a { font-size: var(--fs-xs); color: var(--text-faint); text-decoration: none; font-family: monospace; }
+    .td-url a:hover { color: var(--gold); }
+    .td-actions { display: flex; gap: 6px; align-items: center; }
+
+    .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 100px; font-size: 0.65rem; font-weight: var(--fw-semibold); letter-spacing: 0.03em; text-transform: uppercase; }
+    .badge-aktif { background: var(--success-dim); color: var(--success); }
+    .badge-pasif { background: var(--bg3); color: var(--text-faint); }
+
+    .empty-state { text-align: center; padding: 48px 24px; }
+    .empty-state-icon { font-size: 2rem; margin-bottom: 12px; }
+    .empty-state-title { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-muted); margin-bottom: 6px; }
+    .empty-state-sub { font-size: var(--fs-xs); color: var(--text-faint); margin-bottom: 16px; }
+
+    .panel-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .panel-overlay.open { opacity: 1; pointer-events: all; }
+    .slide-panel { position: fixed; top: 0; right: 0; bottom: 0; z-index: 201; width: 440px; max-width: 100vw; background: var(--bg2); border-left: 1px solid var(--border); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16,1,0.3,1); overflow: hidden; }
+    .panel-overlay.open .slide-panel { transform: translateX(0); }
+    .slide-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .slide-title { font-size: var(--fs-base); font-weight: var(--fw-semibold); color: var(--text); }
+    .slide-close { width: 28px; height: 28px; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+    .slide-close:hover { background: var(--border); color: var(--text); }
+    .slide-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .slide-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .field { display: flex; flex-direction: column; gap: 5px; }
+    .field label { font-size: var(--fs-xs); color: var(--text-muted); }
+    .field input, .field textarea, .field select { background: var(--bg3); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 8px 12px; font-size: var(--fs-sm); font-family: inherit; transition: border-color 0.15s, box-shadow 0.15s; outline: none; }
+    .field input:focus, .field textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,168,75,0.1); }
+    .field input::placeholder, .field textarea::placeholder { color: var(--text-faint); }
+    .field textarea { resize: vertical; min-height: 72px; }
+    .field-full { grid-column: 1 / -1; }
+    .field-sep { grid-column: 1 / -1; border: none; border-top: 1px solid var(--border); margin: 4px 0; }
+    .field-section { grid-column: 1 / -1; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 4px; }
+
+    .btn-submit { flex: 1; height: 40px; background: var(--gold); border: none; border-radius: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: #000; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .btn-submit:hover { background: var(--gold-light); }
+    .btn-cancel { height: 40px; padding: 0 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: var(--fs-sm); color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .btn-cancel:hover { border-color: var(--border-gold); color: var(--text); }
+
+    @media (max-width: 640px) {
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .slide-panel { width: 100vw; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="dash-nav">
+  <a href="/" class="nav-logo">NFC<em>Kartify</em></a>
+  <span class="nav-center"><%= bayi.ad %></span>
+  <div class="nav-right">
+    <form method="POST" action="/bayi/cikis" style="margin:0">
+      <button type="submit" class="btn btn-ghost">Çıkış</button>
+    </form>
+  </div>
+</nav>
+
+<!-- FLASH -->
+<% if (success && success.length) { %>
+  <div class="flash-bar flash-success">✓ <%= success[0] %></div>
+<% } %>
+<% if (error && error.length) { %>
+  <div class="flash-bar flash-error">✕ <%= error[0] %></div>
+<% } %>
+
+<div class="dash-main">
+
+<% if (view === 'musteriler') { %>
+
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">Hoş geldiniz</div>
+      <div class="dash-subtitle"><%= bayi.email %></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="/bayi/panel/kredi-yukle" class="btn btn-border">+ Kredi Yükle</a>
+      <button class="btn btn-gold" onclick="openMusteriSlide()">+ Müşteri Ekle</button>
+    </div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-card-n"><%= firmalar.length %></div>
+      <div class="stat-card-l">Müşteri</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-n"><%= firmalar.reduce((s,f)=>s+parseInt(f.calisan_sayisi||0),0) %></div>
+      <div class="stat-card-l">Toplam Kart</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-n"><%= bayi.kredi_bakiyesi %></div>
+      <div class="stat-card-l">Kalan Kredi</div>
+    </div>
+  </div>
+
+  <% if (firmalar.length) { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Müşteri</th><th>Sektör</th><th>Kart Sayısı</th><th>İşlem</th></tr></thead>
+      <tbody>
+        <% firmalar.forEach(f => { %>
+        <tr>
+          <td><div class="td-name"><%= f.ad %></div></td>
+          <td><div class="td-sub"><%= f.sektor %></div></td>
+          <td><%= f.calisan_sayisi %></td>
+          <td>
+            <div class="td-actions">
+              <a href="/?firma=<%= f.id %>" class="btn btn-border btn-sm">Kartlar</a>
+              <form method="POST" action="/bayi/panel/firma-sil/<%= f.id %>" style="margin:0"
+                    onsubmit="return confirm('<%= f.ad %> ve tüm kartları silinecek. Emin misin?')">
+                <button type="submit" class="btn btn-danger-sm btn-sm">Sil</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } else { %>
+  <div class="table-wrap">
+    <div class="empty-state">
+      <div class="empty-state-icon">🏢</div>
+      <div class="empty-state-title">Henüz müşteri yok</div>
+      <div class="empty-state-sub">İlk müşterini ekleyerek başla</div>
+      <button class="btn btn-gold" onclick="openMusteriSlide()">+ Müşteri Ekle</button>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- SLIDE: YENİ MÜŞTERİ -->
+  <div class="panel-overlay" id="musteriOverlay">
+    <div class="slide-panel">
+      <div class="slide-header">
+        <span class="slide-title">Yeni Müşteri</span>
+        <button class="slide-close" onclick="closeMusteriSlide()">✕</button>
+      </div>
+      <div class="slide-body">
+        <form id="musteriForm" method="POST" action="/bayi/panel/firma-ekle">
+          <div class="form-row">
+            <div class="field field-full">
+              <label>Müşteri / Firma Adı *</label>
+              <input type="text" name="ad" placeholder="Örn: Ahmet Demir" required>
+            </div>
+            <div class="field">
+              <label>Sektör</label>
+              <select name="sektor">
+                <option value="diger">Diğer</option>
+                <option value="teknoloji">Teknoloji</option>
+                <option value="saglik">Sağlık</option>
+                <option value="finans">Finans</option>
+                <option value="egitim">Eğitim</option>
+                <option value="insaat">İnşaat</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Kart Rengi</label>
+              <input type="color" name="marka_rengi" value="#1a73e8" style="height:36px;padding:2px">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="slide-footer">
+        <button class="btn-cancel" onclick="closeMusteriSlide()">İptal</button>
+        <button class="btn-submit" onclick="document.getElementById('musteriForm').submit()">Oluştur</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    function openMusteriSlide(){document.getElementById('musteriOverlay').classList.add('open');document.body.style.overflow='hidden';}
+    function closeMusteriSlide(){document.getElementById('musteriOverlay').classList.remove('open');document.body.style.overflow='';}
+  </script>
+
+<% } else if (view === 'calisanlar') { %>
+
+  <div class="dash-header">
+    <div>
+      <a href="/" class="btn-ghost" style="display:inline-flex;margin-bottom:6px">← Müşteriler</a>
+      <div class="dash-title"><%= firma.ad %></div>
+    </div>
+    <button class="btn btn-gold" onclick="openKartSlide()">+ Yeni Kart</button>
+  </div>
+
+  <div class="stat-row" style="grid-template-columns:repeat(2,1fr)">
+    <div class="stat-card">
+      <div class="stat-card-n"><%= aktifSayisi %></div>
+      <div class="stat-card-l">Aktif</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-n"><%= pasifSayisi %></div>
+      <div class="stat-card-l">Pasif</div>
+    </div>
+  </div>
+
+  <% if (calisanlar.length) { %>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ad Soyad</th><th>Unvan / Departman</th><th>Profil URL</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <tbody>
+        <% calisanlar.forEach(c => { %>
+        <tr>
+          <td><div class="td-name"><%= c.ad %> <%= c.soyad %></div></td>
+          <td>
+            <div style="font-size:var(--fs-xs);color:var(--text-muted)"><%= c.unvan || '—' %></div>
+            <div class="td-sub"><%= c.departman || '' %></div>
+          </td>
+          <td class="td-url">
+            <a href="/bayi/<%= bayi.slug %>/<%= firma.slug %>/<%= c.slug %>" target="_blank">/bayi/<%= bayi.slug %>/<%= firma.slug %>/<%= c.slug %></a>
+          </td>
+          <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
+          <td>
+            <div class="td-actions">
+              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+              <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="margin:0">
+                <input type="hidden" name="durum" value="<%= c.durum === 'aktif' ? 'pasif' : 'aktif' %>">
+                <button type="submit" class="btn btn-danger-sm btn-sm"><%= c.durum === 'aktif' ? 'Pasife Al' : 'Aktif Et' %></button>
+              </form>
+              <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/sil" style="margin:0"
+                    onsubmit="return confirm('<%= c.ad %> <%= c.soyad %> silinecek. Emin misin?')">
+                <button type="submit" class="btn btn-danger-sm btn-sm">Sil</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+  <% } else { %>
+  <div class="table-wrap">
+    <div class="empty-state">
+      <div class="empty-state-icon">👤</div>
+      <div class="empty-state-title">Henüz kart yok</div>
+      <div class="empty-state-sub">İlk kartı ekleyerek başla</div>
+      <button class="btn btn-gold" onclick="openKartSlide()">+ Yeni Kart</button>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- SLIDE: YENİ / DÜZENLE KART -->
+  <div class="panel-overlay" id="kartOverlay">
+    <div class="slide-panel">
+      <div class="slide-header">
+        <span class="slide-title" id="kartSlideTitle">Yeni Kart</span>
+        <button class="slide-close" onclick="closeKartSlide()">✕</button>
+      </div>
+      <div class="slide-body">
+        <form id="kartForm" method="POST" action="/bayi/panel/<%= firma.id %>/calisan-ekle" enctype="multipart/form-data">
+          <input type="hidden" id="kartFormMethod" name="_method" value="">
+          <div class="form-row">
+            <div class="field"><label>Ad *</label><input type="text" name="ad" id="k_ad" required></div>
+            <div class="field"><label>Soyad *</label><input type="text" name="soyad" id="k_soyad" required></div>
+            <div class="field"><label>Unvan</label><input type="text" name="unvan" id="k_unvan" placeholder="Örn: Satış Müdürü"></div>
+            <div class="field"><label>Departman</label><input type="text" name="departman" id="k_departman"></div>
+            <div class="field"><label>Telefon</label><input type="tel" name="telefon" id="k_telefon" placeholder="+905001112233"></div>
+            <div class="field"><label>E-posta</label><input type="email" name="email" id="k_email"></div>
+            <div class="field field-full"><label>Adres</label><input type="text" name="adres" id="k_adres" placeholder="Adres aramaya başlayın..." autocomplete="off"></div>
+
+            <hr class="field-sep">
+            <div class="field-section">Sosyal Medya</div>
+            <div class="field"><label>LinkedIn URL</label><input type="url" name="linkedin" id="k_linkedin"></div>
+            <div class="field"><label>Instagram URL</label><input type="url" name="instagram" id="k_instagram"></div>
+            <div class="field"><label>Twitter / X URL</label><input type="url" name="twitter" id="k_twitter"></div>
+            <div class="field"><label>YouTube URL</label><input type="url" name="youtube" id="k_youtube"></div>
+            <div class="field"><label>Web Sitesi</label><input type="url" name="website" id="k_website"></div>
+            <div class="field"><label>WhatsApp</label><input type="tel" name="whatsapp" id="k_whatsapp" placeholder="+905001112233"></div>
+            <div class="field"><label>TikTok URL</label><input type="url" name="tiktok" id="k_tiktok"></div>
+            <div class="field"><label>Sahibinden URL</label><input type="url" name="sahibinden" id="k_sahibinden"></div>
+            <div class="field"><label>Hürriyet Emlak URL</label><input type="url" name="hurriyet_emlak" id="k_hurriyet_emlak"></div>
+            <div class="field"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link" id="k_google_yorum_link"></div>
+
+            <hr class="field-sep">
+            <div class="field field-full"><label>Biyografi</label><textarea name="biyografi" id="k_biyografi"></textarea></div>
+
+            <div id="kartCreateOnly" class="field-full" style="display:contents">
+              <hr class="field-sep">
+              <div class="field field-full"><label>Fotoğraf</label><input type="file" name="foto" id="k_foto" accept="image/jpeg,image/png,image/webp"></div>
+              <div class="field field-full" style="flex-direction:row;gap:8px;align-items:flex-start">
+                <input type="checkbox" name="kvkk" id="k_kvkk" style="margin-top:3px">
+                <label style="font-weight:400" for="k_kvkk">Bu kişinin verilerinin (ad, telefon, e-posta, fotoğraf) dijital kartvizit oluşturulması amacıyla işlenmesi için onayı alınmıştır.</label>
+              </div>
+            </div>
+            <div id="kartEditFotoWrap" class="field field-full" style="display:none">
+              <label>Fotoğraf</label>
+              <input type="file" name="foto" id="k_foto_edit" accept="image/jpeg,image/png,image/webp">
+              <small style="color:var(--text-faint)">Yeni seçmezsen mevcut kalır.</small>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="slide-footer">
+        <button class="btn-cancel" onclick="closeKartSlide()">İptal</button>
+        <button class="btn-submit" onclick="submitKart()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const firmaId = <%- JSON.stringify(firma.id) %>;
+
+    function openKartSlide(){
+      document.getElementById('kartSlideTitle').textContent = 'Yeni Kart';
+      document.getElementById('kartForm').action = `/bayi/panel/${firmaId}/calisan-ekle`;
+      document.getElementById('kartFormMethod').value = '';
+      document.getElementById('kartCreateOnly').style.display = 'contents';
+      document.getElementById('kartEditFotoWrap').style.display = 'none';
+      document.getElementById('k_kvkk').required = true;
+      clearKartForm();
+      document.getElementById('kartOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function openKartSlideEdit(c){
+      document.getElementById('kartSlideTitle').textContent = 'Kart Düzenle';
+      document.getElementById('kartForm').action = `/bayi/panel/${firmaId}/calisan/${c.id}/duzenle`;
+      document.getElementById('kartFormMethod').value = 'PUT';
+      document.getElementById('kartCreateOnly').style.display = 'none';
+      document.getElementById('kartEditFotoWrap').style.display = 'flex';
+      document.getElementById('k_kvkk').required = false;
+      fillKartForm(c);
+      document.getElementById('kartOverlay').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeKartSlide(){
+      document.getElementById('kartOverlay').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    function submitKart(){ document.getElementById('kartForm').submit(); }
+
+    const kartAlanlari = ['ad','soyad','unvan','departman','telefon','email','adres','linkedin','instagram','twitter','youtube','website','whatsapp','tiktok','sahibinden','hurriyet_emlak','google_yorum_link','biyografi'];
+    function clearKartForm(){
+      kartAlanlari.forEach(f => { const el = document.getElementById('k_'+f); if (el) el.value = ''; });
+      document.getElementById('k_foto').value = '';
+      document.getElementById('k_kvkk').checked = false;
+    }
+    function fillKartForm(c){
+      kartAlanlari.forEach(f => { const el = document.getElementById('k_'+f); if (el) el.value = c[f] || ''; });
+    }
+  </script>
+
+<% } %>
+
+</div><!-- /dash-main -->
+
+<% if (process.env.GOOGLE_MAPS_API_KEY) { %>
+<script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
+<script>
+  function adresAutocompleteBaslat() {
+    const input = document.getElementById('k_adres');
+    if (!input || !window.google) return;
+    new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
+  }
+</script>
+<% } %>
+</body>
+</html>

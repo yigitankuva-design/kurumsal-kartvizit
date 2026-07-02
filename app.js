@@ -7,6 +7,7 @@ const methodOverride = require('method-override');
 const ejsLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 const path = require('path');
+const bcrypt = require('bcrypt');
 const { pool } = require('./db');
 
 const authRoutes = require('./routes/auth');
@@ -16,6 +17,7 @@ const bayiRoutes = require('./routes/bayi');
 const { router: odemeRoutes } = require('./routes/odeme');
 const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
+const { createLoginLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -61,7 +63,57 @@ app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
 app.use('/bayi', odemeRoutes);
 
-// Ana sayfa: giriş yapılmışsa dashboard (firma ya da süperadmin), yoksa landing
+// Tek giriş noktası: firma, bayi veya süperadmin — hangisi eşleşirse ona giriş yapılır
+const girisLimiter = createLoginLimiter('/');
+app.post('/giris', girisLimiter, async (req, res) => {
+  const { giris_bilgisi, sifre } = req.body;
+  if (!giris_bilgisi || !sifre) {
+    req.flash('error', 'E-posta/kullanıcı adı ve şifre gerekli.');
+    return res.redirect('/');
+  }
+  try {
+    const suKullaniciAdi = (process.env.SUPERADMIN_USERNAME || '').trim();
+    const suSifre = (process.env.SUPERADMIN_PASSWORD || '').trim();
+    if (giris_bilgisi.trim() === suKullaniciAdi && sifre.trim() === suSifre) {
+      req.session.superadmin = true;
+      return res.redirect('/');
+    }
+
+    const firmaSonuc = await pool.query(
+      'SELECT * FROM firmalar WHERE yetkili_email = $1 OR kullanici_adi = $1',
+      [giris_bilgisi]
+    );
+    if (firmaSonuc.rows.length) {
+      const firma = firmaSonuc.rows[0];
+      if (await bcrypt.compare(sifre, firma.yetkili_sifre_hash)) {
+        req.session.firmaId = firma.id;
+        return res.redirect('/');
+      }
+    }
+
+    const bayiSonuc = await pool.query(
+      'SELECT * FROM bayiler WHERE (email = $1 OR kullanici_adi = $1) AND aktif = true',
+      [giris_bilgisi]
+    );
+    if (bayiSonuc.rows.length) {
+      const bayi = bayiSonuc.rows[0];
+      if (await bcrypt.compare(sifre, bayi.sifre_hash)) {
+        req.session.bayiId = bayi.id;
+        req.session.bayiAd = bayi.ad;
+        return res.redirect('/');
+      }
+    }
+
+    req.flash('error', 'E-posta/kullanıcı adı veya şifre hatalı.');
+    res.redirect('/');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Bir hata oluştu.');
+    res.redirect('/');
+  }
+});
+
+// Ana sayfa: giriş yapılmışsa dashboard (firma, bayi ya da süperadmin), yoksa landing
 app.get('/', async (req, res) => {
   if (req.session.superadmin) {
     try {
@@ -76,6 +128,50 @@ app.get('/', async (req, res) => {
       const tab = req.query.tab || 'firmalar';
       return res.render('public/admin-dashboard', {
         layout: false, firmalar: firmalarResult.rows, bayiler: bayilerResult.rows, tab
+      });
+    } catch (err) {
+      console.error(err);
+      return res.render('public/landing', { layout: false, error: ['Bir hata oluştu.'], success: [] });
+    }
+  }
+
+  if (req.session.bayiId) {
+    try {
+      const bayiResult = await pool.query('SELECT * FROM bayiler WHERE id = $1', [req.session.bayiId]);
+      if (!bayiResult.rows.length) {
+        req.session.destroy(() => {});
+        return res.render('public/landing', { layout: false, error: ['Oturum sona erdi.'], success: [] });
+      }
+      const bayi = bayiResult.rows[0];
+      const firmaId = req.query.firma;
+
+      if (firmaId) {
+        const firmaResult = await pool.query(
+          'SELECT * FROM firmalar WHERE id = $1 AND bayi_id = $2',
+          [firmaId, bayi.id]
+        );
+        if (!firmaResult.rows.length) return res.redirect('/');
+        const firma = firmaResult.rows[0];
+        const calisanlarResult = await pool.query(
+          'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
+          [firmaId]
+        );
+        const calisanlar = calisanlarResult.rows;
+        return res.render('public/bayi-dashboard', {
+          layout: false, view: 'calisanlar', bayi, firma, calisanlar,
+          aktifSayisi: calisanlar.filter(c => c.durum === 'aktif').length,
+          pasifSayisi: calisanlar.filter(c => c.durum === 'pasif').length,
+        });
+      }
+
+      const firmalarResult = await pool.query(
+        `SELECT f.*, COUNT(c.id) as calisan_sayisi
+         FROM firmalar f LEFT JOIN calisanlar c ON c.firma_id = f.id
+         WHERE f.bayi_id = $1 GROUP BY f.id ORDER BY f.created_at DESC`,
+        [bayi.id]
+      );
+      return res.render('public/bayi-dashboard', {
+        layout: false, view: 'musteriler', bayi, firmalar: firmalarResult.rows
       });
     } catch (err) {
       console.error(err);

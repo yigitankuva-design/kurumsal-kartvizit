@@ -656,8 +656,6 @@
   <a href="/" class="footer-logo">NFC<em>Kartify</em></a>
   <div class="footer-links">
     <button onclick="openModal('kayit')">Kayıt</button>
-    <button onclick="openModal('bayi')">Bayi</button>
-    <button onclick="openModal('yonetici')">Yönetici</button>
     <a href="mailto:info@nfckartify.com">İletişim</a>
   </div>
   <div class="footer-copy">© 2026 NFCKartify</div>
@@ -672,13 +670,11 @@
     <div class="modal-tabs">
       <button class="modal-tab" id="tabGiris" onclick="switchTab('giris')">Giriş Yap</button>
       <button class="modal-tab" id="tabKayit" onclick="switchTab('kayit')">Hesap Oluştur</button>
-      <button class="modal-tab" id="tabBayi" onclick="switchTab('bayi')">Bayi</button>
-      <button class="modal-tab" id="tabYonetici" onclick="switchTab('yonetici')">Yönetici</button>
     </div>
     <% if (typeof error !== 'undefined' && error && error.length) { %>
       <div class="modal-flash-error" style="margin-bottom:12px"><%= error[0] %></div>
     <% } %>
-    <form class="modal-form" id="formGiris" method="POST" action="/firma/giris">
+    <form class="modal-form" id="formGiris" method="POST" action="/giris">
       <div><label>E-posta veya Kullanıcı Adı</label><input type="text" name="giris_bilgisi" placeholder="firma@ornek.com veya kullanıcı adı" required autocomplete="username"></div>
       <div><label>Şifre</label><input type="password" name="sifre" placeholder="••••••••" required autocomplete="current-password"></div>
       <button type="submit" class="modal-submit">Giriş Yap →</button>
@@ -693,16 +689,6 @@
       <button type="submit" class="modal-submit">Hesap Oluştur →</button>
       <div class="modal-divider"><span>veya</span></div>
       <button type="button" class="btn-outline-hero" style="width:100%;height:38px;justify-content:center;" onclick="switchTab('giris')">Zaten hesabım var</button>
-    </form>
-    <form class="modal-form" id="formYonetici" method="POST" action="/superadmin/giris" style="display:none">
-      <div><label>Kullanıcı Adı</label><input type="text" name="kullanici_adi" placeholder="Kullanıcı adı" required autocomplete="username"></div>
-      <div><label>Şifre</label><input type="password" name="sifre" placeholder="••••••••" required autocomplete="current-password"></div>
-      <button type="submit" class="modal-submit">Giriş Yap →</button>
-    </form>
-    <form class="modal-form" id="formBayi" method="POST" action="/bayi/giris" style="display:none">
-      <div><label>E-posta veya Kullanıcı Adı</label><input type="text" name="giris_bilgisi" placeholder="bayi@ornek.com veya kullanıcı adı" required autocomplete="username"></div>
-      <div><label>Şifre</label><input type="password" name="sifre" placeholder="••••••••" required autocomplete="current-password"></div>
-      <button type="submit" class="modal-submit">Giriş Yap →</button>
     </form>
   </div>
 </div>
@@ -765,17 +751,13 @@ function closeModal(){overlay.classList.remove('open');document.body.style.overf
 function switchTab(tab){
   document.getElementById('formGiris').style.display=tab==='giris'?'flex':'none';
   document.getElementById('formKayit').style.display=tab==='kayit'?'flex':'none';
-  document.getElementById('formBayi').style.display=tab==='bayi'?'flex':'none';
-  document.getElementById('formYonetici').style.display=tab==='yonetici'?'flex':'none';
   document.getElementById('tabGiris').classList.toggle('active',tab==='giris');
   document.getElementById('tabKayit').classList.toggle('active',tab==='kayit');
-  document.getElementById('tabBayi').classList.toggle('active',tab==='bayi');
-  document.getElementById('tabYonetici').classList.toggle('active',tab==='yonetici');
-  const basliklar={giris:'Hesabınıza giriş yapın',kayit:'Ücretsiz hesap oluşturun',bayi:'Bayi girişi',yonetici:'Yönetici girişi'};
+  const basliklar={giris:'Hesabınıza giriş yapın',kayit:'Ücretsiz hesap oluşturun'};
   document.getElementById('modalSub').textContent=basliklar[tab];
 }
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
-<% if(typeof error!=='undefined'&&error&&error.length){%>window.addEventListener('DOMContentLoaded',()=>openModal(<%- JSON.stringify(error[0] === 'Kullanıcı adı veya şifre hatalı.' ? 'yonetici' : 'giris') %>));<% } %>
+<% if(typeof error!=='undefined'&&error&&error.length){%>window.addEventListener('DOMContentLoaded',()=>openModal('giris'));<% } %>
 </script>
 </body>
 </html>

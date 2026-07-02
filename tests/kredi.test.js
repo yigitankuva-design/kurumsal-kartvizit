@@ -46,7 +46,7 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
 
     const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi Test Firma 2' });
     expect(res.statusCode).toBe(302);
-    expect(res.headers.location).toBe('/bayi/panel');
+    expect(res.headers.location).toBe('/');
 
     const bayiSonuc = await pool.query('SELECT kredi_bakiyesi FROM bayiler WHERE id = $1', [bayiId]);
     expect(bayiSonuc.rows[0].kredi_bakiyesi).toBe(2);

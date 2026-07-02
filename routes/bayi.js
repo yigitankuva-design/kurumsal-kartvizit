@@ -60,7 +60,7 @@ router.post('/giris', bayiGirisLimiter, async (req, res) => {
     }
     req.session.bayiId = bayi.id;
     req.session.bayiAd = bayi.ad;
-    res.redirect('/bayi/panel');
+    res.redirect('/');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
@@ -72,42 +72,17 @@ router.post('/cikis', (req, res) => {
   req.session.destroy(() => res.redirect('/'));
 });
 
-// ── PANEL — FİRMA LİSTESİ ────────────────────────────────────────────────────
+// ── PANEL — FİRMA LİSTESİ (artık '/' üzerinde) ───────────────────────────────
 
-router.get('/panel', requireBayi, async (req, res) => {
-  try {
-    const bayiResult = await pool.query('SELECT * FROM bayiler WHERE id = $1', [req.session.bayiId]);
-    const firmalarResult = await pool.query(
-      `SELECT f.*, COUNT(c.id) as calisan_sayisi
-       FROM firmalar f
-       LEFT JOIN calisanlar c ON c.firma_id = f.id
-       WHERE f.bayi_id = $1
-       GROUP BY f.id ORDER BY f.created_at DESC`,
-      [req.session.bayiId]
-    );
-    res.render('bayi/panel', {
-      title: 'Bayi Paneli',
-      bayi: bayiResult.rows[0],
-      firmalar: firmalarResult.rows
-    });
-  } catch (err) {
-    console.error(err);
-    req.flash('error', 'Bir hata oluştu.');
-    res.redirect('/');
-  }
-});
+router.get('/panel', requireBayi, (req, res) => res.redirect('/'));
 
 // ── FİRMA EKLE / SİL ─────────────────────────────────────────────────────────
-
-router.get('/panel/firma-ekle', requireBayi, (req, res) => {
-  res.render('bayi/firma-ekle', { title: 'Yeni Müşteri Ekle' });
-});
 
 router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res) => {
   const { ad, sektor, marka_rengi } = req.body;
   if (!ad) {
     req.flash('error', 'Müşteri adı zorunlu.');
-    return res.redirect('/bayi/panel/firma-ekle');
+    return res.redirect('/');
   }
   const client = await pool.connect();
   try {
@@ -147,12 +122,12 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res)
 
     await client.query('COMMIT');
     req.flash('success', `${ad} eklendi.`);
-    res.redirect('/bayi/panel');
+    res.redirect('/');
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);
     req.flash('error', 'Eklenemedi.');
-    res.redirect('/bayi/panel/firma-ekle');
+    res.redirect('/');
   } finally {
     client.release();
   }
@@ -166,63 +141,23 @@ router.post('/panel/firma-sil/:id', requireBayi, async (req, res) => {
     console.error(err);
     req.flash('error', 'Silinemedi.');
   }
-  res.redirect('/bayi/panel');
+  res.redirect('/');
 });
 
-// ── ÇALIŞAN LİSTESİ ──────────────────────────────────────────────────────────
-
-router.get('/panel/:firmaId/calisanlar', requireBayi, async (req, res) => {
-  try {
-    const firmaResult = await pool.query(
-      `SELECT f.*, b.slug as bayi_slug FROM firmalar f
-       JOIN bayiler b ON b.id = f.bayi_id
-       WHERE f.id = $1 AND f.bayi_id = $2`,
-      [req.params.firmaId, req.session.bayiId]
-    );
-    if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
-
-    const calisanlarResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
-      [req.params.firmaId]
-    );
-    const firma = firmaResult.rows[0];
-    const calisanlar = calisanlarResult.rows;
-
-    res.render('bayi/calisanlar', {
-      title: `${firma.ad} — Çalışanlar`,
-      firma,
-      calisanlar,
-      aktifSayisi: calisanlar.filter(c => c.durum === 'aktif').length,
-      pasifSayisi: calisanlar.filter(c => c.durum === 'pasif').length
-    });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/bayi/panel');
-  }
-});
-
-// ── ÇALIŞAN EKLE ─────────────────────────────────────────────────────────────
-
-router.get('/panel/:firmaId/calisan-ekle', requireBayi, async (req, res) => {
-  const firmaResult = await pool.query(
-    'SELECT f.*, b.slug as bayi_slug FROM firmalar f JOIN bayiler b ON b.id = f.bayi_id WHERE f.id = $1 AND f.bayi_id = $2',
-    [req.params.firmaId, req.session.bayiId]
-  );
-  if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
-  res.render('bayi/calisan-ekle', { title: 'Yeni Çalışan', firma: firmaResult.rows[0] });
-});
+// ── ÇALIŞAN EKLE (artık '/' üzerindeki kayan panelden) ───────────────────────
 
 router.post('/panel/:firmaId/calisan-ekle', requireBayi,
-  fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan-ekle`),
+  fotoUploadGuvenli((req) => `/?firma=${req.params.firmaId}`),
   async (req, res) => {
   const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, kvkk } = req.body;
+  const geriDon = `/?firma=${req.params.firmaId}`;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
-    return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
+    return res.redirect(geriDon);
   }
   if (!kvkk) {
     req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
-    return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
+    return res.redirect(geriDon);
   }
   try {
     // Firma bayiye ait mi kontrol et
@@ -230,7 +165,7 @@ router.post('/panel/:firmaId/calisan-ekle', requireBayi,
       'SELECT id FROM firmalar WHERE id = $1 AND bayi_id = $2',
       [req.params.firmaId, req.session.bayiId]
     );
-    if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
+    if (!firmaResult.rows.length) return res.redirect('/');
 
     const slug = await benzersizCalisanSlugOlustur(req.params.firmaId, ad, soyad);
 
@@ -247,55 +182,31 @@ router.post('/panel/:firmaId/calisan-ekle', requireBayi,
        biyografiTemiz, fotoUrl, slug]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
-    res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
+    res.redirect(geriDon);
   } catch (err) {
     console.error(err);
     req.flash('error', 'Çalışan eklenemedi.');
-    res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
+    res.redirect(geriDon);
   }
 });
 
-// ── ÇALIŞAN DÜZENLE ──────────────────────────────────────────────────────────
-
-router.get('/panel/:firmaId/calisan/:id/duzenle', requireBayi, async (req, res) => {
-  try {
-    const firmaResult = await pool.query(
-      'SELECT f.*, b.slug as bayi_slug FROM firmalar f JOIN bayiler b ON b.id = f.bayi_id WHERE f.id = $1 AND f.bayi_id = $2',
-      [req.params.firmaId, req.session.bayiId]
-    );
-    if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
-
-    const calisanResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE id = $1 AND firma_id = $2',
-      [req.params.id, req.params.firmaId]
-    );
-    if (!calisanResult.rows.length) return res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
-
-    res.render('bayi/calisan-duzenle', {
-      title: 'Çalışan Düzenle',
-      firma: firmaResult.rows[0],
-      calisan: calisanResult.rows[0]
-    });
-  } catch (err) {
-    console.error(err);
-    res.redirect('/bayi/panel');
-  }
-});
+// ── ÇALIŞAN DÜZENLE (artık '/' üzerindeki kayan panelden) ────────────────────
 
 router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
-  fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`),
+  fotoUploadGuvenli((req) => `/?firma=${req.params.firmaId}`),
   async (req, res) => {
   const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
+  const geriDon = `/?firma=${req.params.firmaId}`;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
-    return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`);
+    return res.redirect(geriDon);
   }
   try {
     const firmaResult = await pool.query(
       'SELECT id FROM firmalar WHERE id = $1 AND bayi_id = $2',
       [req.params.firmaId, req.session.bayiId]
     );
-    if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
+    if (!firmaResult.rows.length) return res.redirect('/');
 
     const fotoUrl = req.file?.location || null;
     const biyografiTemiz = biyografiTemizle(biyografi);
@@ -328,11 +239,11 @@ router.post('/panel/:firmaId/calisan/:id/duzenle', requireBayi,
       );
     }
     req.flash('success', 'Çalışan güncellendi.');
-    res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
+    res.redirect(geriDon);
   } catch (err) {
     console.error(err);
     req.flash('error', 'Güncellenemedi.');
-    res.redirect(`/bayi/panel/${req.params.firmaId}/calisan/${req.params.id}/duzenle`);
+    res.redirect(geriDon);
   }
 });
 
@@ -344,7 +255,7 @@ router.post('/panel/:firmaId/calisan/:id/sil', requireBayi, async (req, res) => 
       'SELECT id FROM firmalar WHERE id = $1 AND bayi_id = $2',
       [req.params.firmaId, req.session.bayiId]
     );
-    if (!firmaResult.rows.length) return res.redirect('/bayi/panel');
+    if (!firmaResult.rows.length) return res.redirect('/');
 
     await pool.query('DELETE FROM calisanlar WHERE id = $1 AND firma_id = $2', [req.params.id, req.params.firmaId]);
     req.flash('success', 'Çalışan silindi.');
@@ -352,12 +263,12 @@ router.post('/panel/:firmaId/calisan/:id/sil', requireBayi, async (req, res) => 
     console.error(err);
     req.flash('error', 'Silinemedi.');
   }
-  res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
+  res.redirect(`/?firma=${req.params.firmaId}`);
 });
 
 router.patch('/panel/:firmaId/calisan/:id/durum', requireBayi, async (req, res) => {
   const { durum } = req.body;
-  if (!['aktif', 'pasif'].includes(durum)) return res.redirect('/bayi/panel');
+  if (!['aktif', 'pasif'].includes(durum)) return res.redirect('/');
   try {
     await pool.query(
       'UPDATE calisanlar SET durum=$1 WHERE id=$2 AND firma_id=$3',
@@ -366,7 +277,7 @@ router.patch('/panel/:firmaId/calisan/:id/durum', requireBayi, async (req, res) 
   } catch (err) {
     console.error(err);
   }
-  res.redirect(`/bayi/panel/${req.params.firmaId}/calisanlar`);
+  res.redirect(`/?firma=${req.params.firmaId}`);
 });
 
 module.exports = router;
