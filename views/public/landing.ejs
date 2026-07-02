@@ -667,7 +667,7 @@
 </footer>
 
 <!-- LOGIN MODAL -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+<div class="modal-overlay" id="modalOverlay">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-logo">NFC<em>Kartify</em></div>
@@ -758,7 +758,6 @@ if(barEl) barObs.observe(barEl.closest('.bcard'));
 const overlay=document.getElementById('modalOverlay');
 function openModal(tab){overlay.classList.add('open');document.body.style.overflow='hidden';switchTab(tab);}
 function closeModal(){overlay.classList.remove('open');document.body.style.overflow='';}
-function closeModalOutside(e){if(e.target===overlay)closeModal();}
 function switchTab(tab){
   document.getElementById('formGiris').style.display=tab==='giris'?'flex':'none';
   document.getElementById('formKayit').style.display=tab==='kayit'?'flex':'none';
