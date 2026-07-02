@@ -17,7 +17,7 @@ function requireSuperadmin(req, res, next) {
 function requireBayi(req, res, next) {
   if (!req.session.bayiId) {
     req.flash('error', 'Lütfen bayi girişi yapın.');
-    return res.redirect('/bayi/giris');
+    return res.redirect('/');
   }
   next();
 }

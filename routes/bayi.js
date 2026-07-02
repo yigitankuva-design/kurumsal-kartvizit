@@ -34,14 +34,14 @@ function fotoUploadGuvenli(redirectYolu) {
 // ── AUTH ──────────────────────────────────────────────────────────────────────
 
 router.get('/giris', (req, res) => {
-  res.render('bayi/giris', { title: 'Bayi Girişi', layout: 'layout' });
+  res.redirect('/');
 });
 
 router.post('/giris', bayiGirisLimiter, async (req, res) => {
   const { giris_bilgisi, sifre } = req.body;
   if (!giris_bilgisi || !sifre) {
     req.flash('error', 'E-posta/kullanıcı adı ve şifre zorunlu.');
-    return res.redirect('/bayi/giris');
+    return res.redirect('/');
   }
   try {
     const result = await pool.query(
@@ -50,13 +50,13 @@ router.post('/giris', bayiGirisLimiter, async (req, res) => {
     );
     if (!result.rows.length) {
       req.flash('error', 'E-posta/kullanıcı adı veya şifre hatalı.');
-      return res.redirect('/bayi/giris');
+      return res.redirect('/');
     }
     const bayi = result.rows[0];
     const eslesme = await bcrypt.compare(sifre, bayi.sifre_hash);
     if (!eslesme) {
       req.flash('error', 'E-posta/kullanıcı adı veya şifre hatalı.');
-      return res.redirect('/bayi/giris');
+      return res.redirect('/');
     }
     req.session.bayiId = bayi.id;
     req.session.bayiAd = bayi.ad;
@@ -64,12 +64,12 @@ router.post('/giris', bayiGirisLimiter, async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
-    res.redirect('/bayi/giris');
+    res.redirect('/');
   }
 });
 
 router.post('/cikis', (req, res) => {
-  req.session.destroy(() => res.redirect('/bayi/giris'));
+  req.session.destroy(() => res.redirect('/'));
 });
 
 // ── PANEL — FİRMA LİSTESİ ────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ router.get('/panel', requireBayi, async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'Bir hata oluştu.');
-    res.redirect('/bayi/giris');
+    res.redirect('/');
   }
 });
 
