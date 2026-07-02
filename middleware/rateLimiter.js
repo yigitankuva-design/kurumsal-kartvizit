@@ -24,4 +24,16 @@ const firmaEkleLimiter = rateLimit({
   },
 });
 
-module.exports = { createLoginLimiter, firmaEkleLimiter };
+function createJsonLimiter(mesaj) {
+  return rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res) => {
+      res.status(429).json({ ok: false, error: mesaj });
+    },
+  });
+}
+
+module.exports = { createLoginLimiter, firmaEkleLimiter, createJsonLimiter };
