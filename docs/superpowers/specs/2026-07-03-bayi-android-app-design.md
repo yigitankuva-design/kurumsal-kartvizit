@@ -28,7 +28,8 @@ eklenecek — böylece bayi ayrı bir "NFC Tools" uygulamasına ihtiyaç duymaya
   kırpma/yakınlaştırma, adres otomatik tamamlama, biyografi kalın/italik/ortala —
   web'deki kadar dolu, basitleştirilmiş bir ilk sürüm değil.
 - **NFC özellikleri**: "Karta Yaz" (üretilen URL'i boş karta NDEF olarak yazma) +
-  "Kilitle" (kartı salt-okunur/read-only hale getirme, geri alınamaz).
+  "Kilitle" (kartı salt-okunur/read-only hale getirme, geri alınamaz — bu yüzden
+  "Kilitle" öncesi mutlaka onay ekranı olacak, yanlışlıkla tıklamayı önlemek için).
 - **Bayi hesabı açma**: Sadece süperadmin panelinden (mevcut model aynen devam).
   Uygulama içinden bayi kendi kendine kayıt olamayacak (self-signup yok).
 - **CRM / lead-capture (Salesforce/HubSpot tarzı otomatik kişi yakalama)**: Bu proje
@@ -55,7 +56,10 @@ kurulu**, ek indirme gerekmedi:
   komut satırından derleme/hata kontrolü.
 - **Kullanıcı yapar**: Gerçek telefonla fiziksel NFC testi (karta yazma/kilitleme),
   uygulamayı telefona kurup gözle kontrol, Google Play Developer hesabı açma/ödeme
-  (Claude hesap açamaz/ödeme yapamaz).
+  (tek seferlik ~$25, Claude hesap açamaz/ödeme yapamaz).
+- **Play Store yayın modu**: Başlangıçta herkese açık "Production" yerine "Kapalı
+  test" (closed testing) track önerilir — uygulama sadece bayilere özel, herkesin
+  indirip login ekranını görmesine gerek yok.
 
 ## Henüz netleşmedi / yarın devam edilecek
 
@@ -64,8 +68,18 @@ kurulu**, ek indirme gerekmedi:
 - Android tarafında ekran akışı (giriş → müşteri listesi → profil oluştur/düzenle →
   karta yaz) detaylı UI planı.
 - Test planı (backend API testleri + Android tarafı manuel test senaryoları).
+- **Google Maps API anahtarı**: native Android'de adres otomatik tamamlama için
+  kullanılacaksa, Google normalde mobil uygulamaya özel kısıtlama (paket adı + imza)
+  önerir. Kullanıcı mevcut paylaşılan anahtara kısıtlama eklenmesini istemiyordu
+  (diğer projeleri bozulmasın diye) — bu konu netleşmedi, ilerde tekrar konuşulacak.
 - Bu doküman henüz brainstorming skill'inin "Present design" / "spec self-review" /
   "user reviews spec" adımlarından geçmedi — sadece konuşmanın özeti.
+
+## Kabul edilen riskler (kullanıcı onayladı, devam kararı verildi)
+
+- **Kapsam/süre riski**: Tam native + v1'den itibaren tam özellik paritesi, mevcut
+  web sitesine sadece "Karta Yaz" butonu eklemekten çok daha uzun sürer. Kullanıcı bu
+  riski bilerek "gerçek uygulama" istiyor, devam kararı verildi (2026-07-03).
 
 ## Devam etmek için
 
