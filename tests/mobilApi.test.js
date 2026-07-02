@@ -95,4 +95,21 @@ describe('Mobil API — /api/mobil/musteriler', () => {
     expect(res.body.ok).toBe(true);
     expect(res.body.musteriler.some(m => m.id === firmaId)).toBe(true);
   });
+
+  test('başka bayinin müşterisine erişilemez (404)', async () => {
+    const res = await request(app)
+      .get('/api/mobil/musteriler/999999/calisanlar')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(404);
+  });
+
+  test('kendi müşterisinin çalışanlarını listeler', async () => {
+    const res = await request(app)
+      .get(`/api/mobil/musteriler/${firmaId}/calisanlar`)
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(Array.isArray(res.body.calisanlar)).toBe(true);
+    expect(res.body.firma.id).toBe(firmaId);
+  });
 });

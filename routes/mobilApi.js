@@ -49,4 +49,24 @@ router.get('/musteriler', requireBayiToken, async (req, res) => {
   }
 });
 
+router.get('/musteriler/:firmaId/calisanlar', requireBayiToken, async (req, res) => {
+  try {
+    const firmaResult = await pool.query(
+      'SELECT id, ad, slug FROM firmalar WHERE id = $1 AND bayi_id = $2',
+      [req.params.firmaId, req.bayiId]
+    );
+    if (!firmaResult.rows.length) {
+      return res.status(404).json({ ok: false, error: 'Müşteri bulunamadı.' });
+    }
+    const calisanlarResult = await pool.query(
+      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
+      [req.params.firmaId]
+    );
+    res.json({ ok: true, firma: firmaResult.rows[0], calisanlar: calisanlarResult.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 module.exports = router;
