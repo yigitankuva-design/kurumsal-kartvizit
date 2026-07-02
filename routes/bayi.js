@@ -11,6 +11,12 @@ const { biyografiTemizle } = require('../utils/sanitize');
 const fotoUpload = uploadMiddleware('calisanlar');
 const bayiGirisLimiter = createLoginLimiter('/bayi/giris');
 
+function adSoyadAyir(adSoyad) {
+  const parcalar = adSoyad.trim().split(/\s+/);
+  if (parcalar.length === 1) return { ad: parcalar[0], soyad: '' };
+  return { ad: parcalar.slice(0, -1).join(' '), soyad: parcalar[parcalar.length - 1] };
+}
+
 // fotoUpload.single() bir dizi middleware döner (multer + sharp işleme) — hata
 // olursa çökmek yerine flash mesajıyla forma geri döner.
 function fotoUploadGuvenli(redirectYolu) {
@@ -83,17 +89,22 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
   async (req, res) => {
   const {
     isletme_adi, sektor, marka_rengi,
-    ad, soyad, unvan, departman, telefon, email, adres, biyografi,
+    ad_soyad, unvan, departman, telefon, email, adres, biyografi,
     linkedin, instagram, twitter, youtube, website, whatsapp, tiktok,
     sahibinden, hurriyet_emlak, google_yorum_link, kvkk,
   } = req.body;
 
-  if (!ad || !soyad) {
-    req.flash('error', 'Ad ve soyad zorunlu.');
+  if (!ad_soyad || !ad_soyad.trim()) {
+    req.flash('error', 'Ad soyad zorunlu.');
     return res.redirect('/');
   }
   if (!kvkk) {
     req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
+    return res.redirect('/');
+  }
+  const { ad, soyad } = adSoyadAyir(ad_soyad);
+  if (!soyad) {
+    req.flash('error', 'Lütfen ad ve soyadı birlikte yazın.');
     return res.redirect('/');
   }
 

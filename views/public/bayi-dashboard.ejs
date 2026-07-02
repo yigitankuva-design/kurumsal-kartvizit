@@ -123,6 +123,36 @@
     .btn-cancel { height: 40px; padding: 0 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: var(--fs-sm); color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .btn-cancel:hover { border-color: var(--border-gold); color: var(--text); }
 
+    /* ── FOTOĞRAF KIRPICI ── */
+    .cropper-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .cropper-box { width: 220px; height: 220px; border-radius: 50%; overflow: hidden; position: relative; background: var(--bg3); border: 1px solid var(--border); cursor: grab; touch-action: none; user-select: none; }
+    .cropper-box:active { cursor: grabbing; }
+    .cropper-box img { position: absolute; top: 0; left: 0; transform-origin: top left; pointer-events: none; }
+    .cropper-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-faint); font-size: var(--fs-xs); text-align: center; line-height: 1.8; }
+    .cropper-controls { display: flex; align-items: center; gap: 10px; }
+    .cropper-zoom { display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 4px 6px; }
+    .cropper-zoom button { width: 24px; height: 24px; border-radius: 6px; background: var(--bg4); border: 1px solid var(--border); color: var(--text); cursor: pointer; font-size: 0.9rem; line-height: 1; }
+    .cropper-zoom button:hover { border-color: var(--border-gold); }
+    .cropper-zoom span { font-size: var(--fs-xs); color: var(--text-muted); min-width: 26px; text-align: center; }
+    .cropper-hint { font-size: var(--fs-xs); color: var(--text-faint); }
+
+    /* ── BİYOGRAFİ TOOLBAR ── */
+    .bio-toolbar { display: flex; gap: 4px; margin-bottom: 6px; }
+    .bio-toolbar button { width: 28px; height: 28px; border-radius: 6px; background: var(--bg3); border: 1px solid var(--border); color: var(--text-muted); cursor: pointer; font-size: 0.8rem; font-family: inherit; }
+    .bio-toolbar button:hover { color: var(--text); border-color: var(--border-gold); }
+
+    /* ── ÖNİZLEME ── */
+    .preview-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
+    .preview-photo-wrap { display: flex; justify-content: center; margin-bottom: 14px; }
+    .preview-photo-wrap canvas { border-radius: 50%; background: var(--bg4); }
+    .preview-ad { font-size: 1.1rem; font-weight: var(--fw-bold); color: var(--text); }
+    .preview-unvan { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 2px; }
+    .preview-info { font-size: var(--fs-sm); color: var(--text-muted); margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+    .preview-bio { font-size: var(--fs-sm); color: var(--text); margin-top: 14px; line-height: 1.6; }
+    .preview-sosyal { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 14px; }
+    .preview-chip { background: var(--gold-dim); color: var(--gold); font-size: var(--fs-xs); font-weight: var(--fw-medium); padding: 4px 10px; border-radius: 100px; }
+    .preview-note { font-size: var(--fs-xs); color: var(--text-faint); text-align: center; margin-top: 14px; line-height: 1.6; }
+
     @media (max-width: 640px) {
       .stat-row { grid-template-columns: 1fr 1fr; }
       .slide-panel { width: 100vw; }
@@ -224,25 +254,46 @@
         <button class="slide-close" onclick="closeMusteriSlide()">✕</button>
       </div>
       <div class="slide-body">
-        <form id="musteriForm" method="POST" action="/bayi/panel/firma-ekle" enctype="multipart/form-data">
+        <!-- FORM ADIMI -->
+        <div id="musteriFormView">
+        <form id="musteriForm" method="POST" action="/bayi/panel/firma-ekle" enctype="multipart/form-data" onsubmit="return false">
           <div class="form-row">
-            <div class="field"><label>Ad *</label><input type="text" name="ad" required></div>
-            <div class="field"><label>Soyad *</label><input type="text" name="soyad" required></div>
-            <div class="field"><label>Unvan</label><input type="text" name="unvan" placeholder="Örn: Satış Müdürü"></div>
-            <div class="field"><label>Departman</label><input type="text" name="departman"></div>
-            <div class="field"><label>Telefon</label><input type="tel" name="telefon" placeholder="+905001112233"></div>
-            <div class="field"><label>E-posta</label><input type="email" name="email"></div>
+            <div class="field field-full">
+              <label>Fotoğraf</label>
+              <div class="cropper-wrap">
+                <div class="cropper-box" id="m_cropper_box">
+                  <img id="m_foto_img" alt="" style="display:none">
+                  <div class="cropper-empty" id="m_cropper_empty">📷<br>Fotoğraf Seç</div>
+                </div>
+                <div class="cropper-controls">
+                  <button type="button" class="btn-cancel btn-sm" onclick="document.getElementById('m_foto_input').click()">Fotoğraf Seç</button>
+                  <div class="cropper-zoom" id="m_zoom_controls" style="display:none">
+                    <button type="button" onclick="fotoZoom(-1)">−</button>
+                    <span id="m_zoom_label">1x</span>
+                    <button type="button" onclick="fotoZoom(1)">+</button>
+                  </div>
+                </div>
+                <div class="cropper-hint" id="m_cropper_hint" style="display:none">Sürükleyerek konumlandırın</div>
+              </div>
+              <input type="file" id="m_foto_input" accept="image/jpeg,image/png,image/webp" style="display:none">
+            </div>
+
+            <div class="field field-full"><label>Ad Soyad *</label><input type="text" name="ad_soyad" id="m_ad_soyad" placeholder="Örn: Ahmet Yılmaz" required></div>
+            <div class="field"><label>Unvan</label><input type="text" name="unvan" id="m_unvan" placeholder="Örn: Satış Müdürü"></div>
+            <div class="field"><label>Departman</label><input type="text" name="departman" id="m_departman"></div>
+            <div class="field"><label>Telefon</label><input type="tel" name="telefon" id="m_telefon" placeholder="+905001112233"></div>
+            <div class="field"><label>E-posta</label><input type="email" name="email" id="m_email"></div>
             <div class="field field-full"><label>Adres</label><input type="text" name="adres" id="m_adres" placeholder="Adres aramaya başlayın..." autocomplete="off"></div>
 
             <hr class="field-sep">
             <div class="field-section">İşletme (isteğe bağlı)</div>
             <div class="field field-full">
               <label>İşletme / Müşteri Adı <span style="color:var(--text-faint);font-weight:400">(boş bırakılırsa ad soyad kullanılır)</span></label>
-              <input type="text" name="isletme_adi" placeholder="Örn: Yılmaz Berber Salonu">
+              <input type="text" name="isletme_adi" id="m_isletme_adi" placeholder="Örn: Yılmaz Berber Salonu">
             </div>
             <div class="field">
               <label>Sektör</label>
-              <select name="sektor">
+              <select name="sektor" id="m_sektor">
                 <option value="diger">Diğer</option>
                 <option value="teknoloji">Teknoloji</option>
                 <option value="saglik">Sağlık</option>
@@ -253,43 +304,299 @@
             </div>
             <div class="field">
               <label>Kart Rengi</label>
-              <input type="color" name="marka_rengi" value="#1a73e8" style="height:36px;padding:2px">
+              <input type="color" name="marka_rengi" id="m_marka_rengi" value="#1a73e8" style="height:36px;padding:2px">
             </div>
 
             <hr class="field-sep">
             <div class="field-section">Sosyal Medya</div>
-            <div class="field"><label>LinkedIn URL</label><input type="url" name="linkedin"></div>
-            <div class="field"><label>Instagram URL</label><input type="url" name="instagram"></div>
-            <div class="field"><label>Twitter / X URL</label><input type="url" name="twitter"></div>
-            <div class="field"><label>YouTube URL</label><input type="url" name="youtube"></div>
-            <div class="field"><label>Web Sitesi</label><input type="url" name="website"></div>
-            <div class="field"><label>WhatsApp</label><input type="tel" name="whatsapp" placeholder="+905001112233"></div>
-            <div class="field"><label>TikTok URL</label><input type="url" name="tiktok"></div>
-            <div class="field"><label>Sahibinden URL</label><input type="url" name="sahibinden"></div>
-            <div class="field"><label>Hürriyet Emlak URL</label><input type="url" name="hurriyet_emlak"></div>
-            <div class="field"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link"></div>
+            <div class="field"><label>LinkedIn URL</label><input type="url" name="linkedin" id="m_linkedin"></div>
+            <div class="field"><label>Instagram URL</label><input type="url" name="instagram" id="m_instagram"></div>
+            <div class="field"><label>Twitter / X URL</label><input type="url" name="twitter" id="m_twitter"></div>
+            <div class="field"><label>YouTube URL</label><input type="url" name="youtube" id="m_youtube"></div>
+            <div class="field"><label>Web Sitesi</label><input type="url" name="website" id="m_website"></div>
+            <div class="field"><label>WhatsApp</label><input type="tel" name="whatsapp" id="m_whatsapp" placeholder="+905001112233"></div>
+            <div class="field"><label>TikTok URL</label><input type="url" name="tiktok" id="m_tiktok"></div>
+            <div class="field"><label>Sahibinden URL</label><input type="url" name="sahibinden" id="m_sahibinden"></div>
+            <div class="field"><label>Hürriyet Emlak URL</label><input type="url" name="hurriyet_emlak" id="m_hurriyet_emlak"></div>
+            <div class="field"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link" id="m_google_yorum_link"></div>
 
             <hr class="field-sep">
-            <div class="field field-full"><label>Biyografi</label><textarea name="biyografi"></textarea></div>
+            <div class="field field-full">
+              <label>Biyografi</label>
+              <div class="bio-toolbar">
+                <button type="button" title="Kalın" onclick="bioFormat('bold')"><b>K</b></button>
+                <button type="button" title="İtalik" onclick="bioFormat('italic')"><i>İ</i></button>
+                <button type="button" title="Ortala" onclick="bioFormat('center')">≡</button>
+              </div>
+              <textarea name="biyografi" id="m_biyografi"></textarea>
+            </div>
 
             <hr class="field-sep">
-            <div class="field field-full"><label>Fotoğraf</label><input type="file" name="foto" accept="image/jpeg,image/png,image/webp"></div>
             <div class="field field-full" style="flex-direction:row;gap:8px;align-items:flex-start">
               <input type="checkbox" name="kvkk" id="m_kvkk" required style="margin-top:3px">
               <label style="font-weight:400" for="m_kvkk">Bu kişinin verilerinin (ad, telefon, e-posta, fotoğraf) dijital kartvizit oluşturulması amacıyla işlenmesi için onayı alınmıştır.</label>
             </div>
           </div>
         </form>
+        </div>
+
+        <!-- ÖNİZLEME ADIMI -->
+        <div id="musteriPreviewView" style="display:none">
+          <div class="preview-card">
+            <div class="preview-photo-wrap"><canvas id="m_preview_canvas" width="120" height="120"></canvas></div>
+            <div class="preview-ad" id="pv_ad_soyad"></div>
+            <div class="preview-unvan" id="pv_unvan"></div>
+            <div class="preview-info" id="pv_bilgiler"></div>
+            <div class="preview-bio" id="pv_biyografi"></div>
+            <div class="preview-sosyal" id="pv_sosyal"></div>
+          </div>
+          <div class="preview-note">Bu bir önizlemedir — henüz kaydedilmedi. URL, "Onayla ve Oluştur"a bastıktan sonra oluşturulur.</div>
+        </div>
       </div>
-      <div class="slide-footer">
+      <div class="slide-footer" id="musteriFooterForm">
         <button class="btn-cancel" onclick="closeMusteriSlide()">İptal</button>
-        <button class="btn-submit" onclick="document.getElementById('musteriForm').submit()">Oluştur</button>
+        <button class="btn-submit" onclick="musteriOnizle()">Devam Et → Önizle</button>
+      </div>
+      <div class="slide-footer" id="musteriFooterPreview" style="display:none">
+        <button class="btn-cancel" onclick="musteriDuzenleyeDon()">← Düzenle</button>
+        <button class="btn-submit" onclick="musteriOnaylaVeOlustur()">Onayla ve Oluştur</button>
       </div>
     </div>
   </div>
   <script>
-    function openMusteriSlide(){document.getElementById('musteriOverlay').classList.add('open');document.body.style.overflow='hidden';}
+    function openMusteriSlide(){
+      document.getElementById('musteriOverlay').classList.add('open');
+      document.body.style.overflow='hidden';
+      musteriFormaDon();
+    }
     function closeMusteriSlide(){document.getElementById('musteriOverlay').classList.remove('open');document.body.style.overflow='';}
+
+    function musteriFormaDon(){
+      document.getElementById('musteriFormView').style.display='block';
+      document.getElementById('musteriPreviewView').style.display='none';
+      document.getElementById('musteriFooterForm').style.display='flex';
+      document.getElementById('musteriFooterPreview').style.display='none';
+    }
+    const musteriDuzenleyeDon = musteriFormaDon;
+
+    // Basit ve güvenli önizleme render'ı — innerHTML kullanmadan, sadece
+    // izin verilen b/i/p(center) etiketlerini tanıyıp gerçek DOM node'u üretir.
+    function metniTemizEkle(container, text){
+      container.appendChild(document.createTextNode(text));
+    }
+    function biyografiOnizleOlustur(container, kaynak){
+      container.textContent = '';
+      const merkezEslesme = kaynak.match(/^<p style="text-align:center">([\s\S]*)<\/p>$/);
+      const govdeHedef = merkezEslesme ? document.createElement('div') : container;
+      if (merkezEslesme) govdeHedef.style.textAlign = 'center';
+      const govdeMetin = merkezEslesme ? merkezEslesme[1] : kaynak;
+
+      const parcaDeseni = /<(\/?)(b|i)>/g;
+      let sonIndex = 0, acikEtiketler = [], hedef = govdeHedef;
+      for (const eslesme of govdeMetin.matchAll(parcaDeseni)) {
+        if (eslesme.index > sonIndex) metniTemizEkle(hedef, govdeMetin.slice(sonIndex, eslesme.index));
+        const kapaniyorMu = eslesme[1] === '/';
+        const etiketAdi = eslesme[2];
+        if (!kapaniyorMu) {
+          const yeniEl = document.createElement(etiketAdi);
+          hedef.appendChild(yeniEl);
+          acikEtiketler.push(hedef);
+          hedef = yeniEl;
+        } else if (acikEtiketler.length) {
+          hedef = acikEtiketler.pop();
+        }
+        sonIndex = eslesme.index + eslesme[0].length;
+      }
+      if (sonIndex < govdeMetin.length) metniTemizEkle(hedef, govdeMetin.slice(sonIndex));
+      if (merkezEslesme) container.appendChild(govdeHedef);
+    }
+
+    function musteriOnizle(){
+      const form = document.getElementById('musteriForm');
+      if (!form.reportValidity()) return;
+
+      document.getElementById('pv_ad_soyad').textContent = document.getElementById('m_ad_soyad').value;
+      document.getElementById('pv_unvan').textContent = document.getElementById('m_unvan').value || '';
+
+      const bilgilerEl = document.getElementById('pv_bilgiler');
+      bilgilerEl.textContent = '';
+      [
+        ['📞 ', 'm_telefon'], ['✉️ ', 'm_email'], ['📍 ', 'm_adres'],
+      ].forEach(([onEk, id]) => {
+        const deger = document.getElementById(id).value;
+        if (!deger) return;
+        const satir = document.createElement('div');
+        satir.textContent = onEk + deger;
+        bilgilerEl.appendChild(satir);
+      });
+
+      biyografiOnizleOlustur(document.getElementById('pv_biyografi'), document.getElementById('m_biyografi').value);
+
+      const sosyalEl = document.getElementById('pv_sosyal');
+      sosyalEl.textContent = '';
+      [
+        ['m_linkedin','LinkedIn'], ['m_instagram','Instagram'], ['m_twitter','X/Twitter'],
+        ['m_youtube','YouTube'], ['m_website','Web'], ['m_whatsapp','WhatsApp'],
+        ['m_tiktok','TikTok'], ['m_sahibinden','Sahibinden'], ['m_hurriyet_emlak','Hürriyet Emlak'],
+        ['m_google_yorum_link','Google Yorum'],
+      ].forEach(([id, etiket]) => {
+        if (!document.getElementById(id).value) return;
+        const chip = document.createElement('span');
+        chip.className = 'preview-chip';
+        chip.textContent = etiket;
+        sosyalEl.appendChild(chip);
+      });
+
+      const previewCanvas = document.getElementById('m_preview_canvas');
+      const pctx = previewCanvas.getContext('2d');
+      pctx.clearRect(0,0,120,120);
+      if (fotoState.img) {
+        fotoCiz(pctx, 120);
+      } else {
+        pctx.fillStyle = '#28282e';
+        pctx.fillRect(0,0,120,120);
+      }
+
+      document.getElementById('musteriFormView').style.display='none';
+      document.getElementById('musteriPreviewView').style.display='block';
+      document.getElementById('musteriFooterForm').style.display='none';
+      document.getElementById('musteriFooterPreview').style.display='flex';
+    }
+
+    function musteriOnaylaVeOlustur(){
+      if (fotoState.img) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 600; canvas.height = 600;
+        fotoCiz(canvas.getContext('2d'), 600);
+        canvas.toBlob(blob => {
+          const dosya = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
+          const dt = new DataTransfer();
+          dt.items.add(dosya);
+          document.getElementById('m_foto_input').files = dt.files;
+          document.getElementById('m_foto_input').name = 'foto';
+          document.getElementById('musteriForm').submit();
+        }, 'image/jpeg', 0.9);
+      } else {
+        document.getElementById('musteriForm').submit();
+      }
+    }
+
+    // ── BİYOGRAFİ BİÇİMLENDİRME ──
+    function bioFormat(tip){
+      const el = document.getElementById('m_biyografi');
+      if (tip === 'center') {
+        const merkezliMi = /^<p style="text-align:center">[\s\S]*<\/p>$/.test(el.value.trim());
+        if (merkezliMi) {
+          el.value = el.value.trim().replace(/^<p style="text-align:center">/, '').replace(/<\/p>$/, '');
+        } else {
+          el.value = `<p style="text-align:center">${el.value}</p>`;
+        }
+        el.focus();
+        return;
+      }
+      const etiket = tip === 'bold' ? 'b' : 'i';
+      const start = el.selectionStart, end = el.selectionEnd;
+      const secili = el.value.slice(start, end) || 'metin';
+      el.value = el.value.slice(0, start) + '<' + etiket + '>' + secili + '</' + etiket + '>' + el.value.slice(end);
+      el.focus();
+    }
+
+    // ── FOTOĞRAF KIRPICI (sürükle + yakınlaştır) ──
+    const ZOOM_KADEMELERI = [1, 1.33, 1.66, 2];
+    const KUTU_BOYUTU = 220;
+    const fotoState = { img: null, baseScale: 1, zoomIndex: 0, offsetX: 0, offsetY: 0, dragging: false, startX: 0, startY: 0, startOffsetX: 0, startOffsetY: 0 };
+
+    document.getElementById('m_foto_input').addEventListener('change', function(e){
+      const dosya = e.target.files[0];
+      if (!dosya) return;
+      const okuyucu = new FileReader();
+      okuyucu.onload = function(ev){
+        const img = new Image();
+        img.onload = function(){
+          fotoState.img = img;
+          fotoState.baseScale = Math.max(KUTU_BOYUTU / img.naturalWidth, KUTU_BOYUTU / img.naturalHeight);
+          fotoState.zoomIndex = 0;
+          const olcek = fotoState.baseScale;
+          fotoState.offsetX = (KUTU_BOYUTU - img.naturalWidth * olcek) / 2;
+          fotoState.offsetY = (KUTU_BOYUTU - img.naturalHeight * olcek) / 2;
+          document.getElementById('m_foto_img').src = ev.target.result;
+          document.getElementById('m_foto_img').style.display = 'block';
+          document.getElementById('m_cropper_empty').style.display = 'none';
+          document.getElementById('m_zoom_controls').style.display = 'flex';
+          document.getElementById('m_cropper_hint').style.display = 'block';
+          fotoGuncelle();
+        };
+        img.src = ev.target.result;
+      };
+      okuyucu.readAsDataURL(dosya);
+    });
+
+    function fotoOlcek(){ return fotoState.baseScale * ZOOM_KADEMELERI[fotoState.zoomIndex]; }
+
+    function fotoSinirla(){
+      const olcek = fotoOlcek();
+      const genislik = fotoState.img.naturalWidth * olcek;
+      const yukseklik = fotoState.img.naturalHeight * olcek;
+      const minX = Math.min(0, KUTU_BOYUTU - genislik), maxX = 0;
+      const minY = Math.min(0, KUTU_BOYUTU - yukseklik), maxY = 0;
+      fotoState.offsetX = Math.max(minX, Math.min(maxX, fotoState.offsetX));
+      fotoState.offsetY = Math.max(minY, Math.min(maxY, fotoState.offsetY));
+    }
+
+    function fotoGuncelle(){
+      if (!fotoState.img) return;
+      fotoSinirla();
+      const olcek = fotoOlcek();
+      const imgEl = document.getElementById('m_foto_img');
+      imgEl.style.width = (fotoState.img.naturalWidth * olcek) + 'px';
+      imgEl.style.height = (fotoState.img.naturalHeight * olcek) + 'px';
+      imgEl.style.transform = `translate(${fotoState.offsetX}px, ${fotoState.offsetY}px)`;
+      document.getElementById('m_zoom_label').textContent = ZOOM_KADEMELERI[fotoState.zoomIndex] + 'x';
+    }
+
+    function fotoZoom(yon){
+      if (!fotoState.img) return;
+      const yeniIndex = Math.max(0, Math.min(ZOOM_KADEMELERI.length - 1, fotoState.zoomIndex + yon));
+      if (yeniIndex === fotoState.zoomIndex) return;
+      const eskiOlcek = fotoOlcek();
+      fotoState.zoomIndex = yeniIndex;
+      const yeniOlcek = fotoOlcek();
+      const merkezX = KUTU_BOYUTU / 2, merkezY = KUTU_BOYUTU / 2;
+      fotoState.offsetX = merkezX - (merkezX - fotoState.offsetX) * (yeniOlcek / eskiOlcek);
+      fotoState.offsetY = merkezY - (merkezY - fotoState.offsetY) * (yeniOlcek / eskiOlcek);
+      fotoGuncelle();
+    }
+
+    function fotoCiz(ctx, hedefBoyut){
+      const olcek = fotoOlcek();
+      const sx = -fotoState.offsetX / olcek;
+      const sy = -fotoState.offsetY / olcek;
+      const sBoyut = KUTU_BOYUTU / olcek;
+      ctx.drawImage(fotoState.img, sx, sy, sBoyut, sBoyut, 0, 0, hedefBoyut, hedefBoyut);
+    }
+
+    function surukleBasla(x, y){
+      if (!fotoState.img) return;
+      fotoState.dragging = true;
+      fotoState.startX = x; fotoState.startY = y;
+      fotoState.startOffsetX = fotoState.offsetX; fotoState.startOffsetY = fotoState.offsetY;
+    }
+    function surukleDevam(x, y){
+      if (!fotoState.dragging) return;
+      fotoState.offsetX = fotoState.startOffsetX + (x - fotoState.startX);
+      fotoState.offsetY = fotoState.startOffsetY + (y - fotoState.startY);
+      fotoGuncelle();
+    }
+    function surukleBitir(){ fotoState.dragging = false; }
+
+    const cropperKutu = document.getElementById('m_cropper_box');
+    cropperKutu.addEventListener('mousedown', e => surukleBasla(e.clientX, e.clientY));
+    document.addEventListener('mousemove', e => surukleDevam(e.clientX, e.clientY));
+    document.addEventListener('mouseup', surukleBitir);
+    cropperKutu.addEventListener('touchstart', e => { const t = e.touches[0]; surukleBasla(t.clientX, t.clientY); }, { passive: true });
+    cropperKutu.addEventListener('touchmove', e => { const t = e.touches[0]; surukleDevam(t.clientX, t.clientY); }, { passive: true });
+    cropperKutu.addEventListener('touchend', surukleBitir);
+    cropperKutu.addEventListener('click', () => { if (!fotoState.img) document.getElementById('m_foto_input').click(); });
   </script>
 
 <% } else if (view === 'calisanlar') { %>

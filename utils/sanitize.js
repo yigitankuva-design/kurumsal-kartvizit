@@ -4,7 +4,8 @@ function biyografiTemizle(biyografi) {
   if (!biyografi) return null;
   const temiz = sanitizeHtml(biyografi, {
     allowedTags: ['b', 'i', 'br', 'p', 'a', 'strong', 'em'],
-    allowedAttributes: { a: ['href', 'target', 'rel'] },
+    allowedAttributes: { a: ['href', 'target', 'rel'], p: ['style'] },
+    allowedStyles: { p: { 'text-align': [/^center$/, /^left$/, /^right$/] } },
   });
   return temiz || null;
 }
