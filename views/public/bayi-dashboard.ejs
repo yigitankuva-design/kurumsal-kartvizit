@@ -191,12 +191,11 @@
       <div class="dash-subtitle"><%= bayi.email %></div>
     </div>
     <div style="display:flex;gap:8px">
-      <a href="/bayi/panel/kredi-yukle" class="btn btn-border">+ Kredi Yükle</a>
       <button class="btn btn-gold" onclick="openMusteriSlide()">+ Profil Oluştur</button>
     </div>
   </div>
 
-  <div class="stat-row">
+  <div class="stat-row" style="grid-template-columns:repeat(2,1fr)">
     <div class="stat-card">
       <div class="stat-card-n"><%= firmalar.length %></div>
       <div class="stat-card-l">Müşteri</div>
@@ -204,10 +203,6 @@
     <div class="stat-card">
       <div class="stat-card-n"><%= firmalar.reduce((s,f)=>s+parseInt(f.calisan_sayisi||0),0) %></div>
       <div class="stat-card-l">Toplam Kart</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-n"><%= bayi.kredi_bakiyesi %></div>
-      <div class="stat-card-l">Kalan Kredi</div>
     </div>
   </div>
 

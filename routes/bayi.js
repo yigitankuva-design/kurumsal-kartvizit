@@ -113,7 +113,7 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
     await client.query('BEGIN');
 
     const bayiSonuc = await client.query(
-      'SELECT kredi_bakiyesi, abonelik_bitis_tarihi FROM bayiler WHERE id = $1 FOR UPDATE',
+      'SELECT abonelik_bitis_tarihi FROM bayiler WHERE id = $1 FOR UPDATE',
       [req.session.bayiId]
     );
     if (!bayiSonuc.rows.length) {
@@ -125,11 +125,6 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
       await client.query('ROLLBACK');
       req.flash('error', 'Aboneliğinizin süresi dolmuş. Lütfen bizimle iletişime geçin.');
       return res.redirect('/');
-    }
-    if (bayiSonuc.rows[0].kredi_bakiyesi < 1) {
-      await client.query('ROLLBACK');
-      req.flash('error', 'Krediniz kalmadı, lütfen kredi yükleyin.');
-      return res.redirect('/bayi/panel/kredi-yukle');
     }
 
     const firmaAd = (isletme_adi && isletme_adi.trim()) || `${ad} ${soyad}`;
@@ -161,14 +156,6 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
        linkedin || null, instagram || null, twitter || null, youtube || null, website || null,
        whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null, google_yorum_link || null,
        biyografiTemiz, fotoUrl, calisanSlug]
-    );
-
-    await client.query('UPDATE bayiler SET kredi_bakiyesi = kredi_bakiyesi - 1 WHERE id = $1', [req.session.bayiId]);
-
-    await client.query(
-      `INSERT INTO kredi_hareketleri (bayi_id, tip, miktar, aciklama, firma_id)
-       VALUES ($1, 'harcama', -1, $2, $3)`,
-      [req.session.bayiId, `Müşteri eklendi: ${firmaAd}`, firmaId]
     );
 
     await client.query('COMMIT');

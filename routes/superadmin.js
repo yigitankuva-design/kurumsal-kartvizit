@@ -45,66 +45,26 @@ router.post('/firma-sil/:id', requireSuperadmin, async (req, res) => {
 
 // Bayi ekleme
 router.post('/bayi-ekle', requireSuperadmin, async (req, res) => {
-  const { ad, email, kullanici_adi, sifre, marka_rengi, abonelik_bitis_tarihi, baslangic_kredi } = req.body;
+  const { ad, email, kullanici_adi, sifre, marka_rengi, abonelik_bitis_tarihi } = req.body;
   if (!ad || !email || !kullanici_adi || !sifre) {
     req.flash('error', 'Ad, email, kullanıcı adı ve şifre zorunlu.');
     return res.redirect('/?tab=bayiler');
   }
-  const kredi = parseInt(baslangic_kredi, 10) || 0;
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
     const hash = await bcrypt.hash(sifre, 12);
     let slug = firmaSlugOlustur(ad);
-    const check = await client.query('SELECT id FROM bayiler WHERE slug = $1', [slug]);
+    const check = await pool.query('SELECT id FROM bayiler WHERE slug = $1', [slug]);
     if (check.rows.length) slug = `${slug}-${Date.now()}`;
 
-    const sonuc = await client.query(
-      `INSERT INTO bayiler (ad, slug, email, kullanici_adi, sifre_hash, marka_rengi, abonelik_bitis_tarihi, kredi_bakiyesi)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
-      [ad, slug, email, kullanici_adi, hash, marka_rengi || '#1a73e8', abonelik_bitis_tarihi || null, kredi]
+    await pool.query(
+      `INSERT INTO bayiler (ad, slug, email, kullanici_adi, sifre_hash, marka_rengi, abonelik_bitis_tarihi)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [ad, slug, email, kullanici_adi, hash, marka_rengi || '#1a73e8', abonelik_bitis_tarihi || null]
     );
-    if (kredi > 0) {
-      await client.query(
-        `INSERT INTO kredi_hareketleri (bayi_id, tip, miktar, aciklama) VALUES ($1, 'admin_ekleme', $2, 'Bayi oluşturulurken tanımlanan başlangıç kredisi')`,
-        [sonuc.rows[0].id, kredi]
-      );
-    }
-    await client.query('COMMIT');
     req.flash('success', `${ad} bayisi eklendi.`);
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(err);
     req.flash('error', err.code === '23505' ? (err.constraint && err.constraint.includes('kullanici_adi') ? 'Bu kullanıcı adı zaten alınmış.' : 'Bu email zaten kayıtlı.') : 'Bayi eklenemedi.');
-  } finally {
-    client.release();
-  }
-  res.redirect('/?tab=bayiler');
-});
-
-// Bayiye elle kredi ekle (yıllık anlaşma karşılığı vb.)
-router.post('/bayi-kredi-ekle/:id', requireSuperadmin, async (req, res) => {
-  const miktar = parseInt(req.body.miktar, 10);
-  if (!Number.isInteger(miktar) || miktar === 0) {
-    req.flash('error', 'Geçerli bir miktar girin.');
-    return res.redirect('/?tab=bayiler');
-  }
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('UPDATE bayiler SET kredi_bakiyesi = kredi_bakiyesi + $1 WHERE id = $2', [miktar, req.params.id]);
-    await client.query(
-      `INSERT INTO kredi_hareketleri (bayi_id, tip, miktar, aciklama) VALUES ($1, 'admin_ekleme', $2, 'Süperadmin tarafından elle eklendi')`,
-      [req.params.id, miktar]
-    );
-    await client.query('COMMIT');
-    req.flash('success', `${miktar} kredi eklendi.`);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error(err);
-    req.flash('error', 'Kredi eklenemedi.');
-  } finally {
-    client.release();
   }
   res.redirect('/?tab=bayiler');
 });
