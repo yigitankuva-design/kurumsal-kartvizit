@@ -113,3 +113,36 @@ describe('Mobil API — /api/mobil/musteriler', () => {
     expect(res.body.firma.id).toBe(firmaId);
   });
 });
+
+describe('Mobil API — /api/mobil/abonelik', () => {
+  let bayiId;
+  let token;
+  const email = 'mobilapi-abonelik-test@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const hash = await bcrypt.hash(sifre, 8);
+    const sonuc = await pool.query(
+      `INSERT INTO bayiler (ad, slug, email, sifre_hash, aktif, abonelik_bitis_tarihi)
+       VALUES ('Mobil Abonelik Test Bayi', 'mobil-abonelik-test-bayi', $1, $2, true, '2099-01-01') RETURNING id`,
+      [email, hash]
+    );
+    bayiId = sonuc.rows[0].id;
+    const girisRes = await request(app).post('/api/mobil/giris').send({ giris_bilgisi: email, sifre });
+    token = girisRes.body.token;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM bayiler WHERE id = $1', [bayiId]);
+  });
+
+  test('abonelik bitiş tarihini ve aktif durumunu döner', async () => {
+    const res = await request(app)
+      .get('/api/mobil/abonelik')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.aktif).toBe(true);
+    expect(res.body.abonelikBitisTarihi).toBeTruthy();
+  });
+});

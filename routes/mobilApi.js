@@ -69,4 +69,19 @@ router.get('/musteriler/:firmaId/calisanlar', requireBayiToken, async (req, res)
   }
 });
 
+router.get('/abonelik', requireBayiToken, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT abonelik_bitis_tarihi FROM bayiler WHERE id = $1', [req.bayiId]);
+    if (!result.rows.length) {
+      return res.status(404).json({ ok: false, error: 'Bayi bulunamadı.' });
+    }
+    const bitis = result.rows[0].abonelik_bitis_tarihi;
+    const aktif = !bitis || new Date(bitis) >= new Date();
+    res.json({ ok: true, abonelikBitisTarihi: bitis, aktif });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 module.exports = router;
