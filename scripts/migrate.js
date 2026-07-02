@@ -59,6 +59,7 @@ async function migrate() {
     )`,
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
     `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
+    `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS abonelik_bitis_tarihi DATE`,
   ];
 
   for (const sql of migrations) {

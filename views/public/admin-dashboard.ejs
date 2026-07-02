@@ -176,6 +176,15 @@
             <td><%= f.bayi_ad || '—' %></td>
             <td><%= f.sektor %></td>
             <td><%= f.calisan_sayisi %></td>
+            <td>
+              <form method="POST" action="/superadmin/firma-paket/<%= f.id %>" onchange="this.submit()" style="margin:0">
+                <select name="paket" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 8px;font-size:var(--fs-xs);font-family:inherit">
+                  <option value="basic" <%= f.paket === 'basic' ? 'selected' : '' %>>Basic</option>
+                  <option value="premium" <%= f.paket === 'premium' ? 'selected' : '' %>>Premium</option>
+                  <option value="kurumsal" <%= f.paket === 'kurumsal' ? 'selected' : '' %>>Kurumsal</option>
+                </select>
+              </form>
+            </td>
             <td class="td-sub"><%= new Date(f.created_at).toLocaleDateString('tr-TR') %></td>
             <td>
               <form method="POST" action="/superadmin/firma-sil/<%= f.id %>"
@@ -203,6 +212,8 @@
           <div class="field"><label>Kullanıcı Adı</label><input type="text" name="kullanici_adi" required></div>
           <div class="field"><label>Şifre</label><input type="password" name="sifre" required></div>
           <div class="field"><label>Marka Rengi</label><input type="color" name="marka_rengi" value="#c8a84b" style="height:36px;padding:2px"></div>
+          <div class="field"><label>Abonelik Bitiş Tarihi <span style="color:var(--text-faint);font-weight:400">(yıllık anlaşma)</span></label><input type="date" name="abonelik_bitis_tarihi"></div>
+          <div class="field"><label>Başlangıç Kredisi</label><input type="number" name="baslangic_kredi" min="0" value="0"></div>
         </div>
         <button type="submit" class="btn-submit">Bayi Ekle</button>
       </form>
@@ -212,14 +223,35 @@
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Bayi</th><th>Email</th><th>Kredi</th><th>Durum</th><th>Kayıt</th><th></th></tr>
+          <tr><th>Bayi</th><th>Email</th><th>Kredi</th><th>Abonelik</th><th>Durum</th><th>Kayıt</th><th></th></tr>
         </thead>
         <tbody>
-          <% bayiler.forEach(b => { %>
+          <% bayiler.forEach(b => {
+            const bitis = b.abonelik_bitis_tarihi ? new Date(b.abonelik_bitis_tarihi) : null;
+            const suresiDolmus = bitis && bitis < new Date();
+          %>
           <tr>
             <td><div class="td-name"><%= b.ad %></div><div class="td-sub"><%= b.slug %></div></td>
             <td><%= b.email %></td>
-            <td><span style="color:var(--gold);font-weight:700"><%= b.kredi_bakiyesi %></span></td>
+            <td>
+              <span style="color:var(--gold);font-weight:700"><%= b.kredi_bakiyesi %></span>
+              <form method="POST" action="/superadmin/bayi-kredi-ekle/<%= b.id %>" style="display:inline-flex;gap:4px;margin-top:4px">
+                <input type="number" name="miktar" placeholder="±kredi" style="width:70px;background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px;font-size:var(--fs-xs)">
+                <button type="submit" class="btn btn-border btn-sm" style="padding:0 8px">Ekle</button>
+              </form>
+            </td>
+            <td>
+              <% if (bitis) { %>
+                <div class="td-sub" style="color:<%= suresiDolmus ? 'var(--danger)' : 'var(--text-muted)' %>"><%= bitis.toLocaleDateString('tr-TR') %><%= suresiDolmus ? ' (dolmuş)' : '' %></div>
+              <% } else { %>
+                <div class="td-sub">—</div>
+              <% } %>
+              <form method="POST" action="/superadmin/bayi-abonelik/<%= b.id %>" style="margin-top:4px">
+                <input type="date" name="abonelik_bitis_tarihi" value="<%= b.abonelik_bitis_tarihi ? new Date(b.abonelik_bitis_tarihi).toISOString().slice(0,10) : '' %>"
+                       onchange="this.form.submit()"
+                       style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:3px 6px;font-size:var(--fs-xs)">
+              </form>
+            </td>
             <td><span class="badge <%= b.aktif ? 'badge-aktif' : 'badge-pasif' %>"><%= b.aktif ? 'Aktif' : 'Pasif' %></span></td>
             <td class="td-sub"><%= new Date(b.created_at).toLocaleDateString('tr-TR') %></td>
             <td>

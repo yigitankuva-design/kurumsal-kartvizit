@@ -113,10 +113,20 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
     await client.query('BEGIN');
 
     const bayiSonuc = await client.query(
-      'SELECT kredi_bakiyesi FROM bayiler WHERE id = $1 FOR UPDATE',
+      'SELECT kredi_bakiyesi, abonelik_bitis_tarihi FROM bayiler WHERE id = $1 FOR UPDATE',
       [req.session.bayiId]
     );
-    if (!bayiSonuc.rows.length || bayiSonuc.rows[0].kredi_bakiyesi < 1) {
+    if (!bayiSonuc.rows.length) {
+      await client.query('ROLLBACK');
+      return res.redirect('/');
+    }
+    const bitisTarihi = bayiSonuc.rows[0].abonelik_bitis_tarihi;
+    if (bitisTarihi && new Date(bitisTarihi) < new Date()) {
+      await client.query('ROLLBACK');
+      req.flash('error', 'Aboneliğinizin süresi dolmuş. Lütfen bizimle iletişime geçin.');
+      return res.redirect('/');
+    }
+    if (bayiSonuc.rows[0].kredi_bakiyesi < 1) {
       await client.query('ROLLBACK');
       req.flash('error', 'Krediniz kalmadı, lütfen kredi yükleyin.');
       return res.redirect('/bayi/panel/kredi-yukle');
