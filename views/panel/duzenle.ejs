@@ -38,12 +38,9 @@
 </div>
 
 <% if (process.env.GOOGLE_MAPS_API_KEY) { %>
+<script src="/js/adres-autocomplete.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
 <script>
-  function adresAutocompleteBaslat() {
-    const input = document.getElementById('adres-input');
-    if (!input || !window.google) return;
-    new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
-  }
+  function adresAutocompleteBaslat() { adresAutocompleteYukselt('adres-input'); }
 </script>
 <% } %>

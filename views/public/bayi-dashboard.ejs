@@ -756,11 +756,15 @@
     const kartAlanlari = ['ad','soyad','unvan','departman','telefon','email','adres','linkedin','instagram','twitter','youtube','website','whatsapp','tiktok','sahibinden','hurriyet_emlak','google_yorum_link','biyografi'];
     function clearKartForm(){
       kartAlanlari.forEach(f => { const el = document.getElementById('k_'+f); if (el) el.value = ''; });
+      const manuelAdres = document.getElementById('k_adres_manuel');
+      if (manuelAdres) manuelAdres.value = '';
       document.getElementById('k_foto').value = '';
       document.getElementById('k_kvkk').checked = false;
     }
     function fillKartForm(c){
       kartAlanlari.forEach(f => { const el = document.getElementById('k_'+f); if (el) el.value = c[f] || ''; });
+      const manuelAdres = document.getElementById('k_adres_manuel');
+      if (manuelAdres) manuelAdres.value = c.adres || '';
     }
   </script>
 
@@ -769,14 +773,12 @@
 </div><!-- /dash-main -->
 
 <% if (process.env.GOOGLE_MAPS_API_KEY) { %>
+<script src="/js/adres-autocomplete.js"></script>
 <script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
 <script>
   function adresAutocompleteBaslat() {
-    if (!window.google) return;
-    ['m_adres', 'k_adres'].forEach(id => {
-      const input = document.getElementById(id);
-      if (input) new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
-    });
+    adresAutocompleteYukselt('m_adres');
+    adresAutocompleteYukselt('k_adres');
   }
 </script>
 <% } %>
