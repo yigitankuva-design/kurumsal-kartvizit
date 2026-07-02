@@ -38,21 +38,24 @@ router.get('/giris', (req, res) => {
 });
 
 router.post('/giris', bayiGirisLimiter, async (req, res) => {
-  const { email, sifre } = req.body;
-  if (!email || !sifre) {
-    req.flash('error', 'Email ve şifre zorunlu.');
+  const { giris_bilgisi, sifre } = req.body;
+  if (!giris_bilgisi || !sifre) {
+    req.flash('error', 'E-posta/kullanıcı adı ve şifre zorunlu.');
     return res.redirect('/bayi/giris');
   }
   try {
-    const result = await pool.query('SELECT * FROM bayiler WHERE email = $1 AND aktif = true', [email]);
+    const result = await pool.query(
+      'SELECT * FROM bayiler WHERE (email = $1 OR kullanici_adi = $1) AND aktif = true',
+      [giris_bilgisi]
+    );
     if (!result.rows.length) {
-      req.flash('error', 'Email veya şifre hatalı.');
+      req.flash('error', 'E-posta/kullanıcı adı veya şifre hatalı.');
       return res.redirect('/bayi/giris');
     }
     const bayi = result.rows[0];
     const eslesme = await bcrypt.compare(sifre, bayi.sifre_hash);
     if (!eslesme) {
-      req.flash('error', 'Email veya şifre hatalı.');
+      req.flash('error', 'E-posta/kullanıcı adı veya şifre hatalı.');
       return res.redirect('/bayi/giris');
     }
     req.session.bayiId = bayi.id;

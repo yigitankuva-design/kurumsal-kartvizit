@@ -57,6 +57,8 @@ async function migrate() {
       odeme_id     INTEGER REFERENCES odemeler(id) ON DELETE SET NULL,
       created_at   TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
+    `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
   ];
 
   for (const sql of migrations) {

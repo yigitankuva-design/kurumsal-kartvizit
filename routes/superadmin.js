@@ -45,9 +45,9 @@ router.post('/firma-sil/:id', requireSuperadmin, async (req, res) => {
 
 // Bayi ekleme
 router.post('/bayi-ekle', requireSuperadmin, async (req, res) => {
-  const { ad, email, sifre, marka_rengi } = req.body;
-  if (!ad || !email || !sifre) {
-    req.flash('error', 'Ad, email ve şifre zorunlu.');
+  const { ad, email, kullanici_adi, sifre, marka_rengi } = req.body;
+  if (!ad || !email || !kullanici_adi || !sifre) {
+    req.flash('error', 'Ad, email, kullanıcı adı ve şifre zorunlu.');
     return res.redirect('/?tab=bayiler');
   }
   try {
@@ -57,13 +57,13 @@ router.post('/bayi-ekle', requireSuperadmin, async (req, res) => {
     if (check.rows.length) slug = `${slug}-${Date.now()}`;
 
     await pool.query(
-      'INSERT INTO bayiler (ad, slug, email, sifre_hash, marka_rengi) VALUES ($1,$2,$3,$4,$5)',
-      [ad, slug, email, hash, marka_rengi || '#1a73e8']
+      'INSERT INTO bayiler (ad, slug, email, kullanici_adi, sifre_hash, marka_rengi) VALUES ($1,$2,$3,$4,$5,$6)',
+      [ad, slug, email, kullanici_adi, hash, marka_rengi || '#1a73e8']
     );
     req.flash('success', `${ad} bayisi eklendi.`);
   } catch (err) {
     console.error(err);
-    req.flash('error', err.code === '23505' ? 'Bu email zaten kayıtlı.' : 'Bayi eklenemedi.');
+    req.flash('error', err.code === '23505' ? (err.constraint && err.constraint.includes('kullanici_adi') ? 'Bu kullanıcı adı zaten alınmış.' : 'Bu email zaten kayıtlı.') : 'Bayi eklenemedi.');
   }
   res.redirect('/?tab=bayiler');
 });

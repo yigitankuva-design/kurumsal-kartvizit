@@ -13,7 +13,7 @@ describe('POST /firma/giris rate limit', () => {
     for (let i = 0; i < 11; i++) {
       sonIstek = await request(app)
         .post('/firma/giris')
-        .send({ yetkili_email: 'olmayan@test.com', sifre: 'yanlis' });
+        .send({ giris_bilgisi: 'olmayan@test.com', sifre: 'yanlis' });
     }
     expect(sonIstek.statusCode).toBe(302);
     expect(sonIstek.headers.location).toBe('/');
@@ -26,7 +26,7 @@ describe('POST /bayi/giris rate limit', () => {
     for (let i = 0; i < 11; i++) {
       sonIstek = await request(app)
         .post('/bayi/giris')
-        .send({ email: 'olmayan@test.com', sifre: 'yanlis' });
+        .send({ giris_bilgisi: 'olmayan@test.com', sifre: 'yanlis' });
     }
     expect(sonIstek.statusCode).toBe(302);
     expect(sonIstek.headers.location).toBe('/bayi/giris');

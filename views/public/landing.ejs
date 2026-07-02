@@ -681,7 +681,7 @@
       <div class="modal-flash-error" style="margin-bottom:12px"><%= error[0] %></div>
     <% } %>
     <form class="modal-form" id="formGiris" method="POST" action="/firma/giris">
-      <div><label>E-posta</label><input type="email" name="yetkili_email" placeholder="firma@ornek.com" required autocomplete="email"></div>
+      <div><label>E-posta veya Kullanıcı Adı</label><input type="text" name="giris_bilgisi" placeholder="firma@ornek.com veya kullanıcı adı" required autocomplete="username"></div>
       <div><label>Şifre</label><input type="password" name="sifre" placeholder="••••••••" required autocomplete="current-password"></div>
       <button type="submit" class="modal-submit">Giriş Yap →</button>
       <div class="modal-divider"><span>veya</span></div>
@@ -690,6 +690,7 @@
     <form class="modal-form" id="formKayit" method="POST" action="/firma/kayit" style="display:none">
       <div><label>Firma Adı</label><input type="text" name="ad" placeholder="Örnek Firma A.Ş." required autocomplete="organization"></div>
       <div><label>E-posta</label><input type="email" name="yetkili_email" placeholder="firma@ornek.com" required autocomplete="email"></div>
+      <div><label>Kullanıcı Adı</label><input type="text" name="kullanici_adi" placeholder="ornekfirma" required autocomplete="username"></div>
       <div><label>Şifre</label><input type="password" name="sifre" placeholder="En az 8 karakter" required minlength="8" autocomplete="new-password"></div>
       <button type="submit" class="modal-submit">Hesap Oluştur →</button>
       <div class="modal-divider"><span>veya</span></div>

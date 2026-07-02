@@ -26,7 +26,7 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
 
   test('kredi 0 iken firma eklenemez', async () => {
     const agent = request.agent(app);
-    await agent.post('/bayi/giris').send({ email, sifre });
+    await agent.post('/bayi/giris').send({ giris_bilgisi: email, sifre });
 
     const oncekiFirmaSayisi = (await pool.query('SELECT COUNT(*) FROM firmalar WHERE bayi_id = $1', [bayiId])).rows[0].count;
 
@@ -42,7 +42,7 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
     await pool.query('UPDATE bayiler SET kredi_bakiyesi = 3 WHERE id = $1', [bayiId]);
 
     const agent = request.agent(app);
-    await agent.post('/bayi/giris').send({ email, sifre });
+    await agent.post('/bayi/giris').send({ giris_bilgisi: email, sifre });
 
     const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi Test Firma 2' });
     expect(res.statusCode).toBe(302);
