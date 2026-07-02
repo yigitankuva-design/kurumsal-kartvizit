@@ -78,12 +78,25 @@ router.get('/panel', requireBayi, (req, res) => res.redirect('/'));
 
 // ── FİRMA EKLE / SİL ─────────────────────────────────────────────────────────
 
-router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res) => {
-  const { ad, sektor, marka_rengi } = req.body;
-  if (!ad) {
-    req.flash('error', 'Müşteri adı zorunlu.');
+router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter,
+  fotoUploadGuvenli(() => '/'),
+  async (req, res) => {
+  const {
+    isletme_adi, sektor, marka_rengi,
+    ad, soyad, unvan, departman, telefon, email, adres, biyografi,
+    linkedin, instagram, twitter, youtube, website, whatsapp, tiktok,
+    sahibinden, hurriyet_emlak, google_yorum_link, kvkk,
+  } = req.body;
+
+  if (!ad || !soyad) {
+    req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
   }
+  if (!kvkk) {
+    req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
+    return res.redirect('/');
+  }
+
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -98,7 +111,8 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res)
       return res.redirect('/bayi/panel/kredi-yukle');
     }
 
-    let slug = firmaSlugOlustur(ad);
+    const firmaAd = (isletme_adi && isletme_adi.trim()) || `${ad} ${soyad}`;
+    let slug = firmaSlugOlustur(firmaAd);
     const check = await client.query('SELECT id FROM firmalar WHERE slug = $1', [slug]);
     if (check.rows.length) slug = `${slug}-${Date.now()}`;
 
@@ -109,7 +123,23 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res)
     const firmaSonuc = await client.query(
       `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, sektor, marka_rengi, bayi_id)
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      [ad, slug, dummyEmail, dummyHash, sektor || 'diger', marka_rengi || '#1a73e8', req.session.bayiId]
+      [firmaAd, slug, dummyEmail, dummyHash, sektor || 'diger', marka_rengi || '#1a73e8', req.session.bayiId]
+    );
+    const firmaId = firmaSonuc.rows[0].id;
+
+    const calisanSlug = await benzersizCalisanSlugOlustur(firmaId, ad, soyad);
+    const fotoUrl = req.file?.location || null;
+    const biyografiTemiz = biyografiTemizle(biyografi);
+
+    await client.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, adres,
+        linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden,
+        hurriyet_emlak, google_yorum_link, biyografi, foto_url, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
+      [firmaId, ad, soyad, unvan || null, departman || null, telefon || null, email || null, adres || null,
+       linkedin || null, instagram || null, twitter || null, youtube || null, website || null,
+       whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null, google_yorum_link || null,
+       biyografiTemiz, fotoUrl, calisanSlug]
     );
 
     await client.query('UPDATE bayiler SET kredi_bakiyesi = kredi_bakiyesi - 1 WHERE id = $1', [req.session.bayiId]);
@@ -117,12 +147,12 @@ router.post('/panel/firma-ekle', requireBayi, firmaEkleLimiter, async (req, res)
     await client.query(
       `INSERT INTO kredi_hareketleri (bayi_id, tip, miktar, aciklama, firma_id)
        VALUES ($1, 'harcama', -1, $2, $3)`,
-      [req.session.bayiId, `Firma eklendi: ${ad}`, firmaSonuc.rows[0].id]
+      [req.session.bayiId, `Müşteri eklendi: ${firmaAd}`, firmaId]
     );
 
     await client.query('COMMIT');
-    req.flash('success', `${ad} eklendi.`);
-    res.redirect('/');
+    req.flash('success', `${ad} ${soyad} eklendi.`);
+    res.redirect(`/?firma=${firmaId}`);
   } catch (err) {
     await client.query('ROLLBACK');
     console.error(err);

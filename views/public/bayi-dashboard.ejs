@@ -224,11 +224,21 @@
         <button class="slide-close" onclick="closeMusteriSlide()">✕</button>
       </div>
       <div class="slide-body">
-        <form id="musteriForm" method="POST" action="/bayi/panel/firma-ekle">
+        <form id="musteriForm" method="POST" action="/bayi/panel/firma-ekle" enctype="multipart/form-data">
           <div class="form-row">
+            <div class="field"><label>Ad *</label><input type="text" name="ad" required></div>
+            <div class="field"><label>Soyad *</label><input type="text" name="soyad" required></div>
+            <div class="field"><label>Unvan</label><input type="text" name="unvan" placeholder="Örn: Satış Müdürü"></div>
+            <div class="field"><label>Departman</label><input type="text" name="departman"></div>
+            <div class="field"><label>Telefon</label><input type="tel" name="telefon" placeholder="+905001112233"></div>
+            <div class="field"><label>E-posta</label><input type="email" name="email"></div>
+            <div class="field field-full"><label>Adres</label><input type="text" name="adres" id="m_adres" placeholder="Adres aramaya başlayın..." autocomplete="off"></div>
+
+            <hr class="field-sep">
+            <div class="field-section">İşletme (isteğe bağlı)</div>
             <div class="field field-full">
-              <label>Müşteri / Firma Adı *</label>
-              <input type="text" name="ad" placeholder="Örn: Ahmet Demir" required>
+              <label>İşletme / Müşteri Adı <span style="color:var(--text-faint);font-weight:400">(boş bırakılırsa ad soyad kullanılır)</span></label>
+              <input type="text" name="isletme_adi" placeholder="Örn: Yılmaz Berber Salonu">
             </div>
             <div class="field">
               <label>Sektör</label>
@@ -244,6 +254,29 @@
             <div class="field">
               <label>Kart Rengi</label>
               <input type="color" name="marka_rengi" value="#1a73e8" style="height:36px;padding:2px">
+            </div>
+
+            <hr class="field-sep">
+            <div class="field-section">Sosyal Medya</div>
+            <div class="field"><label>LinkedIn URL</label><input type="url" name="linkedin"></div>
+            <div class="field"><label>Instagram URL</label><input type="url" name="instagram"></div>
+            <div class="field"><label>Twitter / X URL</label><input type="url" name="twitter"></div>
+            <div class="field"><label>YouTube URL</label><input type="url" name="youtube"></div>
+            <div class="field"><label>Web Sitesi</label><input type="url" name="website"></div>
+            <div class="field"><label>WhatsApp</label><input type="tel" name="whatsapp" placeholder="+905001112233"></div>
+            <div class="field"><label>TikTok URL</label><input type="url" name="tiktok"></div>
+            <div class="field"><label>Sahibinden URL</label><input type="url" name="sahibinden"></div>
+            <div class="field"><label>Hürriyet Emlak URL</label><input type="url" name="hurriyet_emlak"></div>
+            <div class="field"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link"></div>
+
+            <hr class="field-sep">
+            <div class="field field-full"><label>Biyografi</label><textarea name="biyografi"></textarea></div>
+
+            <hr class="field-sep">
+            <div class="field field-full"><label>Fotoğraf</label><input type="file" name="foto" accept="image/jpeg,image/png,image/webp"></div>
+            <div class="field field-full" style="flex-direction:row;gap:8px;align-items:flex-start">
+              <input type="checkbox" name="kvkk" id="m_kvkk" required style="margin-top:3px">
+              <label style="font-weight:400" for="m_kvkk">Bu kişinin verilerinin (ad, telefon, e-posta, fotoğraf) dijital kartvizit oluşturulması amacıyla işlenmesi için onayı alınmıştır.</label>
             </div>
           </div>
         </form>
@@ -432,9 +465,11 @@
 <script src="https://maps.googleapis.com/maps/api/js?key=<%= process.env.GOOGLE_MAPS_API_KEY %>&libraries=places&callback=adresAutocompleteBaslat" async defer></script>
 <script>
   function adresAutocompleteBaslat() {
-    const input = document.getElementById('k_adres');
-    if (!input || !window.google) return;
-    new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
+    if (!window.google) return;
+    ['m_adres', 'k_adres'].forEach(id => {
+      const input = document.getElementById(id);
+      if (input) new google.maps.places.Autocomplete(input, { types: ['address'], componentRestrictions: { country: 'tr' } });
+    });
   }
 </script>
 <% } %>

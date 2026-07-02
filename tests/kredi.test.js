@@ -30,7 +30,7 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
 
     const oncekiFirmaSayisi = (await pool.query('SELECT COUNT(*) FROM firmalar WHERE bayi_id = $1', [bayiId])).rows[0].count;
 
-    const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi Test Firma' });
+    const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi', soyad: 'Test', kvkk: 'on' });
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('/bayi/panel/kredi-yukle');
 
@@ -44,9 +44,9 @@ describe('Bayi kredi kontrolü — firma ekleme', () => {
     const agent = request.agent(app);
     await agent.post('/bayi/giris').send({ giris_bilgisi: email, sifre });
 
-    const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi Test Firma 2' });
+    const res = await agent.post('/bayi/panel/firma-ekle').send({ ad: 'Kredi', soyad: 'Test2', kvkk: 'on' });
     expect(res.statusCode).toBe(302);
-    expect(res.headers.location).toBe('/');
+    expect(res.headers.location).toMatch(/^\/\?firma=\d+$/);
 
     const bayiSonuc = await pool.query('SELECT kredi_bakiyesi FROM bayiler WHERE id = $1', [bayiId]);
     expect(bayiSonuc.rows[0].kredi_bakiyesi).toBe(2);
