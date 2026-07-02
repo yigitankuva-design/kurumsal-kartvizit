@@ -146,3 +146,57 @@ describe('Mobil API — /api/mobil/abonelik', () => {
     expect(res.body.abonelikBitisTarihi).toBeTruthy();
   });
 });
+
+describe('Mobil API — /api/mobil/profil-olustur', () => {
+  let bayiId;
+  let token;
+  let olusturulanFirmaId;
+  const email = 'mobilapi-profil-test@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const hash = await bcrypt.hash(sifre, 8);
+    const sonuc = await pool.query(
+      `INSERT INTO bayiler (ad, slug, email, sifre_hash, aktif)
+       VALUES ('Mobil Profil Test Bayi', 'mobil-profil-test-bayi', $1, $2, true) RETURNING id`,
+      [email, hash]
+    );
+    bayiId = sonuc.rows[0].id;
+    const girisRes = await request(app).post('/api/mobil/giris').send({ giris_bilgisi: email, sifre });
+    token = girisRes.body.token;
+  });
+
+  afterAll(async () => {
+    if (olusturulanFirmaId) await pool.query('DELETE FROM firmalar WHERE id = $1', [olusturulanFirmaId]);
+    await pool.query('DELETE FROM bayiler WHERE id = $1', [bayiId]);
+  });
+
+  test('fotoğrafsız, geçerli veriyle profil oluşturur ve url döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/profil-olustur')
+      .set('Authorization', `Bearer ${token}`)
+      .field('ad_soyad', 'Mehmet Demir')
+      .field('kvkk', 'on');
+    expect(res.statusCode).toBe(201);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.url).toContain('/mehmet-demir');
+    olusturulanFirmaId = res.body.firmaId;
+  });
+
+  test('ad_soyad eksikse 400 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/profil-olustur')
+      .set('Authorization', `Bearer ${token}`)
+      .field('kvkk', 'on');
+    expect(res.statusCode).toBe(400);
+    expect(res.body.ok).toBe(false);
+  });
+
+  test('token olmadan 401 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/profil-olustur')
+      .field('ad_soyad', 'Test Test')
+      .field('kvkk', 'on');
+    expect(res.statusCode).toBe(401);
+  });
+});

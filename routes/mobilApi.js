@@ -5,6 +5,32 @@ const { pool } = require('../db');
 const { bayiTokenUret } = require('../utils/jwt');
 const { createJsonLimiter } = require('../middleware/rateLimiter');
 const { requireBayiToken } = require('../middleware/tokenAuth');
+const { uploadMiddleware } = require('../middleware/upload');
+const {
+  profilOlustur,
+  GecersizProfilHatasi,
+  AbonelikSuresiDolmusHatasi,
+} = require('../services/musteriService');
+
+const fotoUpload = uploadMiddleware('calisanlar');
+const mobilProfilLimiter = createJsonLimiter('Çok fazla işlem yaptınız. Lütfen biraz sonra tekrar deneyin.');
+
+function fotoUploadGuvenliJson() {
+  return (req, res, next) => {
+    const [multerMw, isleMw] = fotoUpload.single('foto');
+    const hataYakala = (err) => {
+      console.error(err);
+      res.status(400).json({ ok: false, error: err.message || 'Fotoğraf yüklenemedi.' });
+    };
+    multerMw(req, res, (err) => {
+      if (err) return hataYakala(err);
+      isleMw(req, res, (err2) => {
+        if (err2) return hataYakala(err2);
+        next();
+      });
+    });
+  };
+}
 
 const mobilGirisLimiter = createJsonLimiter('Çok fazla deneme yaptınız. Lütfen 15 dakika sonra tekrar deneyin.');
 
@@ -79,6 +105,27 @@ router.get('/abonelik', requireBayiToken, async (req, res) => {
     const aktif = !bitis || new Date(bitis) >= new Date();
     res.json({ ok: true, abonelikBitisTarihi: bitis, aktif });
   } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+router.post('/profil-olustur', requireBayiToken, mobilProfilLimiter, fotoUploadGuvenliJson(), async (req, res) => {
+  try {
+    const sonuc = await profilOlustur(req.bayiId, req.body, req.file?.location || null);
+    const siteUrl = process.env.SITE_URL || 'https://www.nfckartify.com.tr';
+    res.status(201).json({
+      ok: true,
+      firmaId: sonuc.firmaId,
+      url: `${siteUrl}/${sonuc.firmaSlug}/${sonuc.calisanSlug}`,
+    });
+  } catch (err) {
+    if (err instanceof GecersizProfilHatasi) {
+      return res.status(400).json({ ok: false, error: err.message });
+    }
+    if (err instanceof AbonelikSuresiDolmusHatasi) {
+      return res.status(403).json({ ok: false, error: err.message });
+    }
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
   }
