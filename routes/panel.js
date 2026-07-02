@@ -14,20 +14,22 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 
 
 // fotoUpload.single() bir dizi middleware döner (multer + sharp işleme) — hata
 // olursa çökmek yerine flash mesajıyla forma geri döner.
-function fotoUploadGuvenli(req, res, next) {
-  const [multerMw, isleMw] = fotoUpload.single('foto');
-  const hataYakala = (err) => {
-    console.error(err);
-    req.flash('error', err.message || 'Fotoğraf yüklenemedi.');
-    res.redirect(`/firma/panel/${req.params.id}/duzenle`);
-  };
-  multerMw(req, res, (err) => {
-    if (err) return hataYakala(err);
-    isleMw(req, res, (err2) => {
-      if (err2) return hataYakala(err2);
-      next();
+function fotoUploadGuvenli(redirectYolu) {
+  return (req, res, next) => {
+    const [multerMw, isleMw] = fotoUpload.single('foto');
+    const hataYakala = (err) => {
+      console.error(err);
+      req.flash('error', err.message || 'Fotoğraf yüklenemedi.');
+      res.redirect(typeof redirectYolu === 'function' ? redirectYolu(req) : redirectYolu);
+    };
+    multerMw(req, res, (err) => {
+      if (err) return hataYakala(err);
+      isleMw(req, res, (err2) => {
+        if (err2) return hataYakala(err2);
+        next();
+      });
     });
-  });
+  };
 }
 
 // Ana panel → dashboard'a yönlendir
@@ -39,25 +41,30 @@ router.get('/ekle', (req, res) => {
 });
 
 // Çalışan ekleme POST
-router.post('/ekle', async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar } = req.body;
+router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) => {
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, kvkk } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
+    return res.redirect('/');
+  }
+  if (!kvkk) {
+    req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
     return res.redirect('/');
   }
   try {
     const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, ad, soyad);
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
     const biyografiTemiz = biyografiTemizle(biyografi);
+    const fotoUrl = req.file?.location || null;
     await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)`,
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, foto_url, slug)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
       [req.session.firmaId, ad, soyad, unvan || null, departman || null,
        telefon || null, email || null, linkedin || null,
        instagram || null, twitter || null, youtube || null, website || null,
        whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null,
        adres || null, google_yorum_link || null,
-       biyografiTemiz, ilaclarArray, slug]
+       biyografiTemiz, ilaclarArray, fotoUrl, slug]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
     res.redirect('/');
@@ -175,8 +182,8 @@ async function duzenleHandler(req, res) {
     res.redirect('/');
   }
 }
-router.post('/:id/duzenle', fotoUploadGuvenli, duzenleHandler);
-router.put('/:id/duzenle', fotoUploadGuvenli, duzenleHandler);
+router.post('/:id/duzenle', fotoUploadGuvenli((req) => `/firma/panel/${req.params.id}/duzenle`), duzenleHandler);
+router.put('/:id/duzenle', fotoUploadGuvenli((req) => `/firma/panel/${req.params.id}/duzenle`), duzenleHandler);
 
 // Durum değiştirme
 router.patch('/:id/durum', async (req, res) => {

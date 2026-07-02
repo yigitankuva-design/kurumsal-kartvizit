@@ -1,7 +1,7 @@
 <div class="form-container">
   <h2>Yeni Çalışan Ekle</h2>
   <a href="/firma/panel" class="btn-link" style="display:inline-block;margin-bottom:20px">← Panele Dön</a>
-  <form method="POST" action="/firma/panel/ekle">
+  <form method="POST" action="/firma/panel/ekle" enctype="multipart/form-data">
     <div class="form-group"><label>Ad *</label><input type="text" name="ad" required></div>
     <div class="form-group"><label>Soyad *</label><input type="text" name="soyad" required></div>
     <div class="form-group"><label>Unvan</label><input type="text" name="unvan"></div>
@@ -23,6 +23,15 @@
     <div class="form-group"><label>Sahibinden İlan URL</label><input type="url" name="sahibinden" placeholder="https://sahibinden.com/..."></div>
     <div class="form-group"><label>Hürriyet Emlak İlan URL</label><input type="url" name="hurriyet_emlak" placeholder="https://hurriyetemlak.com/..."></div>
     <div class="form-group"><label>Google Yorum Linki</label><input type="url" name="google_yorum_link" placeholder="https://g.page/r/.../review"></div>
+
+    <div class="form-group"><label>Fotoğraf</label><input type="file" name="foto" accept="image/jpeg,image/png,image/webp"></div>
+
+    <div class="form-group">
+      <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400">
+        <input type="checkbox" name="kvkk" required style="margin-top:3px">
+        <span>Bu kişinin verilerinin (ad, telefon, e-posta, fotoğraf) dijital kartvizit oluşturulması amacıyla işlenmesi için onayı alınmıştır.</span>
+      </label>
+    </div>
 
     <button type="submit" class="btn">Ekle</button>
   </form>

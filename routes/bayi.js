@@ -212,9 +212,13 @@ router.get('/panel/:firmaId/calisan-ekle', requireBayi, async (req, res) => {
 router.post('/panel/:firmaId/calisan-ekle', requireBayi,
   fotoUploadGuvenli((req) => `/bayi/panel/${req.params.firmaId}/calisan-ekle`),
   async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, kvkk } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
+    return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
+  }
+  if (!kvkk) {
+    req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
     return res.redirect(`/bayi/panel/${req.params.firmaId}/calisan-ekle`);
   }
   try {
