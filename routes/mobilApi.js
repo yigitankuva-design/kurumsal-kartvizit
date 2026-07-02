@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { bayiTokenUret } = require('../utils/jwt');
 const { createJsonLimiter } = require('../middleware/rateLimiter');
+const { requireBayiToken } = require('../middleware/tokenAuth');
 
 const mobilGirisLimiter = createJsonLimiter('Çok fazla deneme yaptınız. Lütfen 15 dakika sonra tekrar deneyin.');
 
@@ -27,6 +28,21 @@ router.post('/giris', mobilGirisLimiter, async (req, res) => {
     }
     const token = bayiTokenUret(bayi.id);
     res.json({ ok: true, token, bayi: { id: bayi.id, ad: bayi.ad } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+router.get('/musteriler', requireBayiToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT f.id, f.ad, f.slug, COUNT(c.id) as calisan_sayisi
+       FROM firmalar f LEFT JOIN calisanlar c ON c.firma_id = f.id
+       WHERE f.bayi_id = $1 GROUP BY f.id ORDER BY f.created_at DESC`,
+      [req.bayiId]
+    );
+    res.json({ ok: true, musteriler: result.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
