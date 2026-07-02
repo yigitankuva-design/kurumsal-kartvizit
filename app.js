@@ -14,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const panelRoutes = require('./routes/panel');
 const superadminRoutes = require('./routes/superadmin');
 const bayiRoutes = require('./routes/bayi');
+const mobilApiRoutes = require('./routes/mobilApi');
 const { router: odemeRoutes } = require('./routes/odeme');
 const publicRoutes = require('./routes/public');
 const { requireFirma } = require('./middleware/authMiddleware');
@@ -62,6 +63,7 @@ app.use('/firma/panel', requireFirma, panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
 app.use('/bayi', odemeRoutes);
+app.use('/api/mobil', mobilApiRoutes);
 
 // Tek giriş noktası: firma, bayi veya süperadmin — hangisi eşleşirse ona giriş yapılır
 const girisLimiter = createLoginLimiter('/');
