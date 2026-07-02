@@ -376,7 +376,7 @@
     </div>
 
     <div class="slide-body">
-      <form id="slideForm" method="POST" action="/firma/panel/ekle">
+      <form id="slideForm" method="POST" action="/firma/panel/ekle" enctype="multipart/form-data">
         <input type="hidden" id="formMethod" name="_method" value="">
         <div class="form-row">
           <div class="field">
@@ -430,6 +430,20 @@
             <label>Biyografi</label>
             <textarea name="biyografi" id="f_biyografi" placeholder="Kısa tanıtım metni..."></textarea>
           </div>
+
+          <div id="createOnlyFields" class="field-full" style="display:contents">
+            <hr class="field-sep">
+
+            <div class="field field-full">
+              <label>Fotoğraf</label>
+              <input type="file" name="foto" id="f_foto" accept="image/jpeg,image/png,image/webp">
+            </div>
+
+            <div class="field field-full" style="flex-direction:row;gap:8px;align-items:flex-start">
+              <input type="checkbox" name="kvkk" id="f_kvkk" style="margin-top:3px">
+              <label style="font-weight:400" for="f_kvkk">Bu kişinin verilerinin (ad, telefon, e-posta, fotoğraf) dijital kartvizit oluşturulması amacıyla işlenmesi için onayı alınmıştır.</label>
+            </div>
+          </div>
         </div>
       </form>
     </div>
@@ -451,6 +465,8 @@
     document.getElementById('slideTitle').textContent = 'Yeni Çalışan';
     document.getElementById('slideForm').action = '/firma/panel/ekle';
     document.getElementById('formMethod').value = '';
+    document.getElementById('createOnlyFields').style.display = 'contents';
+    document.getElementById('f_kvkk').required = true;
     clearForm();
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -461,6 +477,8 @@
     document.getElementById('slideTitle').textContent = 'Çalışan Düzenle';
     document.getElementById('slideForm').action = `/firma/panel/${c.id}/duzenle`;
     document.getElementById('formMethod').value = 'PUT';
+    document.getElementById('createOnlyFields').style.display = 'none';
+    document.getElementById('f_kvkk').required = false;
     fillForm(c);
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -480,10 +498,11 @@
   }
 
   function clearForm() {
-    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi'].forEach(f => {
+    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi','foto'].forEach(f => {
       const el = document.getElementById('f_' + f);
       if (el) el.value = '';
     });
+    document.getElementById('f_kvkk').checked = false;
   }
 
   function fillForm(c) {

@@ -63,9 +63,6 @@ app.use('/bayi', odemeRoutes);
 
 // Ana sayfa: giriş yapılmışsa dashboard (firma ya da süperadmin), yoksa landing
 app.get('/', async (req, res) => {
-  const error = req.flash('error');
-  const success = req.flash('success');
-
   if (req.session.superadmin) {
     try {
       const firmalarResult = await pool.query(`
@@ -78,7 +75,7 @@ app.get('/', async (req, res) => {
       const bayilerResult = await pool.query('SELECT * FROM bayiler ORDER BY created_at DESC');
       const tab = req.query.tab || 'firmalar';
       return res.render('public/admin-dashboard', {
-        layout: false, firmalar: firmalarResult.rows, bayiler: bayilerResult.rows, tab, error, success
+        layout: false, firmalar: firmalarResult.rows, bayiler: bayilerResult.rows, tab
       });
     } catch (err) {
       console.error(err);
@@ -87,7 +84,7 @@ app.get('/', async (req, res) => {
   }
 
   if (!req.session.firmaId) {
-    return res.render('public/landing', { layout: false, error, success });
+    return res.render('public/landing', { layout: false });
   }
   try {
     const firmaResult = await pool.query('SELECT * FROM firmalar WHERE id = $1', [req.session.firmaId]);
@@ -120,7 +117,7 @@ app.get('/', async (req, res) => {
 
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
-      toplamGoruntulenme, tab, linkAnalytics, error, success
+      toplamGoruntulenme, tab, linkAnalytics
     });
   } catch (err) {
     console.error(err);
