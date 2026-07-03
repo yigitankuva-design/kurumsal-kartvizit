@@ -22,4 +22,16 @@ function requireBayi(req, res, next) {
   next();
 }
 
-module.exports = { requireFirma, requireSuperadmin, requireBayi };
+async function requireKurumsalPaket(req, res, next) {
+  try {
+    const { pool } = require('../db');
+    const r = await pool.query('SELECT paket FROM firmalar WHERE id = $1', [req.session.firmaId]);
+    if (!r.rows.length || r.rows[0].paket !== 'kurumsal') return res.redirect('/');
+    next();
+  } catch (err) {
+    console.error(err);
+    res.redirect('/');
+  }
+}
+
+module.exports = { requireFirma, requireSuperadmin, requireBayi, requireKurumsalPaket };
