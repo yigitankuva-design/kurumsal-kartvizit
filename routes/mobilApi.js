@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
-const { bayiTokenUret } = require('../utils/jwt');
+const { bayiTokenUret, calisanTokenUret } = require('../utils/jwt');
 const { createJsonLimiter } = require('../middleware/rateLimiter');
-const { requireBayiToken } = require('../middleware/tokenAuth');
+const { requireBayiToken, requireCalisanToken } = require('../middleware/tokenAuth');
 const { uploadMiddleware } = require('../middleware/upload');
 const {
   profilOlustur,
@@ -54,6 +54,31 @@ router.post('/giris', mobilGirisLimiter, async (req, res) => {
     }
     const token = bayiTokenUret(bayi.id);
     res.json({ ok: true, token, bayi: { id: bayi.id, ad: bayi.ad } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+const temsilciGirisLimiter = createJsonLimiter('Çok fazla deneme yaptınız. Lütfen 15 dakika sonra tekrar deneyin.');
+
+router.post('/temsilci-giris', temsilciGirisLimiter, async (req, res) => {
+  const { giris_email, sifre } = req.body;
+  if (!giris_email || !sifre) {
+    return res.status(400).json({ ok: false, error: 'Giriş e-postası ve şifre zorunlu.' });
+  }
+  try {
+    const result = await pool.query('SELECT * FROM calisanlar WHERE giris_email = $1', [giris_email]);
+    if (!result.rows.length || !result.rows[0].giris_sifre_hash) {
+      return res.status(401).json({ ok: false, error: 'Giriş e-postası veya şifre hatalı.' });
+    }
+    const calisan = result.rows[0];
+    const eslesme = await bcrypt.compare(sifre, calisan.giris_sifre_hash);
+    if (!eslesme) {
+      return res.status(401).json({ ok: false, error: 'Giriş e-postası veya şifre hatalı.' });
+    }
+    const token = calisanTokenUret(calisan.id);
+    res.json({ ok: true, token, calisan: { id: calisan.id, ad: calisan.ad, soyad: calisan.soyad, firmaId: calisan.firma_id } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });

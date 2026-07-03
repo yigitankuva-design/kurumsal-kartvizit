@@ -200,3 +200,56 @@ describe('Mobil API — /api/mobil/profil-olustur', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Mobil API — /api/mobil/temsilci-giris', () => {
+  let firmaId, calisanId;
+  const email = 'temsilci-giris-test@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const firmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Temsilci Test Firma', 'temsilci-test-firma', 'x2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = firmaSonuc.rows[0].id;
+    const hash = await bcrypt.hash(sifre, 12);
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Test', 'Temsilci', 'test-temsilci', $2, $3) RETURNING id`,
+      [firmaId, email, hash]
+    );
+    calisanId = calisanSonuc.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  test('doğru bilgilerle token döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/temsilci-giris')
+      .send({ giris_email: email, sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(typeof res.body.token).toBe('string');
+  });
+
+  test('yanlış şifreyle 401 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/temsilci-giris')
+      .send({ giris_email: email, sifre: 'yanlis' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('eksik alanla 400 döner', async () => {
+    const res = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: email });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('kayıtlı olmayan e-posta ile 401 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/temsilci-giris')
+      .send({ giris_email: 'yok@example.com', sifre: 'herhangi' });
+    expect(res.statusCode).toBe(401);
+  });
+});
