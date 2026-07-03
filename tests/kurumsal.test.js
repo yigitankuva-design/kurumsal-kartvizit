@@ -97,4 +97,21 @@ describe('Kurumsal panel uçları', () => {
     const e = await pool.query('SELECT * FROM eczaneler WHERE id = $1', [eczane.id]);
     expect(e.rows.length).toBe(0);
   });
+
+  test('kurumsal firma dashboardında Raf Kartları sekmesi ve eczane listesi görünür', async () => {
+    const agent = await girisYap('k1kurumsal@example.com');
+    await agent.post('/kurumsal/eczane-ekle').send({ ad: 'Sekme Test Eczanesi' });
+    const res = await agent.get('/?tab=raf');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Raf Kartları');
+    expect(res.text).toContain('Sekme Test Eczanesi');
+    expect(res.text).toContain('/raf/');
+  });
+
+  test('basic firma dashboardında Raf Kartları sekmesi görünmez', async () => {
+    const agent = await girisYap('k1basic@example.com');
+    const res = await agent.get('/');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).not.toContain('Raf Kartları');
+  });
 });

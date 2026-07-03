@@ -252,6 +252,10 @@
     <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
     <a href="/?tab=analytics"  class="dash-tab <%= tab === 'analytics'  ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
+    <% if (firma.paket === 'kurumsal') { %>
+    <a href="/?tab=icerik" class="dash-tab <%= tab === 'icerik' ? 'active' : '' %>">İçerik</a>
+    <a href="/?tab=raf"    class="dash-tab <%= tab === 'raf'    ? 'active' : '' %>">Raf Kartları</a>
+    <% } %>
   </div>
 
   <!-- TAB: ÇALIŞANLAR -->
@@ -362,6 +366,69 @@
         </div>
         <button type="submit" class="btn btn-gold" style="height:36px;">Yükle ve İçe Aktar</button>
       </form>
+    </div>
+
+  <!-- TAB: KURUMSAL İÇERİK -->
+  <% } else if (tab === 'icerik' && firma.paket === 'kurumsal') { %>
+    <div class="table-wrap" style="padding:20px;max-width:560px">
+      <h3 style="margin-bottom:12px">Logo</h3>
+      <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:8px"><% } %>
+      <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" style="margin-bottom:24px">
+        <input type="file" name="logo" accept="image/*" required>
+        <button type="submit">Logoyu Yükle</button>
+      </form>
+
+      <h3 style="margin-bottom:12px">Ürün Kataloğu (PDF)</h3>
+      <% if (firma.katalog_url) { %><p style="margin-bottom:8px"><a href="<%= firma.katalog_url %>" target="_blank">Mevcut kataloğu görüntüle</a></p><% } %>
+      <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" style="margin-bottom:24px">
+        <input type="file" name="katalog" accept="application/pdf" required>
+        <button type="submit">Kataloğu Yükle</button>
+      </form>
+
+      <h3 style="margin-bottom:12px">Linkler</h3>
+      <form method="POST" action="/kurumsal/icerik" style="display:flex;flex-direction:column;gap:8px">
+        <input name="website"   placeholder="Web sitesi"  value="<%= firma.website   || '' %>">
+        <input name="instagram" placeholder="Instagram"   value="<%= firma.instagram || '' %>">
+        <input name="linkedin"  placeholder="LinkedIn"    value="<%= firma.linkedin  || '' %>">
+        <input name="twitter"   placeholder="Twitter / X" value="<%= firma.twitter   || '' %>">
+        <input name="youtube"   placeholder="YouTube"     value="<%= firma.youtube   || '' %>">
+        <input name="tiktok"    placeholder="TikTok"      value="<%= firma.tiktok    || '' %>">
+        <input name="whatsapp"  placeholder="WhatsApp numarası" value="<%= firma.whatsapp || '' %>">
+        <button type="submit">Kaydet</button>
+      </form>
+    </div>
+
+  <!-- TAB: RAF KARTLARI -->
+  <% } else if (tab === 'raf' && firma.paket === 'kurumsal') { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:560px">
+      <h3 style="margin-bottom:12px">Yeni Eczane Ekle</h3>
+      <form method="POST" action="/kurumsal/eczane-ekle" style="display:flex;gap:8px;flex-wrap:wrap">
+        <input name="ad" placeholder="Eczane adı *" required>
+        <input name="adres" placeholder="Adres">
+        <button type="submit">Ekle</button>
+      </form>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th></th></tr></thead>
+        <tbody>
+          <% eczaneler.forEach(e => { %>
+          <tr>
+            <td><%= e.ad %></td>
+            <td><%= e.adres || '-' %></td>
+            <td><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a></td>
+            <td><%= e.okutma_sayisi %></td>
+            <td>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
+                    onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
+                <button type="submit">Sil</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+          <% if (!eczaneler.length) { %><tr><td colspan="5">Henüz eczane eklenmemiş.</td></tr><% } %>
+        </tbody>
+      </table>
     </div>
   <% } %>
 

@@ -215,9 +215,19 @@ app.get('/', async (req, res) => {
       linkAnalytics = aResult.rows;
     }
 
+    let eczaneler = [];
+    if (tab === 'raf' && firma.paket === 'kurumsal') {
+      const eczanelerResult = await pool.query(
+        `SELECT e.*, (SELECT COUNT(*) FROM raf_okutmalar r WHERE r.eczane_id = e.id) as okutma_sayisi
+         FROM eczaneler e WHERE e.firma_id = $1 ORDER BY e.created_at DESC`,
+        [req.session.firmaId]
+      );
+      eczaneler = eczanelerResult.rows;
+    }
+
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
-      toplamGoruntulenme, tab, linkAnalytics
+      toplamGoruntulenme, tab, linkAnalytics, eczaneler
     });
   } catch (err) {
     console.error(err);
