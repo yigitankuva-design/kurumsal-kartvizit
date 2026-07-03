@@ -60,6 +60,33 @@ async function migrate() {
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
     `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS kullanici_adi TEXT UNIQUE`,
     `ALTER TABLE bayiler ADD COLUMN IF NOT EXISTS abonelik_bitis_tarihi DATE`,
+    `CREATE TABLE IF NOT EXISTS eczaneler (
+      id          SERIAL PRIMARY KEY,
+      firma_id    INTEGER REFERENCES firmalar(id) ON DELETE CASCADE,
+      ad          TEXT NOT NULL,
+      adres       TEXT,
+      kod         TEXT UNIQUE NOT NULL,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS raf_okutmalar (
+      id          SERIAL PRIMARY KEY,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS raf_tiklamalar (
+      id          SERIAL PRIMARY KEY,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      tip         TEXT NOT NULL,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS katalog_url TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS website TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS instagram TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS linkedin TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS twitter TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS youtube TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS tiktok TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS whatsapp TEXT`,
   ];
 
   for (const sql of migrations) {
