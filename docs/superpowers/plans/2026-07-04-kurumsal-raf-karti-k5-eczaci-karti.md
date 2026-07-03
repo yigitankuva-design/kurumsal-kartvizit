@@ -454,7 +454,7 @@ git commit -m "K5: eczaci karti public sayfasi (GET /eczaci/:kod)"
     expect(res.headers.location).toBe('/?tab=icerik');
   });
 
-  test('eczacı kartı kodu olmayan eczane için kod üretilir', async () => {
+  test('eczacı kartı kodu olmayan eczane için kod üretilir, ikinci çağrıda değişmez', async () => {
     const agent = kurumsalAgent;
     const eczaneSonuc = await pool.query(
       `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Kod Uret Test Eczanesi', 'koduret01') RETURNING id`,
@@ -465,6 +465,11 @@ git commit -m "K5: eczaci karti public sayfasi (GET /eczaci/:kod)"
     expect(res.statusCode).toBe(302);
     const e = await pool.query('SELECT eczaci_kod FROM eczaneler WHERE id = $1', [eczaneId]);
     expect(e.rows[0].eczaci_kod).toHaveLength(8);
+
+    // idempotent: ikinci çağrı mevcut kodu değiştirmez (kart fiziksel olarak yazılmış olabilir)
+    await agent.post(`/kurumsal/eczane/${eczaneId}/eczaci-kod-uret`);
+    const e2 = await pool.query('SELECT eczaci_kod FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(e2.rows[0].eczaci_kod).toBe(e.rows[0].eczaci_kod);
   });
 
   test('eczaci-kod-uret başka firmanın eczanesi için çalışmaz', async () => {
@@ -767,13 +772,40 @@ git push origin master
 railway up --service app --detach
 ```
 
-Yeni deploy markeri — gerçek bir `/eczaci/:kod` isteği artık 404 yerine ya 200 ya da (geçersiz kod için) 404 render eder; ayırt edici marker olarak geçersiz kodun görünür mesajını kullan:
+Yeni deploy markeri — DİKKAT: geçersiz bir `/eczaci/:kod` isteği K5 ÖNCESİNDE de
+`/:firmaSlug/:calisanSlug` catch-all route'una düşüp aynı "Sayfa bulunamadı."
+mesajını render eder, bu yüzden geçersiz kod marker OLAMAZ. Bunun yerine geçerli
+bir eczacı koduyla, sadece yeni `eczaci.ejs`'te var olan "Eczacılara Özel" metnini
+poll et:
 
 ```bash
-curl -s https://www.nfckartify.com.tr/eczaci/yokboylekod123 | grep -o "Sayfa bulunamadı"
+# 1) Geçici marker verisi oluştur (id'leri not et):
+node -e "
+require('dotenv').config();
+const { pool } = require('./db');
+(async () => {
+  const f = await pool.query(\"INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket) VALUES ('K5 Marker Firma', 'k5-marker-firma', 'k5marker@example.com', 'x', 'kurumsal') RETURNING id\");
+  await pool.query(\"INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES (\$1, 'Marker Eczane', 'k5markr1', 'k5markr2')\", [f.rows[0].id]);
+  console.log('markerFirmaId:', f.rows[0].id);
+  await pool.end();
+})();
+"
+
+# 2) Poll (birkaç kez tekrar et, boş çıktı = deploy bitmemiş):
+curl -s https://www.nfckartify.com.tr/eczaci/k5markr2 | grep -o "Eczacılara Özel"
+
+# 3) "Eczacılara Özel" görülünce marker verisini sil:
+node -e "
+require('dotenv').config();
+const { pool } = require('./db');
+(async () => {
+  await pool.query(\"DELETE FROM firmalar WHERE slug = 'k5-marker-firma'\");
+  await pool.end();
+})();
+"
 ```
 
-Expected: `Sayfa bulunamadı` çıktısı (K5 öncesi bu route tamamen yoktu, genel 404 sayfasından farklı bir mesajdı — eğer boş çıktı alırsan deploy henüz bitmemiştir, tekrar dene)
+Expected: 2. adımda `Eczacılara Özel` çıktısı görülür, 3. adım marker verisini temizler.
 
 ---
 
@@ -944,17 +976,10 @@ fun EczanelerimEkrani(
 }
 ```
 
-- [ ] **Step 2: Derlemeyi doğrula**
+- [ ] **Step 2: Ara derleme kontrolü (commit YOK)**
 
 Run (PowerShell, JAVA_HOME set): `.\gradlew.bat assembleDebug`
-Expected: BUILD FAILED — `NfcKartifyApp.kt` hâlâ eski `eczaneSecildi` parametresini geçiyor (Task 9'da düzeltilecek). Bu adımda sadece bu dosyanın kendi söz dizimi hatası olmadığını gözle doğrula (hata mesajının `NfcKartifyApp.kt` dosyasını işaret ettiğinden emin ol, `EczanelerimEkrani.kt` değil).
-
-- [ ] **Step 3: Commit**
-
-```bash
-git add app/src/main/java/com/nfckartify/bayi/ui/EczanelerimEkrani.kt
-git commit -m "K5: Eczanelerim ekraninda musteri/eczaci karti butonlari"
-```
+Expected: BUILD FAILED — `NfcKartifyApp.kt` hâlâ eski `eczaneSecildi` parametresini geçiyor (Task 9'da düzeltilecek). Bu adımda sadece hata mesajının `NfcKartifyApp.kt`'yi işaret ettiğini (yani `EczanelerimEkrani.kt`'nin kendi söz dizimi hatası olmadığını) doğrula. Derlenemeyen durumda COMMIT YAPMA — bu dosya Task 9'daki commit'e dahil edilecek (bisect edilebilirlik bozulmasın).
 
 ---
 
@@ -999,11 +1024,11 @@ Tüm composable'ı şu hale getir:
 Run (PowerShell, JAVA_HOME set): `.\gradlew.bat assembleDebug`
 Expected: BUILD SUCCESSFUL
 
-- [ ] **Step 3: Commit**
+- [ ] **Step 3: Commit (Task 8'in dosyasıyla birlikte tek commit)**
 
 ```bash
-git add app/src/main/java/com/nfckartify/bayi/ui/NfcKartifyApp.kt
-git commit -m "K5: musteri/eczaci karti yazma navigasyonu"
+git add app/src/main/java/com/nfckartify/bayi/ui/EczanelerimEkrani.kt app/src/main/java/com/nfckartify/bayi/ui/NfcKartifyApp.kt
+git commit -m "K5: Eczanelerim ekraninda musteri/eczaci karti butonlari + navigasyon"
 ```
 
 ---
