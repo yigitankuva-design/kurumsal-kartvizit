@@ -198,4 +198,21 @@ router.get('/ziyaretlerim', requireCalisanToken, async (req, res) => {
   }
 });
 
+router.get('/eczanelerim', requireCalisanToken, async (req, res) => {
+  try {
+    const calisanResult = await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [req.calisanId]);
+    if (!calisanResult.rows.length) {
+      return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
+    }
+    const result = await pool.query(
+      `SELECT id, ad, adres, kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
+      [calisanResult.rows[0].firma_id]
+    );
+    res.json({ ok: true, eczaneler: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 module.exports = router;

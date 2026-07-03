@@ -384,3 +384,64 @@ describe('Mobil API — /api/mobil/ziyaretlerim', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Mobil API — /api/mobil/eczanelerim', () => {
+  let firmaId, digerFirmaId, calisanId, token;
+  const email = 'eczanelerim-test-temsilci@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const firmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Eczanelerim Test Firma', 'eczanelerim-test-firma', 'ecz1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = firmaSonuc.rows[0].id;
+
+    const digerFirmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Eczanelerim Diğer Firma', 'eczanelerim-diger-firma', 'ecz2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    digerFirmaId = digerFirmaSonuc.rows[0].id;
+
+    const hash = await bcrypt.hash(sifre, 12);
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Eczaneler', 'Temsilci', 'eczanelerim-temsilci', $2, $3) RETURNING id`,
+      [firmaId, email, hash]
+    );
+    calisanId = calisanSonuc.rows[0].id;
+
+    await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, adres, kod) VALUES ($1, 'Kendi Eczanem', 'Merkez Mah.', 'eczkend1')`,
+      [firmaId]
+    );
+    await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Baskasinin Eczanesi', 'eczdigr1')`,
+      [digerFirmaId]
+    );
+
+    const girisRes = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: email, sifre });
+    token = girisRes.body.token;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = ANY($1)', [[firmaId, digerFirmaId]]);
+  });
+
+  test('sadece kendi firmasının eczanelerini döner', async () => {
+    const res = await request(app)
+      .get('/api/mobil/eczanelerim')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.eczaneler.length).toBe(1);
+    expect(res.body.eczaneler[0].ad).toBe('Kendi Eczanem');
+    expect(res.body.eczaneler[0].kod).toBe('eczkend1');
+    expect(res.body.eczaneler[0].adres).toBe('Merkez Mah.');
+  });
+
+  test('token yoksa 401 döner', async () => {
+    const res = await request(app).get('/api/mobil/eczanelerim');
+    expect(res.statusCode).toBe(401);
+  });
+});
