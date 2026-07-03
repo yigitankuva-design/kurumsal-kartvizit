@@ -225,9 +225,47 @@ app.get('/', async (req, res) => {
       eczaneler = eczanelerResult.rows;
     }
 
+    let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [] };
+    if (tab === 'saha' && firma.paket === 'kurumsal') {
+      const gunlukResult = await pool.query(
+        `SELECT TO_CHAR(z.created_at, 'YYYY-MM-DD') AS gun, COUNT(*) AS sayi
+         FROM ziyaretler z JOIN calisanlar c ON c.id = z.calisan_id
+         WHERE c.firma_id = $1 AND z.created_at >= NOW() - INTERVAL '30 days'
+         GROUP BY gun ORDER BY gun`,
+        [req.session.firmaId]
+      );
+      const temsilciResult = await pool.query(
+        `SELECT c.ad, c.soyad, COUNT(*) AS sayi
+         FROM ziyaretler z JOIN calisanlar c ON c.id = z.calisan_id
+         WHERE c.firma_id = $1
+         GROUP BY c.id, c.ad, c.soyad ORDER BY sayi DESC LIMIT 10`,
+        [req.session.firmaId]
+      );
+      const eczaneIstatistikResult = await pool.query(
+        `SELECT e.ad, COUNT(*) AS sayi
+         FROM raf_okutmalar r JOIN eczaneler e ON e.id = r.eczane_id
+         WHERE e.firma_id = $1
+         GROUP BY e.id, e.ad ORDER BY sayi DESC LIMIT 10`,
+        [req.session.firmaId]
+      );
+      const tiklamaResult = await pool.query(
+        `SELECT t.tip, COUNT(*) AS sayi
+         FROM raf_tiklamalar t JOIN eczaneler e ON e.id = t.eczane_id
+         WHERE e.firma_id = $1
+         GROUP BY t.tip ORDER BY sayi DESC`,
+        [req.session.firmaId]
+      );
+      sahaIstatistik = {
+        gunlukZiyaret: gunlukResult.rows.map(r => ({ gun: r.gun, sayi: Number(r.sayi) })),
+        temsilciZiyaret: temsilciResult.rows.map(r => ({ ad: r.ad, soyad: r.soyad, sayi: Number(r.sayi) })),
+        eczaneOkutma: eczaneIstatistikResult.rows.map(r => ({ ad: r.ad, sayi: Number(r.sayi) })),
+        tiklamaDagilimi: tiklamaResult.rows.map(r => ({ tip: r.tip, sayi: Number(r.sayi) })),
+      };
+    }
+
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
-      toplamGoruntulenme, tab, linkAnalytics, eczaneler
+      toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik
     });
   } catch (err) {
     console.error(err);

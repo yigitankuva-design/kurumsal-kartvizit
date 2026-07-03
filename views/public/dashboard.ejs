@@ -255,6 +255,7 @@
     <% if (firma.paket === 'kurumsal') { %>
     <a href="/?tab=icerik" class="dash-tab <%= tab === 'icerik' ? 'active' : '' %>">İçerik</a>
     <a href="/?tab=raf"    class="dash-tab <%= tab === 'raf'    ? 'active' : '' %>">Raf Kartları</a>
+    <a href="/?tab=saha"   class="dash-tab <%= tab === 'saha'   ? 'active' : '' %>">Saha İstatistikleri</a>
     <% } %>
   </div>
 
@@ -430,6 +431,58 @@
         </tbody>
       </table>
     </div>
+
+  <!-- TAB: SAHA İSTATİSTİKLERİ -->
+  <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
+    <% if (!sahaIstatistik.gunlukZiyaret.length && !sahaIstatistik.eczaneOkutma.length && !sahaIstatistik.tiklamaDagilimi.length) { %>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-state-icon">📍</div>
+        <div class="empty-state-title">Henüz veri yok</div>
+        <div class="empty-state-sub">Temsilciler ziyaret kaydettikçe burada görünür</div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <a href="/kurumsal/ziyaretler-excel" class="btn btn-border" style="height:36px;">⬇ Ziyaretleri Excel'e Aktar</a>
+    </div>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">Son 30 Gün — Günlük Ziyaret</h3>
+      <canvas id="chartGunluk" height="80"></canvas>
+    </div>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">Temsilci Başına Ziyaret</h3>
+      <canvas id="chartTemsilci" height="80"></canvas>
+    </div>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">Eczane Başına Okutma</h3>
+      <canvas id="chartEczane" height="80"></canvas>
+    </div>
+    <div class="table-wrap" style="padding:20px">
+      <h3 style="margin-bottom:12px">İçerik Tıklama Dağılımı</h3>
+      <canvas id="chartTiklama" height="80"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const sahaVeri = <%- JSON.stringify(sahaIstatistik) %>;
+      new Chart(document.getElementById('chartGunluk'), {
+        type: 'line',
+        data: { labels: sahaVeri.gunlukZiyaret.map(r => r.gun), datasets: [{ label: 'Ziyaret', data: sahaVeri.gunlukZiyaret.map(r => r.sayi), borderColor: '#c9a15a', tension: 0.2 }] }
+      });
+      new Chart(document.getElementById('chartTemsilci'), {
+        type: 'bar',
+        data: { labels: sahaVeri.temsilciZiyaret.map(r => r.ad + ' ' + r.soyad), datasets: [{ label: 'Ziyaret', data: sahaVeri.temsilciZiyaret.map(r => r.sayi), backgroundColor: '#c9a15a' }] }
+      });
+      new Chart(document.getElementById('chartEczane'), {
+        type: 'bar',
+        data: { labels: sahaVeri.eczaneOkutma.map(r => r.ad), datasets: [{ label: 'Okutma', data: sahaVeri.eczaneOkutma.map(r => r.sayi), backgroundColor: '#3a7ca5' }] }
+      });
+      new Chart(document.getElementById('chartTiklama'), {
+        type: 'bar',
+        data: { labels: sahaVeri.tiklamaDagilimi.map(r => r.tip), datasets: [{ label: 'Tıklama', data: sahaVeri.tiklamaDagilimi.map(r => r.sayi), backgroundColor: '#7a9e7e' }] }
+      });
+    </script>
+    <% } %>
   <% } %>
 
 </div><!-- /dash-main -->

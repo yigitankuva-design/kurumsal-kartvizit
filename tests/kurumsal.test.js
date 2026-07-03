@@ -21,11 +21,15 @@ async function girisYap(email) {
 }
 
 describe('Kurumsal panel uçları', () => {
-  let kurumsalId, basicId;
+  let kurumsalId, basicId, kurumsalAgent, basicAgent;
 
   beforeAll(async () => {
     kurumsalId = await firmaOlustur('kurumsal', 'k1kurumsal@example.com');
     basicId = await firmaOlustur('basic', 'k1basic@example.com');
+    // createLoginLimiter IP başına 15 dakikada max 10 giriş izin verir — testler
+    // arasında paylaşılan aynı agent kullanılarak login sayısı azaltılır.
+    kurumsalAgent = await girisYap('k1kurumsal@example.com');
+    basicAgent = await girisYap('k1basic@example.com');
   });
 
   afterAll(async () => {
@@ -34,7 +38,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('kurumsal firma eczane ekleyebilir', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/eczane-ekle').send({ ad: 'Deneme Eczanesi', adres: 'Merkez' });
     expect(res.statusCode).toBe(302);
     const e = await pool.query('SELECT * FROM eczaneler WHERE firma_id = $1', [kurumsalId]);
@@ -43,7 +47,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('basic firma /kurumsal uçlarından redirect ile döner, kayıt oluşmaz', async () => {
-    const agent = await girisYap('k1basic@example.com');
+    const agent = basicAgent;
     const res = await agent.post('/kurumsal/eczane-ekle').send({ ad: 'Yetkisiz Eczane' });
     expect(res.statusCode).toBe(302);
     const e = await pool.query('SELECT * FROM eczaneler WHERE firma_id = $1', [basicId]);
@@ -61,7 +65,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('içerik linkleri güncellenir', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/icerik').send({
       website: 'https://ornek.com', instagram: 'https://instagram.com/ornek',
     });
@@ -72,7 +76,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('katalog PDF yüklenir (dev ortamında location null olsa da 302 döner)', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     const res = await agent
       .post('/kurumsal/katalog')
       .attach('katalog', Buffer.from('%PDF-1.4 test'), { filename: 'katalog.pdf', contentType: 'application/pdf' });
@@ -81,7 +85,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('PDF olmayan dosya reddedilir', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     const res = await agent
       .post('/kurumsal/katalog')
       .attach('katalog', Buffer.from('degil'), { filename: 'resim.jpg', contentType: 'image/jpeg' });
@@ -91,7 +95,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('eczane silinir', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
     await agent.post(`/kurumsal/eczane/${eczane.id}/sil`);
     const e = await pool.query('SELECT * FROM eczaneler WHERE id = $1', [eczane.id]);
@@ -99,7 +103,7 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('kurumsal firma dashboardında Raf Kartları sekmesi ve eczane listesi görünür', async () => {
-    const agent = await girisYap('k1kurumsal@example.com');
+    const agent = kurumsalAgent;
     await agent.post('/kurumsal/eczane-ekle').send({ ad: 'Sekme Test Eczanesi' });
     const res = await agent.get('/?tab=raf');
     expect(res.statusCode).toBe(200);
@@ -109,9 +113,41 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('basic firma dashboardında Raf Kartları sekmesi görünmez', async () => {
-    const agent = await girisYap('k1basic@example.com');
+    const agent = basicAgent;
     const res = await agent.get('/');
     expect(res.statusCode).toBe(200);
     expect(res.text).not.toContain('Raf Kartları');
+  });
+
+  test('veri yokken saha istatistikleri sekmesi boş durum mesajı gösterir', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.get('/?tab=saha');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Henüz veri yok');
+  });
+
+  test('ziyaret/okutma verisi varken saha istatistikleri grafikleri gösterir', async () => {
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Saha', 'Temsilci', 'saha-temsilci-test') RETURNING id`,
+      [kurumsalId]
+    );
+    const eczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Saha Eczanesi', 'sahakod1') RETURNING id`,
+      [kurumsalId]
+    );
+    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [calisanSonuc.rows[0].id, eczaneSonuc.rows[0].id]);
+
+    const agent = kurumsalAgent;
+    const res = await agent.get('/?tab=saha');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('chartGunluk');
+    expect(res.text).not.toContain('Henüz veri yok');
+  });
+
+  test('basic firma dashboardında Saha İstatistikleri sekmesi görünmez', async () => {
+    const agent = basicAgent;
+    const res = await agent.get('/');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).not.toContain('Saha İstatistikleri');
   });
 });
