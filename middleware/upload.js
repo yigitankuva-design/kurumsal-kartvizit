@@ -83,4 +83,51 @@ function uploadMiddleware(klasor) {
   return { single };
 }
 
-module.exports = { uploadMiddleware, fotoIsle, MAX_FOTO_BOYUTU };
+const MAX_PDF_BOYUTU = 20 * 1024 * 1024;
+
+function pdfUploadMiddleware(klasor) {
+  const multerUpload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: MAX_PDF_BOYUTU },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'application/pdf') cb(null, true);
+      else cb(new Error('Sadece PDF yüklenebilir.'));
+    },
+  });
+
+  function single(alanAdi) {
+    return [
+      multerUpload.single(alanAdi),
+      async (req, res, next) => {
+        if (!req.file) return next();
+        try {
+          if (!process.env.RAILWAY_STORAGE_BUCKET) {
+            req.file.location = null;
+            return next();
+          }
+          const anahtar = `${klasor}/${Date.now()}.pdf`;
+          const s3 = buildS3Client();
+          const yukleme = new Upload({
+            client: s3,
+            params: {
+              Bucket: process.env.RAILWAY_STORAGE_BUCKET,
+              Key: anahtar,
+              Body: req.file.buffer,
+              ContentType: 'application/pdf',
+              ACL: 'public-read',
+            },
+          });
+          await yukleme.done();
+          req.file.location = `${process.env.RAILWAY_STORAGE_ENDPOINT}/${process.env.RAILWAY_STORAGE_BUCKET}/${anahtar}`;
+          next();
+        } catch (err) {
+          next(err);
+        }
+      },
+    ];
+  }
+
+  return { single };
+}
+
+module.exports = { uploadMiddleware, pdfUploadMiddleware, fotoIsle, MAX_FOTO_BOYUTU };

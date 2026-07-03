@@ -71,6 +71,25 @@ describe('Kurumsal panel uçları', () => {
     expect(f.rows[0].instagram).toBe('https://instagram.com/ornek');
   });
 
+  test('katalog PDF yüklenir (dev ortamında location null olsa da 302 döner)', async () => {
+    const agent = await girisYap('k1kurumsal@example.com');
+    const res = await agent
+      .post('/kurumsal/katalog')
+      .attach('katalog', Buffer.from('%PDF-1.4 test'), { filename: 'katalog.pdf', contentType: 'application/pdf' });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/?tab=icerik');
+  });
+
+  test('PDF olmayan dosya reddedilir', async () => {
+    const agent = await girisYap('k1kurumsal@example.com');
+    const res = await agent
+      .post('/kurumsal/katalog')
+      .attach('katalog', Buffer.from('degil'), { filename: 'resim.jpg', contentType: 'image/jpeg' });
+    expect(res.statusCode).toBe(302);
+    const f = await pool.query('SELECT katalog_url FROM firmalar WHERE id = $1', [kurumsalId]);
+    expect(f.rows[0].katalog_url).toBeNull();
+  });
+
   test('eczane silinir', async () => {
     const agent = await girisYap('k1kurumsal@example.com');
     const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];

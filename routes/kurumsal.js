@@ -2,6 +2,29 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret } = require('../utils/eczaneKod');
+const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
+
+const logoUpload = uploadMiddleware('firma-logolar');
+const katalogUpload = pdfUploadMiddleware('kataloglar');
+
+// upload middleware dizisini hata yakalayarak çalıştırır (bayi.js'teki desenle aynı)
+function guvenliUpload(uploadCifti, alanAdi, geriDon) {
+  return (req, res, next) => {
+    const [ilkMw, ikinciMw] = uploadCifti.single(alanAdi);
+    const hataYakala = (err) => {
+      console.error(err);
+      req.flash('error', err.message || 'Dosya yüklenemedi.');
+      res.redirect(geriDon);
+    };
+    ilkMw(req, res, (err) => {
+      if (err) return hataYakala(err);
+      ikinciMw(req, res, (err2) => {
+        if (err2) return hataYakala(err2);
+        next();
+      });
+    });
+  };
+}
 
 // İçerik linklerini güncelle
 router.post('/icerik', async (req, res) => {
@@ -72,6 +95,39 @@ router.post('/eczane/:id/sil', async (req, res) => {
     req.flash('error', 'Silinemedi.');
   }
   res.redirect('/?tab=raf');
+});
+
+// Logo yükle
+router.post('/logo', guvenliUpload(logoUpload, 'logo', '/?tab=icerik'), async (req, res) => {
+  try {
+    if (req.file?.location) {
+      await pool.query('UPDATE firmalar SET logo_url=$1 WHERE id=$2', [req.file.location, req.session.firmaId]);
+      req.flash('success', 'Logo güncellendi.');
+    } else {
+      req.flash('error', 'Dosya alınamadı.');
+    }
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Logo yüklenemedi.');
+  }
+  res.redirect('/?tab=icerik');
+});
+
+// Katalog PDF yükle
+router.post('/katalog', guvenliUpload(katalogUpload, 'katalog', '/?tab=icerik'), async (req, res) => {
+  try {
+    if (req.file?.location) {
+      await pool.query('UPDATE firmalar SET katalog_url=$1 WHERE id=$2', [req.file.location, req.session.firmaId]);
+      req.flash('success', 'Katalog güncellendi.');
+    } else {
+      // dev ortamında storage yok — location null; kullanıcıya yine bilgi ver
+      req.flash('error', 'Dosya kaydedilemedi (depolama yapılandırılmamış).');
+    }
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Katalog yüklenemedi.');
+  }
+  res.redirect('/?tab=icerik');
 });
 
 module.exports = router;
