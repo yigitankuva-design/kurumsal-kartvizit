@@ -552,7 +552,7 @@ etiketinden önce ekle:
 ```xml
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD4GlF9-Dt2dPlrQBTpp5sZRnyEQ85DZNo" />
+            android:value="<GOOGLE_MAPS_API_KEY - .env/Railway degiskeninden alinir, plana duz metin yazilmaz>" />
 ```
 
 Not: Bu, `kurumsal-kartvizit` backend'inin `.env` dosyasındaki `GOOGLE_MAPS_API_KEY` ile
@@ -567,7 +567,7 @@ sonra, `setContent`'ten önce) ekle:
         if (!com.google.android.libraries.places.api.Places.isInitialized()) {
             com.google.android.libraries.places.api.Places.initialize(
                 applicationContext,
-                "AIzaSyD4GlF9-Dt2dPlrQBTpp5sZRnyEQ85DZNo",
+                "<GOOGLE_MAPS_API_KEY - .env/Railway degiskeninden alinir, plana duz metin yazilmaz>",
             )
         }
 ```
