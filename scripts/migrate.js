@@ -87,6 +87,14 @@ async function migrate() {
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS youtube TEXT`,
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS tiktok TEXT`,
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS whatsapp TEXT`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS giris_email TEXT UNIQUE`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS giris_sifre_hash TEXT`,
+    `CREATE TABLE IF NOT EXISTS ziyaretler (
+      id          SERIAL PRIMARY KEY,
+      calisan_id  INTEGER REFERENCES calisanlar(id) ON DELETE CASCADE,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {
