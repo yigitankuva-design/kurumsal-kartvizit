@@ -14,4 +14,12 @@ function bayiTokenDogrula(token) {
   return jwt.verify(token, secretAl());
 }
 
-module.exports = { bayiTokenUret, bayiTokenDogrula };
+function calisanTokenUret(calisanId) {
+  return jwt.sign({ calisanId }, secretAl(), { expiresIn: '30d' });
+}
+
+function calisanTokenDogrula(token) {
+  return jwt.verify(token, secretAl());
+}
+
+module.exports = { bayiTokenUret, bayiTokenDogrula, calisanTokenUret, calisanTokenDogrula };
