@@ -253,3 +253,81 @@ describe('Mobil API — /api/mobil/temsilci-giris', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
+  let firmaId, digerFirmaId, calisanId, eczaneId, digerEczaneId, token;
+  const email = 'ziyaret-test-temsilci@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const firmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Ziyaret Test Firma', 'ziyaret-test-firma', 'z1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = firmaSonuc.rows[0].id;
+
+    const digerFirmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Diğer Firma', 'ziyaret-diger-firma', 'z2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    digerFirmaId = digerFirmaSonuc.rows[0].id;
+
+    const hash = await bcrypt.hash(sifre, 12);
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Ziyaret', 'Temsilci', 'ziyaret-temsilci', $2, $3) RETURNING id`,
+      [firmaId, email, hash]
+    );
+    calisanId = calisanSonuc.rows[0].id;
+
+    const eczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Ziyaret Eczanesi', 'ziyarkod') RETURNING id`,
+      [firmaId]
+    );
+    eczaneId = eczaneSonuc.rows[0].id;
+
+    const digerEczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Diğer Eczane', 'digerkod') RETURNING id`,
+      [digerFirmaId]
+    );
+    digerEczaneId = digerEczaneSonuc.rows[0].id;
+
+    const girisRes = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: email, sifre });
+    token = girisRes.body.token;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = ANY($1)', [[firmaId, digerFirmaId]]);
+  });
+
+  test('geçerli eczane_kod ile 201 döner ve ziyaretler tablosuna kayıt düşer', async () => {
+    const res = await request(app)
+      .post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: 'ziyarkod' });
+    expect(res.statusCode).toBe(201);
+    const z = await pool.query('SELECT * FROM ziyaretler WHERE calisan_id = $1 AND eczane_id = $2', [calisanId, eczaneId]);
+    expect(z.rows.length).toBe(1);
+  });
+
+  test('başka firmanın eczanesiyle 403 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: 'digerkod' });
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('token yoksa 401 döner', async () => {
+    const res = await request(app).post('/api/mobil/ziyaret-kaydet').send({ eczane_kod: 'ziyarkod' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('geçersiz eczane_kod ile 404 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: 'yokkod12' });
+    expect(res.statusCode).toBe(404);
+  });
+});

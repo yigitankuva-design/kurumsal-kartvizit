@@ -156,4 +156,30 @@ router.post('/profil-olustur', requireBayiToken, mobilProfilLimiter, fotoUploadG
   }
 });
 
+router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (req, res) => {
+  const { eczane_kod } = req.body;
+  if (!eczane_kod) {
+    return res.status(400).json({ ok: false, error: 'Eczane kodu zorunlu.' });
+  }
+  try {
+    const calisanResult = await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [req.calisanId]);
+    if (!calisanResult.rows.length) {
+      return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
+    }
+    const eczaneResult = await pool.query('SELECT id, firma_id FROM eczaneler WHERE kod = $1', [eczane_kod]);
+    if (!eczaneResult.rows.length) {
+      return res.status(404).json({ ok: false, error: 'Eczane bulunamadı.' });
+    }
+    const eczane = eczaneResult.rows[0];
+    if (eczane.firma_id !== calisanResult.rows[0].firma_id) {
+      return res.status(403).json({ ok: false, error: 'Bu eczaneye ziyaret kaydedemezsiniz.' });
+    }
+    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [req.calisanId, eczane.id]);
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 module.exports = router;
