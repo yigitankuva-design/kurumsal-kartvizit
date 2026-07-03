@@ -1,6 +1,7 @@
 require('dotenv').config();
 const request = require('supertest');
 const bcrypt = require('bcrypt');
+const XLSX = require('xlsx');
 const app = require('../app');
 const { pool } = require('../db');
 
@@ -149,5 +150,22 @@ describe('Kurumsal panel uçları', () => {
     const res = await agent.get('/');
     expect(res.statusCode).toBe(200);
     expect(res.text).not.toContain('Saha İstatistikleri');
+  });
+
+  test('ziyaretler excel export doğru içerik-tipiyle ve satırlarla döner', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.get('/kurumsal/ziyaretler-excel').buffer(true).parse((res, cb) => {
+      res.setEncoding('binary');
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => cb(null, Buffer.from(data, 'binary')));
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('spreadsheetml');
+    const wb = XLSX.read(res.body, { type: 'buffer' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    expect(rows[0]).toEqual(['Temsilci', 'Eczane', 'Tarih']);
+    expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
 });

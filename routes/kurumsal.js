@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const XLSX = require('xlsx');
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret } = require('../utils/eczaneKod');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
@@ -128,6 +129,35 @@ router.post('/katalog', guvenliUpload(katalogUpload, 'katalog', '/?tab=icerik'),
     req.flash('error', 'Katalog yüklenemedi.');
   }
   res.redirect('/?tab=icerik');
+});
+
+// Ziyaret kayıtlarını Excel'e aktar
+router.get('/ziyaretler-excel', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT c.ad AS temsilci_ad, c.soyad AS temsilci_soyad, e.ad AS eczane_ad, z.created_at
+       FROM ziyaretler z
+       JOIN calisanlar c ON c.id = z.calisan_id
+       JOIN eczaneler e ON e.id = z.eczane_id
+       WHERE c.firma_id = $1
+       ORDER BY z.created_at DESC`,
+      [req.session.firmaId]
+    );
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['Temsilci', 'Eczane', 'Tarih'],
+      ...result.rows.map(r => [`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at.toISOString()]),
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Ziyaretler');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', 'attachment; filename="ziyaretler.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Excel oluşturulamadı.');
+    res.redirect('/?tab=saha');
+  }
 });
 
 module.exports = router;
