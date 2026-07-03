@@ -1,4 +1,4 @@
-const { bayiTokenDogrula } = require('../utils/jwt');
+const { bayiTokenDogrula, calisanTokenDogrula } = require('../utils/jwt');
 
 function requireBayiToken(req, res, next) {
   const header = req.headers.authorization || '';
@@ -15,4 +15,19 @@ function requireBayiToken(req, res, next) {
   }
 }
 
-module.exports = { requireBayiToken };
+function requireCalisanToken(req, res, next) {
+  const header = req.headers.authorization || '';
+  const [tip, token] = header.split(' ');
+  if (tip !== 'Bearer' || !token) {
+    return res.status(401).json({ ok: false, error: 'Giriş gerekli.' });
+  }
+  try {
+    const payload = calisanTokenDogrula(token);
+    req.calisanId = payload.calisanId;
+    next();
+  } catch (err) {
+    res.status(401).json({ ok: false, error: 'Oturum geçersiz veya süresi dolmuş.' });
+  }
+}
+
+module.exports = { requireBayiToken, requireCalisanToken };
