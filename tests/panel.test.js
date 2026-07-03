@@ -78,4 +78,11 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(c.rows[0].giris_email).toBeNull();
     expect(c.rows[0].giris_sifre_hash).toBeNull();
   });
+
+  test('kurumsal firma çalışan panelinde giriş e-postası alanı görünür', async () => {
+    const agent = await girisYap(firmaEmail);
+    const res = await agent.get('/?tab=calisanlar');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Giriş E-postası');
+  });
 });

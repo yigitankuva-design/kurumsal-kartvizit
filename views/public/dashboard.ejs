@@ -471,6 +471,20 @@
             <input type="email" name="email" id="f_email" placeholder="murat@firma.com">
           </div>
 
+          <% if (firma.paket === 'kurumsal') { %>
+          <hr class="field-sep">
+          <div class="field-section">Mobil Giriş (Temsilci)</div>
+
+          <div class="field">
+            <label>Giriş E-postası</label>
+            <input type="email" name="giris_email" id="f_giris_email" placeholder="temsilci@firma.com">
+          </div>
+          <div class="field">
+            <label>Giriş Şifresi</label>
+            <input type="password" name="giris_sifre" id="f_giris_sifre" placeholder="Boş bırakılırsa değişmez">
+          </div>
+          <% } %>
+
           <hr class="field-sep">
           <div class="field-section">Sosyal Medya</div>
 
@@ -565,7 +579,7 @@
   }
 
   function clearForm() {
-    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi','foto'].forEach(f => {
+    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi','foto','giris_email','giris_sifre'].forEach(f => {
       const el = document.getElementById('f_' + f);
       if (el) el.value = '';
     });
@@ -573,7 +587,7 @@
   }
 
   function fillForm(c) {
-    const map = { ad:'ad', soyad:'soyad', unvan:'unvan', departman:'departman', telefon:'telefon', email:'email', linkedin:'linkedin', instagram:'instagram', twitter:'twitter', website:'website', biyografi:'biyografi' };
+    const map = { ad:'ad', soyad:'soyad', unvan:'unvan', departman:'departman', telefon:'telefon', email:'email', linkedin:'linkedin', instagram:'instagram', twitter:'twitter', website:'website', biyografi:'biyografi', giris_email:'giris_email' };
     Object.entries(map).forEach(([field, key]) => {
       const el = document.getElementById('f_' + field);
       if (el) el.value = c[key] || '';
