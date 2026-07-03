@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= veri.firma_ad %></title>
+  <style>
+    :root { --renk: <%= veri.marka_rengi || '#1a73e8' %>; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; justify-content: center; padding: 24px 16px; }
+    .kart { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); height: fit-content; }
+    .ust { background: var(--renk); padding: 36px 24px 28px; text-align: center; color: #fff; }
+    .logo { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #fff; margin-bottom: 14px; }
+    .firma-ad { font-size: 24px; font-weight: 700; }
+    .eczane-ad { font-size: 13px; opacity: 0.85; margin-top: 6px; }
+    .govde { padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+    .btn { display: block; text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-size: 16px; font-weight: 600; }
+    .btn-katalog { background: var(--renk); color: #fff; font-size: 17px; }
+    .btn-dis { background: #f0f2f5; color: #1a1a2e; }
+  </style>
+</head>
+<body>
+  <div class="kart">
+    <div class="ust">
+      <% if (veri.logo_url) { %><img class="logo" src="<%= veri.logo_url %>" alt=""><% } %>
+      <div class="firma-ad"><%= veri.firma_ad %></div>
+      <div class="eczane-ad"><%= veri.eczane_ad %></div>
+    </div>
+    <div class="govde">
+      <% if (veri.katalog_url) { %>
+        <a class="btn btn-katalog" href="/raf/<%= veri.kod %>/tikla/katalog">📄 Ürün Kataloğu</a>
+      <% } %>
+      <% if (veri.website) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/website">🌐 Web Sitemiz</a>
+      <% } %>
+      <% if (veri.instagram) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/instagram">📷 Instagram</a>
+      <% } %>
+      <% if (veri.linkedin) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/linkedin">💼 LinkedIn</a>
+      <% } %>
+      <% if (veri.twitter) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/twitter">𝕏 Twitter / X</a>
+      <% } %>
+      <% if (veri.youtube) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/youtube">▶️ YouTube</a>
+      <% } %>
+      <% if (veri.tiktok) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/tiktok">🎵 TikTok</a>
+      <% } %>
+      <% if (veri.whatsapp) { %>
+        <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/whatsapp">💬 WhatsApp</a>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

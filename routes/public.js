@@ -4,6 +4,69 @@ const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
 const { cevirmenOlustur } = require('../utils/i18n');
 
+const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
+
+async function eczaneGetir(kod) {
+  const result = await pool.query(
+    `SELECT e.id as eczane_id, e.ad as eczane_ad, e.kod,
+            f.ad as firma_ad, f.logo_url, f.marka_rengi, f.katalog_url,
+            f.website, f.instagram, f.linkedin, f.twitter, f.youtube, f.tiktok, f.whatsapp
+     FROM eczaneler e JOIN firmalar f ON f.id = e.firma_id
+     WHERE e.kod = $1`,
+    [kod]
+  );
+  return result.rows[0] || null;
+}
+
+// Raf kartı sayfası — müşteri okutması
+router.get('/raf/:kod', async (req, res) => {
+  try {
+    const veri = await eczaneGetir(req.params.kod);
+    if (!veri) {
+      return res.status(404).render('public/404', { title: '404', mesaj: 'Sayfa bulunamadı.', layout: false });
+    }
+    try {
+      await pool.query('INSERT INTO raf_okutmalar (eczane_id) VALUES ($1)', [veri.eczane_id]);
+    } catch (kayitHatasi) {
+      console.error('raf okutma kaydı başarısız:', kayitHatasi);
+    }
+    res.render('public/raf', { title: veri.firma_ad, veri, layout: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
+  }
+});
+
+// Raf kartı tıklama takibi
+router.get('/raf/:kod/tikla/:tip', async (req, res) => {
+  const { kod, tip } = req.params;
+  try {
+    const veri = await eczaneGetir(kod);
+    if (!veri) return res.status(404).send('Bulunamadı.');
+
+    if (!RAF_TIKLAMA_TIPLERI.includes(tip)) return res.redirect(`/raf/${kod}`);
+
+    await pool.query('INSERT INTO raf_tiklamalar (eczane_id, tip) VALUES ($1, $2)', [veri.eczane_id, tip]);
+
+    const hedefler = {
+      katalog: veri.katalog_url,
+      website: veri.website,
+      instagram: veri.instagram,
+      linkedin: veri.linkedin,
+      twitter: veri.twitter,
+      youtube: veri.youtube,
+      tiktok: veri.tiktok,
+      whatsapp: veri.whatsapp ? `https://wa.me/${veri.whatsapp.replace(/\D/g, '')}` : null,
+    };
+    const hedef = hedefler[tip];
+    if (hedef) return res.redirect(hedef);
+    res.redirect(`/raf/${kod}`);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/raf/${kod}`);
+  }
+});
+
 async function profilGetir(firmaSlug, calisanSlug, bayiSlug = null) {
   let query, params;
 
