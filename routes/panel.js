@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { benzersizCalisanSlugOlustur } = require('../utils/slug');
 const XLSX = require('xlsx');
@@ -42,7 +43,7 @@ router.get('/ekle', (req, res) => {
 
 // Çalışan ekleme POST
 router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) => {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, kvkk } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, kvkk, giris_email, giris_sifre } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
@@ -51,26 +52,32 @@ router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) =>
     req.flash('error', 'Devam etmek için KVKK onayı gerekiyor.');
     return res.redirect('/');
   }
+  const girisEmailDeger = giris_email && giris_email.trim() ? giris_email.trim() : null;
+  if (girisEmailDeger && !(giris_sifre && giris_sifre.trim())) {
+    req.flash('error', 'Giriş e-postası girildiyse şifre de zorunludur.');
+    return res.redirect('/');
+  }
   try {
     const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, ad, soyad);
     const ilaclarArray = ilaclar ? ilaclar.split(',').map(s => s.trim()).filter(Boolean) : null;
     const biyografiTemiz = biyografiTemizle(biyografi);
     const fotoUrl = req.file?.location || null;
+    const girisSifreHashDeger = girisEmailDeger ? await bcrypt.hash(giris_sifre.trim(), 12) : null;
     await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, foto_url, slug)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)`,
+      `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, foto_url, slug, giris_email, giris_sifre_hash)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)`,
       [req.session.firmaId, ad, soyad, unvan || null, departman || null,
        telefon || null, email || null, linkedin || null,
        instagram || null, twitter || null, youtube || null, website || null,
        whatsapp || null, tiktok || null, sahibinden || null, hurriyet_emlak || null,
        adres || null, google_yorum_link || null,
-       biyografiTemiz, ilaclarArray, fotoUrl, slug]
+       biyografiTemiz, ilaclarArray, fotoUrl, slug, girisEmailDeger, girisSifreHashDeger]
     );
     req.flash('success', `${ad} ${soyad} eklendi.`);
     res.redirect('/');
   } catch (err) {
     console.error(err);
-    req.flash('error', 'Çalışan eklenemedi.');
+    req.flash('error', err.code === '23505' ? 'Bu giriş e-postası zaten kullanılıyor.' : 'Çalışan eklenemedi.');
     res.redirect('/');
   }
 });
@@ -140,7 +147,7 @@ router.get('/:id/duzenle', async (req, res) => {
 
 // Çalışan düzenleme — hem POST hem PUT (slide-in panel PUT kullanır)
 async function duzenleHandler(req, res) {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, giris_email, giris_sifre } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
@@ -174,11 +181,30 @@ async function duzenleHandler(req, res) {
       );
     }
 
+    const girisEmailDeger = giris_email && giris_email.trim() ? giris_email.trim() : null;
+    if (!girisEmailDeger) {
+      await pool.query(
+        'UPDATE calisanlar SET giris_email=NULL, giris_sifre_hash=NULL WHERE id=$1 AND firma_id=$2',
+        [req.params.id, req.session.firmaId]
+      );
+    } else if (giris_sifre && giris_sifre.trim()) {
+      const girisSifreHashDeger = await bcrypt.hash(giris_sifre.trim(), 12);
+      await pool.query(
+        'UPDATE calisanlar SET giris_email=$1, giris_sifre_hash=$2 WHERE id=$3 AND firma_id=$4',
+        [girisEmailDeger, girisSifreHashDeger, req.params.id, req.session.firmaId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE calisanlar SET giris_email=$1 WHERE id=$2 AND firma_id=$3',
+        [girisEmailDeger, req.params.id, req.session.firmaId]
+      );
+    }
+
     req.flash('success', 'Çalışan güncellendi.');
     res.redirect('/');
   } catch (err) {
     console.error(err);
-    req.flash('error', 'Güncelleme başarısız.');
+    req.flash('error', err.code === '23505' ? 'Bu giriş e-postası zaten kullanılıyor.' : 'Güncelleme başarısız.');
     res.redirect('/');
   }
 }
