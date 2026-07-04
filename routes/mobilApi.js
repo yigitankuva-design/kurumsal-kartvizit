@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
-const { bayiTokenUret, calisanTokenUret } = require('../utils/jwt');
+const { bayiTokenUret, calisanTokenUret, firmaTokenUret } = require('../utils/jwt');
 const { createJsonLimiter } = require('../middleware/rateLimiter');
-const { requireBayiToken, requireCalisanToken } = require('../middleware/tokenAuth');
+const { requireBayiToken, requireCalisanToken, requireFirmaToken } = require('../middleware/tokenAuth');
 const { uploadMiddleware } = require('../middleware/upload');
 const {
   profilOlustur,
@@ -79,6 +79,34 @@ router.post('/temsilci-giris', temsilciGirisLimiter, async (req, res) => {
     }
     const token = calisanTokenUret(calisan.id);
     res.json({ ok: true, token, calisan: { id: calisan.id, ad: calisan.ad, soyad: calisan.soyad, firmaId: calisan.firma_id } });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+const firmaGirisLimiter = createJsonLimiter('Çok fazla deneme yaptınız. Lütfen 15 dakika sonra tekrar deneyin.');
+
+router.post('/firma-giris', firmaGirisLimiter, async (req, res) => {
+  const { giris_bilgisi, sifre } = req.body;
+  if (!giris_bilgisi || !sifre) {
+    return res.status(400).json({ ok: false, error: 'E-posta/kullanıcı adı ve şifre zorunlu.' });
+  }
+  try {
+    const result = await pool.query(
+      'SELECT * FROM firmalar WHERE yetkili_email = $1 OR kullanici_adi = $1',
+      [giris_bilgisi]
+    );
+    if (!result.rows.length || !result.rows[0].yetkili_sifre_hash) {
+      return res.status(401).json({ ok: false, error: 'E-posta/kullanıcı adı veya şifre hatalı.' });
+    }
+    const firma = result.rows[0];
+    const eslesme = await bcrypt.compare(sifre, firma.yetkili_sifre_hash);
+    if (!eslesme) {
+      return res.status(401).json({ ok: false, error: 'E-posta/kullanıcı adı veya şifre hatalı.' });
+    }
+    const token = firmaTokenUret(firma.id);
+    res.json({ ok: true, token, firma: { id: firma.id, ad: firma.ad } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });

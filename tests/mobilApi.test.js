@@ -385,6 +385,155 @@ describe('Mobil API — /api/mobil/ziyaretlerim', () => {
   });
 });
 
+describe('Mobil API — /api/mobil/firma-giris', () => {
+  let firmaId;
+  const email = 'firma-giris-test@example.com';
+  const kullaniciAdi = 'firmagiristest';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const hash = await bcrypt.hash(sifre, 12);
+    const r = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, kullanici_adi, yetkili_sifre_hash, paket)
+       VALUES ('Firma Giris Test', 'firma-giris-test', $1, $2, $3, 'kurumsal') RETURNING id`,
+      [email, kullaniciAdi, hash]
+    );
+    firmaId = r.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  test('e-posta ile doğru bilgilerle token döner', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: email, sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(typeof res.body.token).toBe('string');
+    expect(res.body.firma.id).toBe(firmaId);
+  });
+
+  test('kullanıcı adı ile de token döner', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: kullaniciAdi, sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
+
+  test('yanlış şifreyle 401 döner', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: email, sifre: 'yanlis' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('eksik alanla 400 döner', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: email });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('kayıtlı olmayan bilgi ile 401 döner', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: 'yok@example.com', sifre: 'x' });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
+describe('Mobil API — /api/mobil/firma/calisanlarimiz', () => {
+  let firmaId, digerFirmaId, token;
+
+  beforeAll(async () => {
+    const { firmaTokenUret } = require('../utils/jwt');
+    const r = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Firma Calisan Test', 'firma-calisan-test', 'fc1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = r.rows[0].id;
+    token = firmaTokenUret(firmaId);
+    await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Ali', 'Veli', 'ali-veli-fc')`,
+      [firmaId]
+    );
+    const d = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Diger Firma FC', 'diger-firma-fc', 'fc2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    digerFirmaId = d.rows[0].id;
+    await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Baska', 'Kisi', 'baska-kisi-fc')`,
+      [digerFirmaId]
+    );
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirmaId]);
+  });
+
+  test('token yoksa 401 döner', async () => {
+    const res = await request(app).get('/api/mobil/firma/calisanlarimiz');
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('yalnızca kendi firmasının çalışanları döner', async () => {
+    const res = await request(app)
+      .get('/api/mobil/firma/calisanlarimiz')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.firma.id).toBe(firmaId);
+    const adlar = res.body.calisanlar.map((c) => c.ad);
+    expect(adlar).toContain('Ali');
+    expect(adlar).not.toContain('Baska');
+  });
+});
+
+describe('Mobil API — /api/mobil/firma/eczanelerimiz', () => {
+  let firmaId, digerFirmaId, token;
+
+  beforeAll(async () => {
+    const { firmaTokenUret } = require('../utils/jwt');
+    const r = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Firma Eczane Test', 'firma-eczane-test', 'fe1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = r.rows[0].id;
+    token = firmaTokenUret(firmaId);
+    await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Benim Eczanem', 'femus1', 'feecz1')`,
+      [firmaId]
+    );
+    const d = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Diger Firma FE', 'diger-firma-fe', 'fe2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    digerFirmaId = d.rows[0].id;
+    await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Baska Eczane', 'febaska1')`,
+      [digerFirmaId]
+    );
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirmaId]);
+  });
+
+  test('token yoksa 401 döner', async () => {
+    const res = await request(app).get('/api/mobil/firma/eczanelerimiz');
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('yalnızca kendi firmasının eczaneleri (eczaci_kod dahil) döner', async () => {
+    const res = await request(app)
+      .get('/api/mobil/firma/eczanelerimiz')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const adlar = res.body.eczaneler.map((e) => e.ad);
+    expect(adlar).toContain('Benim Eczanem');
+    expect(adlar).not.toContain('Baska Eczane');
+    const benim = res.body.eczaneler.find((e) => e.ad === 'Benim Eczanem');
+    expect(benim.eczaci_kod).toBe('feecz1');
+  });
+});
+
 describe('Mobil API — /api/mobil/eczanelerim', () => {
   let firmaId, digerFirmaId, calisanId, token;
   const email = 'eczanelerim-test-temsilci@example.com';
