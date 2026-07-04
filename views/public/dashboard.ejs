@@ -317,13 +317,28 @@
   <% } else if (tab === 'istatistik') { %>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Ad Soyad</th><th>Görüntülenme</th><th>Durum</th></tr></thead>
+        <thead><tr><th>Ad Soyad</th><th>Görüntülenme</th><th>Durum</th><th>Kart</th></tr></thead>
         <tbody>
           <% [...calisanlar].sort((a,b) => (b.goruntuleme_sayisi||0) - (a.goruntuleme_sayisi||0)).forEach(c => { %>
           <tr>
             <td class="td-name"><%= c.ad %> <%= c.soyad %></td>
             <td style="font-weight:var(--fw-semibold);color:var(--gold)"><%= c.goruntuleme_sayisi || 0 %></td>
             <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
+            <td>
+              <% if (c.karta_yazildi) { %>
+                <span style="color:#2e7d32;font-weight:600">✓ Yazıldı<%= c.kart_kilitli ? ' 🔒' : '' %></span>
+                <form method="POST" action="/kurumsal/calisan/<%= c.id %>/kart-isaretle" style="display:inline">
+                  <input type="hidden" name="yazildi" value="false">
+                  <button type="submit">Kaldır</button>
+                </form>
+              <% } else { %>
+                <span style="color:#9ca3af">○ Yazılmadı</span>
+                <form method="POST" action="/kurumsal/calisan/<%= c.id %>/kart-isaretle" style="display:inline">
+                  <input type="hidden" name="yazildi" value="true">
+                  <button type="submit">Yazıldı işaretle</button>
+                </form>
+              <% } %>
+            </td>
           </tr>
           <% }); %>
         </tbody>
@@ -426,7 +441,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Eczacı Kartı</th><th></th></tr></thead>
+        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th></th></tr></thead>
         <tbody>
           <% eczaneler.forEach(e => { %>
           <tr>
@@ -434,6 +449,28 @@
             <td><%= e.adres || '-' %></td>
             <td><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a></td>
             <td><%= e.okutma_sayisi %></td>
+            <td>
+              <div style="margin-bottom:4px">
+                Müşteri:
+                <% if (e.musteri_karta_yazildi) { %>
+                  <span style="color:#2e7d32;font-weight:600">✓<%= e.musteri_kart_kilitli ? '🔒' : '' %></span>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit">Kaldır</button></form>
+                <% } else { %>
+                  <span style="color:#9ca3af">○</span>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit">İşaretle</button></form>
+                <% } %>
+              </div>
+              <div>
+                Eczacı:
+                <% if (e.eczaci_karta_yazildi) { %>
+                  <span style="color:#2e7d32;font-weight:600">✓<%= e.eczaci_kart_kilitli ? '🔒' : '' %></span>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit">Kaldır</button></form>
+                <% } else { %>
+                  <span style="color:#9ca3af">○</span>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit">İşaretle</button></form>
+                <% } %>
+              </div>
+            </td>
             <td>
               <% if (e.eczaci_kod) { %>
                 <a href="/eczaci/<%= e.eczaci_kod %>" target="_blank">/eczaci/<%= e.eczaci_kod %></a> (<%= e.eczaci_okutma_sayisi %>)
@@ -451,7 +488,7 @@
             </td>
           </tr>
           <% }) %>
-          <% if (!eczaneler.length) { %><tr><td colspan="6">Henüz eczane eklenmemiş.</td></tr><% } %>
+          <% if (!eczaneler.length) { %><tr><td colspan="7">Henüz eczane eklenmemiş.</td></tr><% } %>
         </tbody>
       </table>
     </div>
