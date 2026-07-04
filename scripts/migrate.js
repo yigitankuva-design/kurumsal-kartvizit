@@ -105,6 +105,15 @@ async function migrate() {
       eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS karta_yazildi BOOLEAN DEFAULT false`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS kart_kilitli BOOLEAN DEFAULT false`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS kart_yazma_tarihi TIMESTAMP`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS musteri_karta_yazildi BOOLEAN DEFAULT false`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS musteri_kart_kilitli BOOLEAN DEFAULT false`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS musteri_kart_yazma_tarihi TIMESTAMP`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_karta_yazildi BOOLEAN DEFAULT false`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kart_kilitli BOOLEAN DEFAULT false`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kart_yazma_tarihi TIMESTAMP`,
   ];
 
   for (const sql of migrations) {
