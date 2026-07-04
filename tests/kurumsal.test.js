@@ -250,4 +250,30 @@ describe('Kurumsal panel uçları', () => {
     expect(res.text).toContain('Eczacı Kartı');
     expect(res.text).toContain('/eczaci/sutuneczaci1');
   });
+
+  test('çalışan kartını elle yazıldı işaretler ve geri alır', async () => {
+    const c = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Elle', 'Isaret', 'elle-isaret-k') RETURNING id`,
+      [kurumsalId]
+    );
+    const calisanId = c.rows[0].id;
+    await kurumsalAgent.post(`/kurumsal/calisan/${calisanId}/kart-isaretle`).send({ yazildi: 'true' });
+    let r = await pool.query('SELECT karta_yazildi FROM calisanlar WHERE id = $1', [calisanId]);
+    expect(r.rows[0].karta_yazildi).toBe(true);
+    await kurumsalAgent.post(`/kurumsal/calisan/${calisanId}/kart-isaretle`).send({ yazildi: 'false' });
+    r = await pool.query('SELECT karta_yazildi FROM calisanlar WHERE id = $1', [calisanId]);
+    expect(r.rows[0].karta_yazildi).toBe(false);
+  });
+
+  test('eczane müşteri kartını elle işaretler', async () => {
+    const e = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Elle Eczane', 'elleecz1') RETURNING id`,
+      [kurumsalId]
+    );
+    const eczaneId = e.rows[0].id;
+    await kurumsalAgent.post(`/kurumsal/eczane/${eczaneId}/kart-isaretle`).send({ tip: 'musteri', yazildi: 'true' });
+    const r = await pool.query('SELECT musteri_karta_yazildi, eczaci_karta_yazildi FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(r.rows[0].musteri_karta_yazildi).toBe(true);
+    expect(r.rows[0].eczaci_karta_yazildi).toBe(false);
+  });
 });

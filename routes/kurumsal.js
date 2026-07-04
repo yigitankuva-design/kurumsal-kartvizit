@@ -221,4 +221,33 @@ router.post('/eczane/:id/eczaci-kod-uret', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
+router.post('/calisan/:id/kart-isaretle', async (req, res) => {
+  const yazildi = req.body.yazildi === 'true';
+  try {
+    await pool.query(
+      'UPDATE calisanlar SET karta_yazildi = $1 WHERE id = $2 AND firma_id = $3',
+      [yazildi, req.params.id, req.session.firmaId]
+    );
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'İşaretlenemedi.');
+  }
+  res.redirect('/?tab=istatistik');
+});
+
+router.post('/eczane/:id/kart-isaretle', async (req, res) => {
+  const yazildi = req.body.yazildi === 'true';
+  const tip = req.body.tip === 'eczaci' ? 'eczaci' : 'musteri';
+  try {
+    await pool.query(
+      `UPDATE eczaneler SET ${tip}_karta_yazildi = $1 WHERE id = $2 AND firma_id = $3`,
+      [yazildi, req.params.id, req.session.firmaId]
+    );
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'İşaretlenemedi.');
+  }
+  res.redirect('/?tab=raf');
+});
+
 module.exports = router;
