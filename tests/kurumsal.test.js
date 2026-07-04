@@ -229,4 +229,25 @@ describe('Kurumsal panel uçları', () => {
     expect(e.rows[0].eczaci_kod).toBeNull();
     await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirma.rows[0].id]);
   });
+
+  test('İçerik sekmesinde eczacı sayfası formu görünür', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.get('/?tab=icerik');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Eczacı Sayfası');
+    expect(res.text).toContain('eczaci_baslik');
+  });
+
+  test('Raf Kartları sekmesinde eczacı kartı sütunu ve linki görünür', async () => {
+    const agent = kurumsalAgent;
+    const eczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Sütun Test Eczanesi', 'sutuntest1', 'sutuneczaci1') RETURNING id`,
+      [kurumsalId]
+    );
+    await pool.query('INSERT INTO eczaci_okutmalar (eczane_id) VALUES ($1)', [eczaneSonuc.rows[0].id]);
+    const res = await agent.get('/?tab=raf');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Eczacı Kartı');
+    expect(res.text).toContain('/eczaci/sutuneczaci1');
+  });
 });

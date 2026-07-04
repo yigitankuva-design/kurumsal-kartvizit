@@ -397,6 +397,21 @@
         <input name="whatsapp"  placeholder="WhatsApp numarası" value="<%= firma.whatsapp || '' %>">
         <button type="submit">Kaydet</button>
       </form>
+
+      <h3 style="margin-bottom:12px">Eczacı Sayfası</h3>
+      <form method="POST" action="/kurumsal/eczaci-icerik" style="display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+        <input name="eczaci_baslik" placeholder="Kampanya başlığı" value="<%= firma.eczaci_baslik || '' %>">
+        <textarea name="eczaci_metin" placeholder="Kampanya / eğitim metni" rows="4"><%= firma.eczaci_metin || '' %></textarea>
+        <input name="eczaci_video_url" placeholder="YouTube video linki" value="<%= firma.eczaci_video_url || '' %>">
+        <button type="submit">Kaydet</button>
+      </form>
+
+      <h3 style="margin-bottom:12px">Eğitim Dokümanı (PDF)</h3>
+      <% if (firma.eczaci_pdf_url) { %><p style="margin-bottom:8px"><a href="<%= firma.eczaci_pdf_url %>" target="_blank">Mevcut dokümanı görüntüle</a></p><% } %>
+      <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data">
+        <input type="file" name="eczaci_pdf" accept="application/pdf" required>
+        <button type="submit">Dokümanı Yükle</button>
+      </form>
     </div>
 
   <!-- TAB: RAF KARTLARI -->
@@ -411,7 +426,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th></th></tr></thead>
+        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Eczacı Kartı</th><th></th></tr></thead>
         <tbody>
           <% eczaneler.forEach(e => { %>
           <tr>
@@ -420,6 +435,15 @@
             <td><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a></td>
             <td><%= e.okutma_sayisi %></td>
             <td>
+              <% if (e.eczaci_kod) { %>
+                <a href="/eczaci/<%= e.eczaci_kod %>" target="_blank">/eczaci/<%= e.eczaci_kod %></a> (<%= e.eczaci_okutma_sayisi %>)
+              <% } else { %>
+                <form method="POST" action="/kurumsal/eczane/<%= e.id %>/eczaci-kod-uret" style="display:inline">
+                  <button type="submit">Kod Üret</button>
+                </form>
+              <% } %>
+            </td>
+            <td>
               <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
                     onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
                 <button type="submit">Sil</button>
@@ -427,7 +451,7 @@
             </td>
           </tr>
           <% }) %>
-          <% if (!eczaneler.length) { %><tr><td colspan="5">Henüz eczane eklenmemiş.</td></tr><% } %>
+          <% if (!eczaneler.length) { %><tr><td colspan="6">Henüz eczane eklenmemiş.</td></tr><% } %>
         </tbody>
       </table>
     </div>

@@ -218,7 +218,8 @@ app.get('/', async (req, res) => {
     let eczaneler = [];
     if (tab === 'raf' && firma.paket === 'kurumsal') {
       const eczanelerResult = await pool.query(
-        `SELECT e.*, (SELECT COUNT(*) FROM raf_okutmalar r WHERE r.eczane_id = e.id) as okutma_sayisi
+        `SELECT e.*, (SELECT COUNT(*) FROM raf_okutmalar r WHERE r.eczane_id = e.id) as okutma_sayisi,
+           (SELECT COUNT(*) FROM eczaci_okutmalar eo WHERE eo.eczane_id = e.id) as eczaci_okutma_sayisi
          FROM eczaneler e WHERE e.firma_id = $1 ORDER BY e.created_at DESC`,
         [req.session.firmaId]
       );
