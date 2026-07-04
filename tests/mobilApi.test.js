@@ -531,6 +531,93 @@ describe('Mobil API — /api/mobil/firma/eczanelerimiz', () => {
     expect(adlar).not.toContain('Baska Eczane');
     const benim = res.body.eczaneler.find((e) => e.ad === 'Benim Eczanem');
     expect(benim.eczaci_kod).toBe('feecz1');
+    expect(benim.musteri_karta_yazildi).toBe(false);
+    expect(benim.eczaci_karta_yazildi).toBe(false);
+  });
+});
+
+describe('Mobil API — /api/mobil/kart-yazildi', () => {
+  let firmaId, calisanId, eczaneId, firmaToken;
+
+  beforeAll(async () => {
+    const { firmaTokenUret } = require('../utils/jwt');
+    const f = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Kart Yazildi Test', 'kart-yazildi-test', 'ky1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = f.rows[0].id;
+    firmaToken = firmaTokenUret(firmaId);
+    const c = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Kart', 'Test', 'kart-test-ky') RETURNING id`,
+      [firmaId]
+    );
+    calisanId = c.rows[0].id;
+    const e = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'KY Eczane', 'kymus001', 'kyecz001') RETURNING id`,
+      [firmaId]
+    );
+    eczaneId = e.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  test('token yoksa 401 döner', async () => {
+    const res = await request(app).post('/api/mobil/kart-yazildi').send({ tip: 'calisan', id: calisanId });
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('geçersiz tip 400 döner', async () => {
+    const res = await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${firmaToken}`)
+      .send({ tip: 'gecersiz', id: calisanId });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('çalışan kartını yazıldı işaretler', async () => {
+    const res = await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${firmaToken}`)
+      .send({ tip: 'calisan', id: calisanId, kilitli: false });
+    expect(res.statusCode).toBe(200);
+    const c = await pool.query('SELECT karta_yazildi, kart_kilitli FROM calisanlar WHERE id = $1', [calisanId]);
+    expect(c.rows[0].karta_yazildi).toBe(true);
+    expect(c.rows[0].kart_kilitli).toBe(false);
+  });
+
+  test('eczane müşteri ve eczacı kartını bağımsız işaretler', async () => {
+    await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${firmaToken}`)
+      .send({ tip: 'musteri', id: eczaneId, kilitli: true });
+    let e = await pool.query('SELECT musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(e.rows[0].musteri_karta_yazildi).toBe(true);
+    expect(e.rows[0].musteri_kart_kilitli).toBe(true);
+    expect(e.rows[0].eczaci_karta_yazildi).toBe(false);
+
+    await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${firmaToken}`)
+      .send({ tip: 'eczaci', id: eczaneId });
+    e = await pool.query('SELECT eczaci_karta_yazildi FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(e.rows[0].eczaci_karta_yazildi).toBe(true);
+  });
+
+  test('başka firmanın kartında 403 döner', async () => {
+    const { firmaTokenUret } = require('../utils/jwt');
+    const d = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('KY Diger', 'ky-diger', 'ky2@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    const digerToken = firmaTokenUret(d.rows[0].id);
+    const res = await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${digerToken}`)
+      .send({ tip: 'calisan', id: calisanId });
+    expect(res.statusCode).toBe(403);
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [d.rows[0].id]);
   });
 });
 

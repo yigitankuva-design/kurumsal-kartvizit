@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
-const { bayiTokenUret, calisanTokenUret, firmaTokenUret } = require('../utils/jwt');
+const { bayiTokenUret, calisanTokenUret, firmaTokenUret, firmaTokenDogrula } = require('../utils/jwt');
 const { createJsonLimiter } = require('../middleware/rateLimiter');
 const { requireBayiToken, requireCalisanToken, requireFirmaToken } = require('../middleware/tokenAuth');
 const { uploadMiddleware } = require('../middleware/upload');
@@ -133,7 +133,7 @@ router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
 router.get('/firma/eczanelerimiz', requireFirmaToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, ad, adres, kod, eczaci_kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
+      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
       [req.firmaId]
     );
     res.json({ ok: true, eczaneler: result.rows });
@@ -263,10 +263,77 @@ router.get('/eczanelerim', requireCalisanToken, async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
     }
     const result = await pool.query(
-      `SELECT id, ad, adres, kod, eczaci_kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
+      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
       [calisanResult.rows[0].firma_id]
     );
     res.json({ ok: true, eczaneler: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+async function tokenSahibiCoz(token) {
+  let payload;
+  try {
+    payload = firmaTokenDogrula(token);
+  } catch {
+    return null;
+  }
+  if (payload.firmaId != null) {
+    return { tur: 'firma', firmaId: payload.firmaId };
+  }
+  if (payload.calisanId != null) {
+    const c = await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [payload.calisanId]);
+    return c.rows.length ? { tur: 'calisan', firmaId: c.rows[0].firma_id } : null;
+  }
+  if (payload.bayiId != null) {
+    return { tur: 'bayi', bayiId: payload.bayiId };
+  }
+  return null;
+}
+
+router.post('/kart-yazildi', mobilProfilLimiter, async (req, res) => {
+  const { tip, id, kilitli } = req.body;
+  if (!tip || !id || !['calisan', 'musteri', 'eczaci'].includes(tip)) {
+    return res.status(400).json({ ok: false, error: 'tip ve id zorunlu.' });
+  }
+  const header = req.headers.authorization || '';
+  const [bearerTip, token] = header.split(' ');
+  if (bearerTip !== 'Bearer' || !token) {
+    return res.status(401).json({ ok: false, error: 'Giriş gerekli.' });
+  }
+  const sahip = await tokenSahibiCoz(token);
+  if (!sahip) {
+    return res.status(401).json({ ok: false, error: 'Oturum geçersiz veya süresi dolmuş.' });
+  }
+  try {
+    const hedefFirmaId = tip === 'calisan'
+      ? (await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [id])).rows[0]?.firma_id
+      : (await pool.query('SELECT firma_id FROM eczaneler WHERE id = $1', [id])).rows[0]?.firma_id;
+    if (!hedefFirmaId) {
+      return res.status(404).json({ ok: false, error: 'Kayıt bulunamadı.' });
+    }
+    if (sahip.tur === 'bayi') {
+      const f = await pool.query('SELECT id FROM firmalar WHERE id = $1 AND bayi_id = $2', [hedefFirmaId, sahip.bayiId]);
+      if (!f.rows.length) return res.status(403).json({ ok: false, error: 'Yetkiniz yok.' });
+    } else if (hedefFirmaId !== sahip.firmaId) {
+      return res.status(403).json({ ok: false, error: 'Yetkiniz yok.' });
+    }
+
+    if (tip === 'calisan') {
+      await pool.query(
+        'UPDATE calisanlar SET karta_yazildi = true, kart_kilitli = $1, kart_yazma_tarihi = NOW() WHERE id = $2',
+        [!!kilitli, id]
+      );
+    } else {
+      const kolonOn = tip === 'musteri' ? 'musteri' : 'eczaci';
+      await pool.query(
+        `UPDATE eczaneler SET ${kolonOn}_karta_yazildi = true, ${kolonOn}_kart_kilitli = $1, ${kolonOn}_kart_yazma_tarihi = NOW() WHERE id = $2`,
+        [!!kilitli, id]
+      );
+    }
+    res.json({ ok: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
