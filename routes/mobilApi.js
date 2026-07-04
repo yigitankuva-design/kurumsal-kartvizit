@@ -130,6 +130,19 @@ router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
   }
 });
 
+router.get('/firma/eczanelerimiz', requireFirmaToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, ad, adres, kod, eczaci_kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
+      [req.firmaId]
+    );
+    res.json({ ok: true, eczaneler: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 router.get('/musteriler', requireBayiToken, async (req, res) => {
   try {
     const result = await pool.query(
