@@ -205,7 +205,7 @@ router.get('/eczanelerim', requireCalisanToken, async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
     }
     const result = await pool.query(
-      `SELECT id, ad, adres, kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
+      `SELECT id, ad, adres, kod, eczaci_kod FROM eczaneler WHERE firma_id = $1 ORDER BY created_at DESC`,
       [calisanResult.rows[0].firma_id]
     );
     res.json({ ok: true, eczaneler: result.rows });

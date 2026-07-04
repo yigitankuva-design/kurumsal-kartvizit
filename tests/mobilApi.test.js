@@ -412,7 +412,7 @@ describe('Mobil API — /api/mobil/eczanelerim', () => {
     calisanId = calisanSonuc.rows[0].id;
 
     await pool.query(
-      `INSERT INTO eczaneler (firma_id, ad, adres, kod) VALUES ($1, 'Kendi Eczanem', 'Merkez Mah.', 'eczkend1')`,
+      `INSERT INTO eczaneler (firma_id, ad, adres, kod, eczaci_kod) VALUES ($1, 'Kendi Eczanem', 'Merkez Mah.', 'eczkend1', 'eczcaci01')`,
       [firmaId]
     );
     await pool.query(
@@ -438,6 +438,7 @@ describe('Mobil API — /api/mobil/eczanelerim', () => {
     expect(res.body.eczaneler[0].ad).toBe('Kendi Eczanem');
     expect(res.body.eczaneler[0].kod).toBe('eczkend1');
     expect(res.body.eczaneler[0].adres).toBe('Merkez Mah.');
+    expect(res.body.eczaneler[0].eczaci_kod).toBe('eczcaci01');
   });
 
   test('token yoksa 401 döner', async () => {
