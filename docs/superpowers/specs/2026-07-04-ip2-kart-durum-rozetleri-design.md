@@ -60,23 +60,35 @@ Girdi: `{ tip: 'calisan' | 'musteri' | 'eczaci', id: number, kilitli?: boolean }
 Tenant izolasyonu: güncellenecek satırın `firma_id`'si, token'dan çözülen
 firma/bayi'nin erişimindeki firmayla eşleşmiyorsa 403.
 
-Yardımcı fonksiyon, token'ın hangi tipte olduğunu (firma/calisan/bayi) sırayla
-dener ve erişim kontrolü için gereken firma kimliğini (ya doğrudan `firmaId`, ya
-da bayi ise `bayiId`) döndürür:
+Yardımcı fonksiyon, token'ı çözer ve **payload'daki alan adına göre** (imzanın
+geçip geçmemesine göre DEĞİL) sahibinin tipini ayırt eder.
+
+> **Kritik not:** Üç token tipi de aynı `JWT_SECRET` ile imzalandığı ve üç
+> `*Dogrula` fonksiyonu da yalnızca `jwt.verify(token, secret)` yaptığı için, bir
+> bayi token'ı `firmaTokenDogrula` ile de "geçerli" sayılır (imza doğru) ama
+> `.firmaId` `undefined` döner. Bu yüzden ayırt etme, `try/catch` sırasına değil,
+> çözülen payload'da hangi kimlik alanının bulunduğuna dayanmalıdır. `verify`
+> herhangi bir `*Dogrula` ile bir kez yapılır (üçü de aynı olduğundan
+> `firmaTokenDogrula` yeterli), sonra alan adına bakılır.
 
 ```javascript
 async function tokenSahibiCoz(token) {
+  let payload;
   try {
-    return { tur: 'firma', firmaId: firmaTokenDogrula(token).firmaId };
-  } catch {}
-  try {
-    const calisanId = calisanTokenDogrula(token).calisanId;
-    const c = await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [calisanId]);
-    if (c.rows.length) return { tur: 'calisan', firmaId: c.rows[0].firma_id };
-  } catch {}
-  try {
-    return { tur: 'bayi', bayiId: bayiTokenDogrula(token).bayiId };
-  } catch {}
+    payload = firmaTokenDogrula(token); // yalnizca imza dogrulama + decode
+  } catch {
+    return null;
+  }
+  if (payload.firmaId != null) {
+    return { tur: 'firma', firmaId: payload.firmaId };
+  }
+  if (payload.calisanId != null) {
+    const c = await pool.query('SELECT firma_id FROM calisanlar WHERE id = $1', [payload.calisanId]);
+    return c.rows.length ? { tur: 'calisan', firmaId: c.rows[0].firma_id } : null;
+  }
+  if (payload.bayiId != null) {
+    return { tur: 'bayi', bayiId: payload.bayiId };
+  }
   return null;
 }
 
@@ -147,15 +159,29 @@ eczane için; çalışan ucu sadece `yazildi` alır) — tenant-scoped, panelden
 
 ## Mobil
 
+- **Aktif token:** `TokenDeposu`'ya `aktifTokenAl()` eklenir — bayi/temsilci/firma
+  token'larından dolu olan ilkini döndürür (aynı anda yalnızca biri dolu; `cikisYap`
+  hepsini temizliyor). `KartaYazViewModel` bu token'ı `kart-yazildi` çağrısında
+  `Bearer` olarak gönderir. `KartaYazViewModel()` bu nedenle `tokenDeposu`
+  parametresi alacak şekilde güncellenir.
+- **Navigasyon `kartId` + `kartTipi` taşır:** Mevcut `kartaYaz/{adSoyad}/{url}?tip={tip}`
+  rotasına iki opsiyonel query param eklenir: `kartTipi` (`calisan`/`musteri`/`eczaci`)
+  ve `kartId` (Int). Mevcut `tip` (`calisan`/`raf`) yalnızca EKRAN METNİNİ belirliyor;
+  yeni `kartTipi` ise `kart-yazildi` çağrısının hangi tablo/kolonu güncelleyeceğini
+  belirler — ikisi ayrı kavramdır. Çağrı yerleri:
+  - `CalisanlarEkrani` (bayi + firma) → `kartTipi=calisan`, `kartId=calisan.id`
+  - `EczanelerimEkrani` müşteri kartı → `kartTipi=musteri`, `kartId=eczane.id`
+  - `EczanelerimEkrani` eczacı kartı → `kartTipi=eczaci`, `kartId=eczane.id`
 - `KartaYazEkrani`/`KartaYazViewModel`: NFC yazımı başarılı olduğunda (mevcut
-  "Kart başarıyla yazıldı." mesajının hemen sonrasında) `ApiService.kartYazildi(...)`
-  çağrılır — `tip`, `id`, `kilitli` (kullanıcının kilitleme seçimine göre).
-  Bu çağrının hangi `tip`/`id` ile yapılacağı, `KartaYazEkrani`'ye yeni opsiyonel
-  parametreler olarak geçirilir: `kartTipi: String? = null`, `kartId: Int? = null`
-  (null ise — geriye dönük uyumluluk için — çağrı atlanır).
+  "Kart başarıyla yazıldı." mesajından hemen sonra) `ApiService.kartYazildi(...)`
+  çağrılır — `tip=kartTipi`, `id=kartId`, `kilitli` (kullanıcının kilitleme
+  seçimine göre). `kartTipi`/`kartId` yoksa (null) çağrı atlanır (geriye dönük
+  güvenli).
 - Liste ekranları (`CalisanlarEkrani`, `EczanelerimEkrani`): her satırda küçük bir
   rozet — `karta_yazildi == true` ise yeşil "Yazıldı" (+ kilitliyse "🔒"), değilse
-  gri "Yazılmadı". Üstte özet: "X/Y yazıldı".
+  gri "Yazılmadı". Eczane satırında müşteri ve eczacı kartı için ayrı rozet. Üstte
+  özet: "X/Y yazıldı" (eczane listesinde özet **müşteri kartı** temel alınır; eczacı
+  durumu satırda ayrıca görünür).
 
 ## Web Panel
 
