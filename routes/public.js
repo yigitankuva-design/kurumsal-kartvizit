@@ -4,6 +4,7 @@ const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
 const { cevirmenOlustur } = require('../utils/i18n');
 const { youtubeIdCikar } = require('../utils/youtube');
+const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir } = require('../utils/sosyalMedya');
 
 const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
 
@@ -51,12 +52,12 @@ router.get('/raf/:kod/tikla/:tip', async (req, res) => {
 
     const hedefler = {
       katalog: veri.katalog_url,
-      website: veri.website,
-      instagram: veri.instagram,
-      linkedin: veri.linkedin,
-      twitter: veri.twitter,
-      youtube: veri.youtube,
-      tiktok: veri.tiktok,
+      website: urlNormallestir(veri.website),
+      instagram: instagramLinkOlustur(veri.instagram),
+      linkedin: urlNormallestir(veri.linkedin),
+      twitter: twitterLinkOlustur(veri.twitter),
+      youtube: urlNormallestir(veri.youtube),
+      tiktok: tiktokLinkOlustur(veri.tiktok),
       whatsapp: veri.whatsapp ? `https://wa.me/${veri.whatsapp.replace(/\D/g, '')}` : null,
     };
     const hedef = hedefler[tip];
@@ -223,16 +224,16 @@ router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
     const hedefler = {
       telefon: calisan.telefon ? `tel:${calisan.telefon}` : null,
       email: calisan.email ? `mailto:${calisan.email}` : null,
-      linkedin: calisan.linkedin,
-      instagram: calisan.instagram,
-      twitter: calisan.twitter,
-      youtube: calisan.youtube,
-      website: calisan.website,
+      linkedin: urlNormallestir(calisan.linkedin),
+      instagram: instagramLinkOlustur(calisan.instagram),
+      twitter: twitterLinkOlustur(calisan.twitter),
+      youtube: urlNormallestir(calisan.youtube),
+      website: urlNormallestir(calisan.website),
       whatsapp: calisan.whatsapp ? `https://wa.me/${calisan.whatsapp.replace(/\D/g, '')}` : null,
-      tiktok: calisan.tiktok,
-      sahibinden: calisan.sahibinden,
-      hurriyet_emlak: calisan.hurriyet_emlak,
-      google_yorum: calisan.google_yorum_link,
+      tiktok: tiktokLinkOlustur(calisan.tiktok),
+      sahibinden: urlNormallestir(calisan.sahibinden),
+      hurriyet_emlak: urlNormallestir(calisan.hurriyet_emlak),
+      google_yorum: urlNormallestir(calisan.google_yorum_link),
       vcf: `/${req.params.firmaSlug}/${req.params.calisanSlug}/vcf`,
     };
 
@@ -257,7 +258,7 @@ router.get('/:firmaSlug/:calisanSlug/degerlendir', async (req, res) => {
     if (!result.rows.length || !result.rows[0].google_yorum_link) {
       return res.status(404).render('public/404', { title: '404', mesaj: 'Değerlendirme linki bulunamadı.', layout: false });
     }
-    res.redirect(result.rows[0].google_yorum_link);
+    res.redirect(urlNormallestir(result.rows[0].google_yorum_link));
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
