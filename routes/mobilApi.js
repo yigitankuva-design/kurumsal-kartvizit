@@ -14,6 +14,7 @@ const {
 
 const fotoUpload = uploadMiddleware('calisanlar');
 const mobilProfilLimiter = createJsonLimiter('Çok fazla işlem yaptınız. Lütfen biraz sonra tekrar deneyin.');
+const kartYazildiLimiter = createJsonLimiter('Çok fazla işlem yaptınız. Lütfen biraz sonra tekrar deneyin.');
 
 function fotoUploadGuvenliJson() {
   return (req, res, next) => {
@@ -293,7 +294,7 @@ async function tokenSahibiCoz(token) {
   return null;
 }
 
-router.post('/kart-yazildi', mobilProfilLimiter, async (req, res) => {
+router.post('/kart-yazildi', kartYazildiLimiter, async (req, res) => {
   const { tip, id, kilitli } = req.body;
   if (!tip || !id || !['calisan', 'musteri', 'eczaci'].includes(tip)) {
     return res.status(400).json({ ok: false, error: 'tip ve id zorunlu.' });
