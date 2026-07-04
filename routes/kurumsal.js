@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const XLSX = require('xlsx');
 const { pool } = require('../db');
-const { benzersizEczaneKoduUret } = require('../utils/eczaneKod');
+const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 
 const logoUpload = uploadMiddleware('firma-logolar');
@@ -54,9 +54,10 @@ router.post('/eczane-ekle', async (req, res) => {
   }
   try {
     const kod = await benzersizEczaneKoduUret();
+    const eczaciKod = await benzersizEczaciKoduUret();
     await pool.query(
-      'INSERT INTO eczaneler (firma_id, ad, adres, kod) VALUES ($1, $2, $3, $4)',
-      [req.session.firmaId, ad.trim(), adres || null, kod]
+      'INSERT INTO eczaneler (firma_id, ad, adres, kod, eczaci_kod) VALUES ($1, $2, $3, $4, $5)',
+      [req.session.firmaId, ad.trim(), adres || null, kod, eczaciKod]
     );
     req.flash('success', `${ad} eklendi.`);
   } catch (err) {

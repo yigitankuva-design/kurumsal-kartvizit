@@ -95,6 +95,16 @@ async function migrate() {
       eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kod TEXT UNIQUE`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS eczaci_baslik TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS eczaci_metin TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS eczaci_pdf_url TEXT`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS eczaci_video_url TEXT`,
+    `CREATE TABLE IF NOT EXISTS eczaci_okutmalar (
+      id          SERIAL PRIMARY KEY,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {

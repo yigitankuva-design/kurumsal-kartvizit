@@ -45,6 +45,8 @@ describe('Kurumsal panel uçları', () => {
     const e = await pool.query('SELECT * FROM eczaneler WHERE firma_id = $1', [kurumsalId]);
     expect(e.rows.length).toBe(1);
     expect(e.rows[0].kod).toHaveLength(8);
+    expect(e.rows[0].eczaci_kod).toHaveLength(8);
+    expect(e.rows[0].eczaci_kod).not.toBe(e.rows[0].kod);
   });
 
   test('basic firma /kurumsal uçlarından redirect ile döner, kayıt oluşmaz', async () => {

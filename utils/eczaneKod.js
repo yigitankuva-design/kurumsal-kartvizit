@@ -21,4 +21,13 @@ async function benzersizEczaneKoduUret() {
   }
 }
 
-module.exports = { eczaneKodUret, benzersizEczaneKoduUret };
+async function benzersizEczaciKoduUret() {
+  const { pool } = require('../db');
+  while (true) {
+    const kod = eczaneKodUret();
+    const sonuc = await pool.query('SELECT id FROM eczaneler WHERE eczaci_kod = $1', [kod]);
+    if (!sonuc.rows.length) return kod;
+  }
+}
+
+module.exports = { eczaneKodUret, benzersizEczaneKoduUret, benzersizEczaciKoduUret };
