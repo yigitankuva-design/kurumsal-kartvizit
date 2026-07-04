@@ -170,4 +170,63 @@ describe('Kurumsal panel uçları', () => {
     expect(rows[0]).toEqual(['Temsilci', 'Eczane', 'Tarih']);
     expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
+
+  test('eczacı içeriği güncellenir', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.post('/kurumsal/eczaci-icerik').send({
+      eczaci_baslik: 'Ağustos Kampanyası',
+      eczaci_metin: 'Detaylar eczacımızda.',
+      eczaci_video_url: 'https://youtu.be/dQw4w9WgXcQ',
+    });
+    expect(res.statusCode).toBe(302);
+    const f = await pool.query('SELECT eczaci_baslik, eczaci_metin, eczaci_video_url FROM firmalar WHERE id = $1', [kurumsalId]);
+    expect(f.rows[0].eczaci_baslik).toBe('Ağustos Kampanyası');
+    expect(f.rows[0].eczaci_metin).toBe('Detaylar eczacımızda.');
+    expect(f.rows[0].eczaci_video_url).toBe('https://youtu.be/dQw4w9WgXcQ');
+  });
+
+  test('eczacı eğitim PDF\'i yüklenir (dev ortamında location null olsa da 302 döner)', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent
+      .post('/kurumsal/eczaci-pdf')
+      .attach('eczaci_pdf', Buffer.from('%PDF-1.4 test'), { filename: 'egitim.pdf', contentType: 'application/pdf' });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/?tab=icerik');
+  });
+
+  test('eczacı kartı kodu olmayan eczane için kod üretilir, ikinci çağrıda değişmez', async () => {
+    const agent = kurumsalAgent;
+    const eczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Kod Uret Test Eczanesi', 'koduret01') RETURNING id`,
+      [kurumsalId]
+    );
+    const eczaneId = eczaneSonuc.rows[0].id;
+    const res = await agent.post(`/kurumsal/eczane/${eczaneId}/eczaci-kod-uret`);
+    expect(res.statusCode).toBe(302);
+    const e = await pool.query('SELECT eczaci_kod FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(e.rows[0].eczaci_kod).toHaveLength(8);
+
+    // idempotent: ikinci çağrı mevcut kodu değiştirmez (kart fiziksel olarak yazılmış olabilir)
+    await agent.post(`/kurumsal/eczane/${eczaneId}/eczaci-kod-uret`);
+    const e2 = await pool.query('SELECT eczaci_kod FROM eczaneler WHERE id = $1', [eczaneId]);
+    expect(e2.rows[0].eczaci_kod).toBe(e.rows[0].eczaci_kod);
+  });
+
+  test('eczaci-kod-uret başka firmanın eczanesi için çalışmaz', async () => {
+    const digerHash = await bcrypt.hash('test1234', 8);
+    const digerFirma = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('K5 Diğer Firma', 'k5-diger-firma', 'k5diger@example.com', $1, 'kurumsal') RETURNING id`,
+      [digerHash]
+    );
+    const digerEczane = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Diğer Firma Eczanesi', 'digerecz1') RETURNING id`,
+      [digerFirma.rows[0].id]
+    );
+    const agent = kurumsalAgent;
+    await agent.post(`/kurumsal/eczane/${digerEczane.rows[0].id}/eczaci-kod-uret`);
+    const e = await pool.query('SELECT eczaci_kod FROM eczaneler WHERE id = $1', [digerEczane.rows[0].id]);
+    expect(e.rows[0].eczaci_kod).toBeNull();
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirma.rows[0].id]);
+  });
 });

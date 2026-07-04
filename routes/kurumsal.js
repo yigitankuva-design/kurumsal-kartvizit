@@ -7,6 +7,7 @@ const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload'
 
 const logoUpload = uploadMiddleware('firma-logolar');
 const katalogUpload = pdfUploadMiddleware('kataloglar');
+const eczaciPdfUpload = pdfUploadMiddleware('eczaci-dokumanlar');
 
 // upload middleware dizisini hata yakalayarak çalıştırır (bayi.js'teki desenle aynı)
 function guvenliUpload(uploadCifti, alanAdi, geriDon) {
@@ -38,6 +39,22 @@ router.post('/icerik', async (req, res) => {
        youtube || null, tiktok || null, whatsapp || null, req.session.firmaId]
     );
     req.flash('success', 'İçerik güncellendi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Güncellenemedi.');
+  }
+  res.redirect('/?tab=icerik');
+});
+
+// Eczacı sayfası içeriğini güncelle (başlık + metin + video linki)
+router.post('/eczaci-icerik', async (req, res) => {
+  const { eczaci_baslik, eczaci_metin, eczaci_video_url } = req.body;
+  try {
+    await pool.query(
+      `UPDATE firmalar SET eczaci_baslik=$1, eczaci_metin=$2, eczaci_video_url=$3 WHERE id=$4`,
+      [eczaci_baslik || null, eczaci_metin || null, eczaci_video_url || null, req.session.firmaId]
+    );
+    req.flash('success', 'Eczacı sayfası güncellendi.');
   } catch (err) {
     console.error(err);
     req.flash('error', 'Güncellenemedi.');
@@ -132,6 +149,22 @@ router.post('/katalog', guvenliUpload(katalogUpload, 'katalog', '/?tab=icerik'),
   res.redirect('/?tab=icerik');
 });
 
+// Eczacı eğitim PDF'i yükle
+router.post('/eczaci-pdf', guvenliUpload(eczaciPdfUpload, 'eczaci_pdf', '/?tab=icerik'), async (req, res) => {
+  try {
+    if (req.file?.location) {
+      await pool.query('UPDATE firmalar SET eczaci_pdf_url=$1 WHERE id=$2', [req.file.location, req.session.firmaId]);
+      req.flash('success', 'Eğitim dokümanı güncellendi.');
+    } else {
+      req.flash('error', 'Dosya kaydedilemedi (depolama yapılandırılmamış).');
+    }
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Doküman yüklenemedi.');
+  }
+  res.redirect('/?tab=icerik');
+});
+
 // Ziyaret kayıtlarını Excel'e aktar
 router.get('/ziyaretler-excel', async (req, res) => {
   try {
@@ -159,6 +192,33 @@ router.get('/ziyaretler-excel', async (req, res) => {
     req.flash('error', 'Excel oluşturulamadı.');
     res.redirect('/?tab=saha');
   }
+});
+
+// Mevcut eczaneye eczacı kartı kodu üret (eczane oluşturulduğunda otomatik üretilir,
+// bu uç migration öncesi oluşturulmuş eczaneler için)
+router.post('/eczane/:id/eczaci-kod-uret', async (req, res) => {
+  try {
+    const mevcut = await pool.query(
+      'SELECT eczaci_kod FROM eczaneler WHERE id=$1 AND firma_id=$2',
+      [req.params.id, req.session.firmaId]
+    );
+    if (!mevcut.rows.length) {
+      req.flash('error', 'Eczane bulunamadı.');
+      return res.redirect('/?tab=raf');
+    }
+    if (!mevcut.rows[0].eczaci_kod) {
+      const kod = await benzersizEczaciKoduUret();
+      await pool.query(
+        'UPDATE eczaneler SET eczaci_kod=$1 WHERE id=$2 AND firma_id=$3',
+        [kod, req.params.id, req.session.firmaId]
+      );
+      req.flash('success', 'Eczacı kartı kodu üretildi.');
+    }
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Kod üretilemedi.');
+  }
+  res.redirect('/?tab=raf');
 });
 
 module.exports = router;
