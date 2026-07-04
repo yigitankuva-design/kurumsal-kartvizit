@@ -113,6 +113,23 @@ router.post('/firma-giris', firmaGirisLimiter, async (req, res) => {
   }
 });
 
+router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
+  try {
+    const firmaResult = await pool.query('SELECT id, ad, slug FROM firmalar WHERE id = $1', [req.firmaId]);
+    if (!firmaResult.rows.length) {
+      return res.status(404).json({ ok: false, error: 'Firma bulunamadı.' });
+    }
+    const calisanlarResult = await pool.query(
+      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
+      [req.firmaId]
+    );
+    res.json({ ok: true, firma: firmaResult.rows[0], calisanlar: calisanlarResult.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 router.get('/musteriler', requireBayiToken, async (req, res) => {
   try {
     const result = await pool.query(
