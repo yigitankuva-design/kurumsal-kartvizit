@@ -587,6 +587,17 @@ describe('Mobil API — /api/mobil/kart-yazildi', () => {
     expect(c.rows[0].kart_kilitli).toBe(false);
   });
 
+  test('form-urlencoded ile gönderilen kilitli=false string olarak dogru yorumlanir (mobil istemci gercek gonderim sekli)', async () => {
+    const res = await request(app)
+      .post('/api/mobil/kart-yazildi')
+      .set('Authorization', `Bearer ${firmaToken}`)
+      .type('form')
+      .send({ tip: 'calisan', id: calisanId, kilitli: 'false' });
+    expect(res.statusCode).toBe(200);
+    const c = await pool.query('SELECT kart_kilitli FROM calisanlar WHERE id = $1', [calisanId]);
+    expect(c.rows[0].kart_kilitli).toBe(false);
+  });
+
   test('eczane müşteri ve eczacı kartını bağımsız işaretler', async () => {
     await request(app)
       .post('/api/mobil/kart-yazildi')

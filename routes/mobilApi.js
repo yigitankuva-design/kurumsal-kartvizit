@@ -295,7 +295,8 @@ async function tokenSahibiCoz(token) {
 }
 
 router.post('/kart-yazildi', kartYazildiLimiter, async (req, res) => {
-  const { tip, id, kilitli } = req.body;
+  const { tip, id } = req.body;
+  const kilitli = req.body.kilitli === true || req.body.kilitli === 'true';
   if (!tip || !id || !['calisan', 'musteri', 'eczaci'].includes(tip)) {
     return res.status(400).json({ ok: false, error: 'tip ve id zorunlu.' });
   }
@@ -325,13 +326,13 @@ router.post('/kart-yazildi', kartYazildiLimiter, async (req, res) => {
     if (tip === 'calisan') {
       await pool.query(
         'UPDATE calisanlar SET karta_yazildi = true, kart_kilitli = $1, kart_yazma_tarihi = NOW() WHERE id = $2',
-        [!!kilitli, id]
+        [kilitli, id]
       );
     } else {
       const kolonOn = tip === 'musteri' ? 'musteri' : 'eczaci';
       await pool.query(
         `UPDATE eczaneler SET ${kolonOn}_karta_yazildi = true, ${kolonOn}_kart_kilitli = $1, ${kolonOn}_kart_yazma_tarihi = NOW() WHERE id = $2`,
-        [!!kilitli, id]
+        [kilitli, id]
       );
     }
     res.json({ ok: true });
