@@ -24,3 +24,17 @@ describe('utils/jwt — temsilci', () => {
     expect(() => calisanTokenDogrula('gecersiz.token.deger')).toThrow();
   });
 });
+
+describe('utils/jwt — firma', () => {
+  test('üretilen firma token doğrulanınca doğru firmaId döner', () => {
+    const { firmaTokenUret, firmaTokenDogrula } = require('../utils/jwt');
+    const token = firmaTokenUret(77);
+    const payload = firmaTokenDogrula(token);
+    expect(payload.firmaId).toBe(77);
+  });
+
+  test('bozuk firma token doğrulanamaz', () => {
+    const { firmaTokenDogrula } = require('../utils/jwt');
+    expect(() => firmaTokenDogrula('gecersiz.token.deger')).toThrow();
+  });
+});

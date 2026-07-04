@@ -22,4 +22,12 @@ function calisanTokenDogrula(token) {
   return jwt.verify(token, secretAl());
 }
 
-module.exports = { bayiTokenUret, bayiTokenDogrula, calisanTokenUret, calisanTokenDogrula };
+function firmaTokenUret(firmaId) {
+  return jwt.sign({ firmaId }, secretAl(), { expiresIn: '30d' });
+}
+
+function firmaTokenDogrula(token) {
+  return jwt.verify(token, secretAl());
+}
+
+module.exports = { bayiTokenUret, bayiTokenDogrula, calisanTokenUret, calisanTokenDogrula, firmaTokenUret, firmaTokenDogrula };
