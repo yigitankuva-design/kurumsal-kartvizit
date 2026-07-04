@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= veri.firma_ad %> — Eczacılara Özel</title>
+  <style>
+    :root { --renk: <%= veri.marka_rengi || '#1a73e8' %>; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; display: flex; justify-content: center; padding: 24px 16px; }
+    .kart { width: 100%; max-width: 420px; background: #fff; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.08); height: fit-content; }
+    .ust { background: var(--renk); padding: 36px 24px 28px; text-align: center; color: #fff; }
+    .logo { width: 88px; height: 88px; border-radius: 50%; object-fit: cover; background: #fff; margin-bottom: 14px; }
+    .firma-ad { font-size: 24px; font-weight: 700; }
+    .eczane-ad { font-size: 13px; opacity: 0.85; margin-top: 6px; }
+    .govde { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .baslik { font-size: 19px; font-weight: 700; color: #1a1a2e; }
+    .metin { font-size: 15px; color: #444; line-height: 1.5; white-space: pre-wrap; }
+    .video-wrap { position: relative; width: 100%; padding-top: 56.25%; border-radius: 12px; overflow: hidden; }
+    .video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+    .btn { display: block; text-align: center; padding: 15px; border-radius: 12px; text-decoration: none; font-size: 16px; font-weight: 600; background: var(--renk); color: #fff; }
+    .bos { text-align: center; color: #888; padding: 24px 0; }
+  </style>
+</head>
+<body>
+  <div class="kart">
+    <div class="ust">
+      <% if (veri.logo_url) { %><img class="logo" src="<%= veri.logo_url %>" alt=""><% } %>
+      <div class="firma-ad"><%= veri.firma_ad %></div>
+      <div class="eczane-ad"><%= veri.eczane_ad %> — Eczacılara Özel</div>
+    </div>
+    <div class="govde">
+      <% if (!veri.eczaci_baslik && !veri.eczaci_metin && !veri.eczaci_video_id && !veri.eczaci_pdf_url) { %>
+        <div class="bos">İçerik henüz eklenmedi.</div>
+      <% } else { %>
+        <% if (veri.eczaci_baslik) { %><div class="baslik"><%= veri.eczaci_baslik %></div><% } %>
+        <% if (veri.eczaci_metin) { %><div class="metin"><%= veri.eczaci_metin %></div><% } %>
+        <% if (veri.eczaci_video_id) { %>
+          <div class="video-wrap">
+            <iframe src="https://www.youtube.com/embed/<%= veri.eczaci_video_id %>" allowfullscreen></iframe>
+          </div>
+        <% } else if (veri.eczaci_video_url) { %>
+          <a class="btn" href="<%= veri.eczaci_video_url %>" target="_blank">▶️ Eğitim Videosu</a>
+        <% } %>
+        <% if (veri.eczaci_pdf_url) { %>
+          <a class="btn" href="<%= veri.eczaci_pdf_url %>" target="_blank">📄 Eğitim Dokümanını Aç (PDF)</a>
+        <% } %>
+      <% } %>
+    </div>
+  </div>
+</body>
+</html>

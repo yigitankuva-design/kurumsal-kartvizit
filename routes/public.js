@@ -3,6 +3,7 @@ const router = express.Router();
 const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
 const { cevirmenOlustur } = require('../utils/i18n');
+const { youtubeIdCikar } = require('../utils/youtube');
 
 const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
 
@@ -64,6 +65,38 @@ router.get('/raf/:kod/tikla/:tip', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.redirect(`/raf/${kod}`);
+  }
+});
+
+async function eczaciGetir(kod) {
+  const result = await pool.query(
+    `SELECT e.id as eczane_id, e.ad as eczane_ad,
+            f.ad as firma_ad, f.logo_url, f.marka_rengi,
+            f.eczaci_baslik, f.eczaci_metin, f.eczaci_pdf_url, f.eczaci_video_url
+     FROM eczaneler e JOIN firmalar f ON f.id = e.firma_id
+     WHERE e.eczaci_kod = $1`,
+    [kod]
+  );
+  return result.rows[0] || null;
+}
+
+// Eczacı kartı sayfası — eczacının kendi okutması
+router.get('/eczaci/:kod', async (req, res) => {
+  try {
+    const veri = await eczaciGetir(req.params.kod);
+    if (!veri) {
+      return res.status(404).render('public/404', { title: '404', mesaj: 'Sayfa bulunamadı.', layout: false });
+    }
+    try {
+      await pool.query('INSERT INTO eczaci_okutmalar (eczane_id) VALUES ($1)', [veri.eczane_id]);
+    } catch (kayitHatasi) {
+      console.error('eczacı okutma kaydı başarısız:', kayitHatasi);
+    }
+    veri.eczaci_video_id = youtubeIdCikar(veri.eczaci_video_url);
+    res.render('public/eczaci', { title: veri.firma_ad, veri, layout: false });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
   }
 });
 
