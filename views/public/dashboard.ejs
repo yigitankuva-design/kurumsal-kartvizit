@@ -286,7 +286,17 @@
             <td class="td-url">
               <a href="/<%= firma.slug %>/<%= c.slug %>" target="_blank">/<%= firma.slug %>/<%= c.slug %></a>
             </td>
-            <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
+            <td>
+              <span class="badge badge-<%= c.durum %>"><%= c.durum %></span>
+              <% if (!c.onayli) { %>
+                <div style="margin-top:6px">
+                  <span style="color:#b45309;font-size:12px">⏳ Onay Bekliyor</span>
+                  <form method="POST" action="/firma/panel/calisan/<%= c.id %>/onayla" style="display:inline">
+                    <button type="submit" class="btn btn-gold btn-sm">Onayla</button>
+                  </form>
+                </div>
+              <% } %>
+            </td>
             <td>
               <div class="td-actions">
                 <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
@@ -383,6 +393,20 @@
         <button type="submit" class="btn btn-gold" style="height:36px;">Yükle ve İçe Aktar</button>
       </form>
     </div>
+    <% if (firma.paket === 'kurumsal') { %>
+    <div class="excel-card" style="margin-top:20px">
+      <h3>Eczane ile toplu yükleme</h3>
+      <p>Eczane listesini Excel ile toplu ekleyin. İçe aktarılan eczaneler onaylanana kadar mobilde görünmez.</p>
+      <a href="/kurumsal/eczane-sablon" class="btn btn-border" style="margin-bottom:20px;height:36px;">⬇ Eczane Şablonu İndir (.xlsx)</a>
+      <form method="POST" action="/kurumsal/eczane-toplu-yukle" enctype="multipart/form-data">
+        <div class="form-group">
+          <label>Excel dosyası (.xlsx)</label>
+          <input type="file" name="excel" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn-gold" style="height:36px;">Yükle ve İçe Aktar</button>
+      </form>
+    </div>
+    <% } %>
 
   <!-- TAB: KURUMSAL İÇERİK -->
   <% } else if (tab === 'icerik' && firma.paket === 'kurumsal') { %>
@@ -445,7 +469,15 @@
         <tbody>
           <% eczaneler.forEach(e => { %>
           <tr>
-            <td><%= e.ad %></td>
+            <td>
+              <%= e.ad %>
+              <% if (!e.onayli) { %>
+                <div style="margin-top:4px">
+                  <span style="color:#b45309;font-size:12px">⏳ Onay Bekliyor</span>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/onayla" style="display:inline"><button type="submit">Onayla</button></form>
+                </div>
+              <% } %>
+            </td>
             <td><%= e.adres || '-' %></td>
             <td><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a></td>
             <td><%= e.okutma_sayisi %></td>
