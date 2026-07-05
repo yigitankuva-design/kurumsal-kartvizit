@@ -1,13 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const XLSX = require('xlsx');
+const multer = require('multer');
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
+const { eczaneExcelParse } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 
 const logoUpload = uploadMiddleware('firma-logolar');
 const katalogUpload = pdfUploadMiddleware('kataloglar');
 const eczaciPdfUpload = pdfUploadMiddleware('eczaci-dokumanlar');
+const excelUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // upload middleware dizisini hata yakalayarak çalıştırır (bayi.js'teki desenle aynı)
 function guvenliUpload(uploadCifti, alanAdi, geriDon) {
@@ -246,6 +249,58 @@ router.post('/eczane/:id/kart-isaretle', async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'İşaretlenemedi.');
+  }
+  res.redirect('/?tab=raf');
+});
+
+router.get('/eczane-sablon', (req, res) => {
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['ad', 'adres'],
+    ['Örnek Eczane', 'Merkez Mah. No:1'],
+  ]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Eczaneler');
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  res.setHeader('Content-Disposition', 'attachment; filename="eczaneler-sablon.xlsx"');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+});
+
+router.post('/eczane-toplu-yukle', excelUpload.single('excel'), async (req, res) => {
+  if (!req.file) {
+    req.flash('error', 'Dosya seçilmedi.');
+    return res.redirect('/?tab=excel');
+  }
+  const { eczaneler, hatalar } = eczaneExcelParse(req.file.buffer);
+  let eklenen = 0;
+  for (const e of eczaneler) {
+    try {
+      const kod = await benzersizEczaneKoduUret();
+      const eczaciKod = await benzersizEczaciKoduUret();
+      await pool.query(
+        'INSERT INTO eczaneler (firma_id, ad, adres, kod, eczaci_kod, onayli) VALUES ($1,$2,$3,$4,$5, false)',
+        [req.session.firmaId, e.ad, e.adres, kod, eczaciKod]
+      );
+      eklenen++;
+    } catch (err) {
+      console.error(err);
+      hatalar.push(`${e.ad}: eklenemedi`);
+    }
+  }
+  const mesaj = `${eklenen} eczane eklendi.${hatalar.length ? ' Hatalar: ' + hatalar.join('; ') : ''}`;
+  req.flash(hatalar.length && eklenen === 0 ? 'error' : 'success', mesaj);
+  res.redirect('/?tab=excel');
+});
+
+router.post('/eczane/:id/onayla', async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE eczaneler SET onayli = true WHERE id = $1 AND firma_id = $2',
+      [req.params.id, req.session.firmaId]
+    );
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Onaylanamadı.');
   }
   res.redirect('/?tab=raf');
 });

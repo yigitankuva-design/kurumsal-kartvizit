@@ -276,4 +276,50 @@ describe('Kurumsal panel uçları', () => {
     expect(r.rows[0].musteri_karta_yazildi).toBe(true);
     expect(r.rows[0].eczaci_karta_yazildi).toBe(false);
   });
+
+  test('eczane Excel toplu yüklenir, kod üretilir ve onayli=false olur', async () => {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['ad', 'adres'],
+      ['Toplu Eczane A', 'Adres A'],
+      ['Toplu Eczane B', ''],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Eczaneler');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const res = await kurumsalAgent.post('/kurumsal/eczane-toplu-yukle')
+      .attach('excel', buffer, { filename: 'ecz.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    expect(res.statusCode).toBe(302);
+    const e = await pool.query(
+      "SELECT ad, kod, eczaci_kod, onayli FROM eczaneler WHERE firma_id = $1 AND ad = 'Toplu Eczane A'",
+      [kurumsalId]
+    );
+    expect(e.rows.length).toBe(1);
+    expect(e.rows[0].kod).toHaveLength(8);
+    expect(e.rows[0].eczaci_kod).toHaveLength(8);
+    expect(e.rows[0].onayli).toBe(false);
+  });
+
+  test('eczane şablonu .xlsx olarak iner', async () => {
+    const res = await kurumsalAgent.get('/kurumsal/eczane-sablon');
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('spreadsheetml');
+  });
+
+  test('eczane onaylama onayli=true yapar', async () => {
+    const e = await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod, onayli) VALUES ($1,'Onay Eczane','onaykod1','onayeczaci1',false) RETURNING id",
+      [kurumsalId]
+    );
+    const res = await kurumsalAgent.post(`/kurumsal/eczane/${e.rows[0].id}/onayla`);
+    expect(res.statusCode).toBe(302);
+    const r = await pool.query('SELECT onayli FROM eczaneler WHERE id = $1', [e.rows[0].id]);
+    expect(r.rows[0].onayli).toBe(true);
+  });
+
+  test('Excel sekmesinde eczane toplu yükleme bölümü görünür', async () => {
+    const res = await kurumsalAgent.get('/?tab=excel');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Eczane ile toplu yükleme');
+    expect(res.text).toContain('/kurumsal/eczane-sablon');
+  });
 });

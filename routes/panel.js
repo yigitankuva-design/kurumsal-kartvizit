@@ -122,6 +122,19 @@ router.post('/toplu-yukle', upload.single('excel'), async (req, res) => {
   res.redirect('/?tab=excel');
 });
 
+router.post('/calisan/:id/onayla', async (req, res) => {
+  try {
+    await pool.query(
+      'UPDATE calisanlar SET onayli = true WHERE id = $1 AND firma_id = $2',
+      [req.params.id, req.session.firmaId]
+    );
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Onaylanamadı.');
+  }
+  res.redirect('/?tab=calisanlar');
+});
+
 // Çalışan düzenleme formu
 router.get('/:id/duzenle', async (req, res) => {
   try {
