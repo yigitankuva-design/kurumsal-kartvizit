@@ -41,6 +41,13 @@ describe('Raf kartı public sayfası', () => {
     expect(Number(sonraki)).toBe(Number(onceki) + 1);
   });
 
+  test('QR kodu gösterilir, doğru domaine işaret eder', async () => {
+    const res = await request(app).get(`/raf/${kod}`);
+    expect(res.text).toContain('api.qrserver.com');
+    expect(res.text).toContain('QR Kodu Göster');
+    expect(res.text).not.toContain('nfckart.com');
+  });
+
   test('geçersiz kod 404 döner', async () => {
     const res = await request(app).get('/raf/yokboylekod');
     expect(res.statusCode).toBe(404);

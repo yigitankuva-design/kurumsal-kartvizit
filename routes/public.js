@@ -32,7 +32,8 @@ router.get('/raf/:kod', async (req, res) => {
     } catch (kayitHatasi) {
       console.error('raf okutma kaydı başarısız:', kayitHatasi);
     }
-    res.render('public/raf', { title: veri.firma_ad, veri, layout: false });
+    const qrHedef = `${req.protocol}://${req.get('host')}/raf/${veri.kod}`;
+    res.render('public/raf', { title: veri.firma_ad, veri, qrHedef, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
