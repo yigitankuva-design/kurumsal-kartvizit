@@ -450,6 +450,10 @@ describe('Mobil API — /api/mobil/firma/calisanlarimiz', () => {
       `INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Ali', 'Veli', 'ali-veli-fc')`,
       [firmaId]
     );
+    await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, onayli) VALUES ($1, 'Onaysiz', 'Calisan', 'onaysiz-calisan-fc', false)`,
+      [firmaId]
+    );
     const d = await pool.query(
       `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
        VALUES ('Diger Firma FC', 'diger-firma-fc', 'fc2@x.com', 'x', 'kurumsal') RETURNING id`
@@ -481,6 +485,7 @@ describe('Mobil API — /api/mobil/firma/calisanlarimiz', () => {
     const adlar = res.body.calisanlar.map((c) => c.ad);
     expect(adlar).toContain('Ali');
     expect(adlar).not.toContain('Baska');
+    expect(adlar).not.toContain('Onaysiz');
   });
 });
 
@@ -497,6 +502,10 @@ describe('Mobil API — /api/mobil/firma/eczanelerimiz', () => {
     token = firmaTokenUret(firmaId);
     await pool.query(
       `INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Benim Eczanem', 'femus1', 'feecz1')`,
+      [firmaId]
+    );
+    await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, onayli) VALUES ($1, 'Onaysiz Eczane', 'feonaysiz1', false)`,
       [firmaId]
     );
     const d = await pool.query(
@@ -529,6 +538,7 @@ describe('Mobil API — /api/mobil/firma/eczanelerimiz', () => {
     const adlar = res.body.eczaneler.map((e) => e.ad);
     expect(adlar).toContain('Benim Eczanem');
     expect(adlar).not.toContain('Baska Eczane');
+    expect(adlar).not.toContain('Onaysiz Eczane');
     const benim = res.body.eczaneler.find((e) => e.ad === 'Benim Eczanem');
     expect(benim.eczaci_kod).toBe('feecz1');
     expect(benim.musteri_karta_yazildi).toBe(false);
