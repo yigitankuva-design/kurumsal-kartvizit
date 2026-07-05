@@ -38,4 +38,27 @@ function excelParse(buffer) {
   return { calisanlar, hatalar };
 }
 
-module.exports = { excelParse };
+function eczaneExcelParse(buffer) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+  const eczaneler = [];
+  const hatalar = [];
+
+  rows.forEach((row, i) => {
+    const ad = String(row['ad'] || '').trim();
+    if (!ad) {
+      hatalar.push(`Satır ${i + 2}: ad zorunlu`);
+      return;
+    }
+    eczaneler.push({
+      ad,
+      adres: String(row['adres'] || '').trim() || null,
+    });
+  });
+
+  return { eczaneler, hatalar };
+}
+
+module.exports = { excelParse, eczaneExcelParse };
