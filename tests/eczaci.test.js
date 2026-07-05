@@ -45,6 +45,13 @@ describe('Eczacı kartı public sayfası', () => {
     expect(Number(sonraki)).toBe(Number(onceki) + 1);
   });
 
+  test('QR kodu gösterilir, doğru domaine işaret eder', async () => {
+    const res = await request(app).get(`/eczaci/${eczaciKod}`);
+    expect(res.text).toContain('api.qrserver.com');
+    expect(res.text).toContain('QR Kodu Göster');
+    expect(res.text).not.toContain('nfckart.com');
+  });
+
   test('geçersiz kod 404 döner', async () => {
     const res = await request(app).get('/eczaci/yokboylekod');
     expect(res.statusCode).toBe(404);

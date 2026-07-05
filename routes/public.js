@@ -95,7 +95,8 @@ router.get('/eczaci/:kod', async (req, res) => {
       console.error('eczacı okutma kaydı başarısız:', kayitHatasi);
     }
     veri.eczaci_video_id = youtubeIdCikar(veri.eczaci_video_url);
-    res.render('public/eczaci', { title: veri.firma_ad, veri, layout: false });
+    const qrHedef = `${req.protocol}://${req.get('host')}/eczaci/${req.params.kod}`;
+    res.render('public/eczaci', { title: veri.firma_ad, veri, qrHedef, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
