@@ -85,4 +85,37 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(res.statusCode).toBe(200);
     expect(res.text).toContain('Giriş E-postası');
   });
+
+  test('Excel toplu yüklenen çalışan onayli=false ile eklenir', async () => {
+    const XLSX = require('xlsx');
+    const agent = await girisYap(firmaEmail);
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'biyografi'],
+      ['Toplu', 'Onaysiz', '', '', '', '', '', ''],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const res = await agent.post('/firma/panel/toplu-yukle')
+      .attach('excel', buffer, { filename: 'test.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    expect(res.statusCode).toBe(302);
+    const c = await pool.query(
+      "SELECT onayli FROM calisanlar WHERE firma_id = $1 AND ad = 'Toplu' AND soyad = 'Onaysiz'",
+      [firmaId]
+    );
+    expect(c.rows.length).toBe(1);
+    expect(c.rows[0].onayli).toBe(false);
+  });
+
+  test('çalışan onaylama onayli=true yapar', async () => {
+    const agent = await girisYap(firmaEmail);
+    const c = await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug, onayli) VALUES ($1,'Onay','Bekleyen','onay-bekleyen',false) RETURNING id",
+      [firmaId]
+    );
+    const res = await agent.post(`/firma/panel/calisan/${c.rows[0].id}/onayla`);
+    expect(res.statusCode).toBe(302);
+    const r = await pool.query('SELECT onayli FROM calisanlar WHERE id = $1', [c.rows[0].id]);
+    expect(r.rows[0].onayli).toBe(true);
+  });
 });

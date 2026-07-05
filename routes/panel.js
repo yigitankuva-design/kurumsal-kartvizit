@@ -108,8 +108,8 @@ router.post('/toplu-yukle', upload.single('excel'), async (req, res) => {
     try {
       const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, c.ad, c.soyad);
       await pool.query(
-        `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, slug)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, slug, onayli)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, false)`,
         [req.session.firmaId, c.ad, c.soyad, c.unvan, c.departman, c.telefon, c.email, c.linkedin, c.biyografi, slug]
       );
       eklenen++;
