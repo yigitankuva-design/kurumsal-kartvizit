@@ -57,6 +57,12 @@ describe('Çalışan profili link tıklama — kullanıcı adı normalleştirme'
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('https://ornek.com');
   });
+
+  test('profil sayfasında QR kod doğru domaine işaret eder, nfckart.com içermez', async () => {
+    const res = await request(app).get('/link-test-firma/link-test');
+    expect(res.text).toContain('api.qrserver.com');
+    expect(res.text).not.toContain('nfckart.com');
+  });
 });
 
 describe('Raf kartı link tıklama — kullanıcı adı normalleştirme', () => {

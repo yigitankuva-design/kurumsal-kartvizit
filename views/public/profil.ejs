@@ -228,10 +228,9 @@
     <div class="modal-kart">
       <button class="modal-kapat" onclick="document.getElementById('qr-modal').classList.remove('aktif')">✕</button>
       <h3 style="margin-bottom:16px;font-size:16px;font-weight:700"><%= t('qr_modal_baslik') %></h3>
-      <% const fullUrl = 'https://' + (process.env.DOMAIN || (typeof req !== 'undefined' ? req.hostname : 'nfckart.com')) + profilUrl; %>
-      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<%= encodeURIComponent(fullUrl) %>" alt="QR Kod" style="width:220px;height:220px;border-radius:8px">
+      <img src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=<%= encodeURIComponent(qrHedef) %>" alt="QR Kod" style="width:220px;height:220px;border-radius:8px">
       <p style="margin-top:12px;font-size:12px;color:#6b7280;text-align:center"><%= t('qr_aciklama') %></p>
-      <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=<%= encodeURIComponent(fullUrl) %>" download="qr-kod.png" class="btn" style="margin-top:14px;width:100%;justify-content:center;font-size:14px">
+      <a href="https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=<%= encodeURIComponent(qrHedef) %>" download="qr-kod.png" class="btn" style="margin-top:14px;width:100%;justify-content:center;font-size:14px">
         ⬇ <%= t('qr_indir') %>
       </a>
     </div>
@@ -261,7 +260,7 @@
                 <% if (calisan.email) { %><div>✉️ <a href="mailto:<%= calisan.email %>" style="color:#1f2937;text-decoration:none"><%= calisan.email %></a></div><% } %>
               </div>
               <div style="margin-top:8px">
-                <a href="<%= fullUrl %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600"><%= t('dijital_kartvizit') %></a>
+                <a href="<%= qrHedef %>" style="display:inline-block;padding:5px 12px;background:<%= marka %>;color:#fff;border-radius:4px;font-size:11px;text-decoration:none;font-weight:600"><%= t('dijital_kartvizit') %></a>
               </div>
             </td>
           </tr>
@@ -282,7 +281,7 @@
       var tel = '<%= calisan.telefon || "" %>';
       var email = '<%= calisan.email || "" %>';
       var foto = '<%= calisan.foto_url || "" %>';
-      var link = '<%= fullUrl %>';
+      var link = '<%= qrHedef %>';
       var dijitalKartvizitMetni = '<%= t("dijital_kartvizit") %>';
 
       var html = '<table cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,sans-serif;font-size:13px;color:#1f2937"><tr>';
