@@ -69,6 +69,13 @@ onaylı sayılır. Sadece **toplu Excel** eklemeleri açıkça `onayli=false` ya
 - `GET /api/mobil/firma/eczanelerimiz`
 - `GET /api/mobil/eczanelerim`
 
+**Tutarlılık düzeltmesi (`GET /api/mobil/musteriler` sayacı):** Bu uç her firma
+için `COUNT(c.id) as calisan_sayisi` döndürüyor; onaysız çalışanları da sayarsa
+liste (filtreli) ile sayaç uyuşmaz ("5 kart" der, içeri girince 3 görünür).
+`COUNT(c.id)` → `COUNT(c.id) FILTER (WHERE c.onayli)` yapılır. (Pratikte
+bayi-yönetimli firmalar `/firma/panel`'e giriş yapamadığı için onaysız kayıt
+oluşmaz; bu savunmacı bir tutarlılık düzeltmesidir.)
+
 **Web panel listeleri** (`app.js` GET `/` sorguları, `tab=calisanlar` ve `tab=raf`)
 değişmez — tüm kayıtları (onaylı + onaysız) döndürmeye devam eder; ayrım UI'da
 yapılır (bkz. aşağı).
