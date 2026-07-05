@@ -114,6 +114,8 @@ async function migrate() {
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_karta_yazildi BOOLEAN DEFAULT false`,
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kart_kilitli BOOLEAN DEFAULT false`,
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kart_yazma_tarihi TIMESTAMP`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS onayli BOOLEAN DEFAULT true`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS onayli BOOLEAN DEFAULT true`,
   ];
 
   for (const sql of migrations) {
