@@ -41,6 +41,16 @@ describe('Raf kartı public sayfası', () => {
     expect(Number(sonraki)).toBe(Number(onceki) + 1);
   });
 
+  test('okutma kaydına ip_hash yazılır', async () => {
+    await request(app).get(`/raf/${kod}`);
+    const son = await pool.query(
+      'SELECT ip_hash FROM raf_okutmalar WHERE eczane_id = $1 ORDER BY id DESC LIMIT 1',
+      [eczaneId]
+    );
+    expect(son.rows[0].ip_hash).not.toBeNull();
+    expect(son.rows[0].ip_hash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
   test('QR kodu gösterilir, doğru domaine işaret eder', async () => {
     const res = await request(app).get(`/raf/${kod}`);
     expect(res.text).toContain('api.qrserver.com');

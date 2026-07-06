@@ -5,6 +5,7 @@ const { vcfOlustur } = require('../utils/vcf');
 const { cevirmenOlustur } = require('../utils/i18n');
 const { youtubeIdCikar } = require('../utils/youtube');
 const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir } = require('../utils/sosyalMedya');
+const { ipHashOlustur } = require('../utils/ipHash');
 
 const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
 
@@ -28,7 +29,8 @@ router.get('/raf/:kod', async (req, res) => {
       return res.status(404).render('public/404', { title: '404', mesaj: 'Sayfa bulunamadı.', layout: false });
     }
     try {
-      await pool.query('INSERT INTO raf_okutmalar (eczane_id) VALUES ($1)', [veri.eczane_id]);
+      const ipHash = ipHashOlustur(req.ip);
+      await pool.query('INSERT INTO raf_okutmalar (eczane_id, ip_hash) VALUES ($1, $2)', [veri.eczane_id, ipHash]);
     } catch (kayitHatasi) {
       console.error('raf okutma kaydı başarısız:', kayitHatasi);
     }
