@@ -703,3 +703,60 @@ describe('Mobil API — /api/mobil/eczanelerim', () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe('Mobil API — /api/mobil/katalog-durumu ve /katalog-gorundu', () => {
+  let firmaId, calisanId, token;
+
+  beforeAll(async () => {
+    const { calisanTokenUret } = require('../utils/jwt');
+    const firmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Katalog Test Firma', 'katalog-test-firma', 'kt1@x.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = firmaSonuc.rows[0].id;
+
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug)
+       VALUES ($1, 'Katalog', 'Temsilci', 'katalog-temsilci') RETURNING id`,
+      [firmaId]
+    );
+    calisanId = calisanSonuc.rows[0].id;
+    token = calisanTokenUret(calisanId);
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  test('firma hiç katalog yüklememişse yeni_katalog_var false döner', async () => {
+    const res = await request(app)
+      .get('/api/mobil/katalog-durumu')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.yeni_katalog_var).toBe(false);
+  });
+
+  test('firma katalog yükledikten sonra yeni_katalog_var true döner', async () => {
+    await pool.query('UPDATE firmalar SET katalog_url=$1, katalog_guncelleme_tarihi=NOW() WHERE id=$2', ['https://ornek.com/k.pdf', firmaId]);
+    const res = await request(app)
+      .get('/api/mobil/katalog-durumu')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.body.yeni_katalog_var).toBe(true);
+  });
+
+  test('katalog-gorundu sonrası yeni_katalog_var tekrar false döner', async () => {
+    await request(app)
+      .post('/api/mobil/katalog-gorundu')
+      .set('Authorization', `Bearer ${token}`);
+    const res = await request(app)
+      .get('/api/mobil/katalog-durumu')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.body.yeni_katalog_var).toBe(false);
+  });
+
+  test('token olmadan 401 döner', async () => {
+    const res = await request(app).get('/api/mobil/katalog-durumu');
+    expect(res.statusCode).toBe(401);
+  });
+});

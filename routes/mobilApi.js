@@ -342,4 +342,39 @@ router.post('/kart-yazildi', kartYazildiLimiter, async (req, res) => {
   }
 });
 
+router.get('/katalog-durumu', requireCalisanToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT f.katalog_guncelleme_tarihi, c.son_gorulen_katalog_tarihi
+       FROM calisanlar c JOIN firmalar f ON f.id = c.firma_id
+       WHERE c.id = $1`,
+      [req.calisanId]
+    );
+    if (!result.rows.length) return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
+    const { katalog_guncelleme_tarihi, son_gorulen_katalog_tarihi } = result.rows[0];
+    const yeniKatalogVar = katalog_guncelleme_tarihi !== null && (
+      son_gorulen_katalog_tarihi === null ||
+      new Date(katalog_guncelleme_tarihi) > new Date(son_gorulen_katalog_tarihi)
+    );
+    res.json({ ok: true, yeni_katalog_var: yeniKatalogVar, katalog_guncelleme_tarihi });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+router.post('/katalog-gorundu', requireCalisanToken, async (req, res) => {
+  try {
+    await pool.query(
+      `UPDATE calisanlar SET son_gorulen_katalog_tarihi = (SELECT katalog_guncelleme_tarihi FROM firmalar WHERE id = calisanlar.firma_id)
+       WHERE id = $1`,
+      [req.calisanId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 module.exports = router;
