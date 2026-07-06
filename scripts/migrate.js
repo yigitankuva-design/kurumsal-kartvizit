@@ -116,6 +116,13 @@ async function migrate() {
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS eczaci_kart_yazma_tarihi TIMESTAMP`,
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS onayli BOOLEAN DEFAULT true`,
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS onayli BOOLEAN DEFAULT true`,
+    `ALTER TABLE raf_okutmalar ADD COLUMN IF NOT EXISTS ip_hash TEXT`,
+    `CREATE TABLE IF NOT EXISTS eczaci_tiklamalar (
+      id          SERIAL PRIMARY KEY,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      tip         TEXT NOT NULL,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {
