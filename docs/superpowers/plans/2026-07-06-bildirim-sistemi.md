@@ -156,26 +156,25 @@ git commit -m "Bildirim sistemi T2: katalog guncelleme tarihi set edilir"
 ```javascript
 describe('Mobil API — /api/mobil/katalog-durumu ve /katalog-gorundu', () => {
   let firmaId, calisanId, token;
-  const email = 'katalog-test-temsilci@example.com';
-  const sifre = 'test1234';
 
   beforeAll(async () => {
+    // Token doğrudan calisanTokenUret ile üretilir — /temsilci-giris login ucu
+    // çağrılmaz. Bu, mevcut firma testlerinin (satır 442+) desenini izler ve
+    // paylaşılan temsilciGirisLimiter (max 10/15dk) bütçesini tüketmez.
+    const { calisanTokenUret } = require('../utils/jwt');
     const firmaSonuc = await pool.query(
       `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
        VALUES ('Katalog Test Firma', 'katalog-test-firma', 'kt1@x.com', 'x', 'kurumsal') RETURNING id`
     );
     firmaId = firmaSonuc.rows[0].id;
 
-    const hash = await bcrypt.hash(sifre, 12);
     const calisanSonuc = await pool.query(
-      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, giris_email, giris_sifre_hash)
-       VALUES ($1, 'Katalog', 'Temsilci', 'katalog-temsilci', $2, $3) RETURNING id`,
-      [firmaId, email, hash]
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug)
+       VALUES ($1, 'Katalog', 'Temsilci', 'katalog-temsilci') RETURNING id`,
+      [firmaId]
     );
     calisanId = calisanSonuc.rows[0].id;
-
-    const girisRes = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: email, sifre });
-    token = girisRes.body.token;
+    token = calisanTokenUret(calisanId);
   });
 
   afterAll(async () => {
