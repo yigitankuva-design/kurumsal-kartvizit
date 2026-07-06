@@ -40,9 +40,24 @@ describe('Eczacı kartı public sayfası', () => {
     expect(res.text).toContain('Temmuz Kampanyası');
     expect(res.text).toContain('3 al 2 öde fırsatı.');
     expect(res.text).toContain('dQw4w9WgXcQ');
-    expect(res.text).toContain('https://ornek.com/egitim.pdf');
     const sonraki = (await pool.query('SELECT COUNT(*) FROM eczaci_okutmalar WHERE eczane_id = $1', [eczaneId])).rows[0].count;
     expect(Number(sonraki)).toBe(Number(onceki) + 1);
+  });
+
+  test('PDF tıklaması kaydedilir ve redirect eder', async () => {
+    const res = await request(app).get(`/eczaci/${eczaciKod}/tikla/pdf`);
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('https://ornek.com/egitim.pdf');
+    const sayi = (await pool.query(
+      "SELECT COUNT(*) FROM eczaci_tiklamalar WHERE eczane_id = $1 AND tip = 'pdf'", [eczaneId]
+    )).rows[0].count;
+    expect(Number(sayi)).toBeGreaterThan(0);
+  });
+
+  test('PDF linki sayfada takip edilen url üzerinden geçer', async () => {
+    const res = await request(app).get(`/eczaci/${eczaciKod}`);
+    expect(res.text).toContain(`/eczaci/${eczaciKod}/tikla/pdf`);
+    expect(res.text).not.toContain('https://ornek.com/egitim.pdf');
   });
 
   test('QR kodu gösterilir, doğru domaine işaret eder', async () => {

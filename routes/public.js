@@ -84,6 +84,20 @@ async function eczaciGetir(kod) {
   return result.rows[0] || null;
 }
 
+// Eczacı kartı PDF tıklama takibi
+router.get('/eczaci/:kod/tikla/pdf', async (req, res) => {
+  const { kod } = req.params;
+  try {
+    const veri = await eczaciGetir(kod);
+    if (!veri || !veri.eczaci_pdf_url) return res.redirect(`/eczaci/${kod}`);
+    await pool.query('INSERT INTO eczaci_tiklamalar (eczane_id, tip) VALUES ($1, $2)', [veri.eczane_id, 'pdf']);
+    res.redirect(veri.eczaci_pdf_url);
+  } catch (err) {
+    console.error(err);
+    res.redirect(`/eczaci/${kod}`);
+  }
+});
+
 // Eczacı kartı sayfası — eczacının kendi okutması
 router.get('/eczaci/:kod', async (req, res) => {
   try {
@@ -98,7 +112,7 @@ router.get('/eczaci/:kod', async (req, res) => {
     }
     veri.eczaci_video_id = youtubeIdCikar(veri.eczaci_video_url);
     const qrHedef = `${req.protocol}://${req.get('host')}/eczaci/${req.params.kod}`;
-    res.render('public/eczaci', { title: veri.firma_ad, veri, qrHedef, layout: false });
+    res.render('public/eczaci', { title: veri.firma_ad, veri, qrHedef, eczaciKod: req.params.kod, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
