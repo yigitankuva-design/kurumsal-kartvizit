@@ -87,6 +87,15 @@ describe('Kurumsal panel uçları', () => {
     expect(res.headers.location).toBe('/?tab=icerik');
   });
 
+  test('yükleme başarısız olduğunda (location null) katalog_guncelleme_tarihi set edilmez', async () => {
+    const res = await kurumsalAgent
+      .post('/kurumsal/katalog')
+      .attach('katalog', Buffer.from('%PDF-1.4 test'), { filename: 'katalog.pdf', contentType: 'application/pdf' });
+    expect(res.statusCode).toBe(302);
+    const f = await pool.query('SELECT katalog_guncelleme_tarihi FROM firmalar WHERE id = $1', [kurumsalId]);
+    expect(f.rows[0].katalog_guncelleme_tarihi).toBeNull();
+  });
+
   test('PDF olmayan dosya reddedilir', async () => {
     const agent = kurumsalAgent;
     const res = await agent

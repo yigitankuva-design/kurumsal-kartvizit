@@ -139,7 +139,7 @@ router.post('/logo', guvenliUpload(logoUpload, 'logo', '/?tab=icerik'), async (r
 router.post('/katalog', guvenliUpload(katalogUpload, 'katalog', '/?tab=icerik'), async (req, res) => {
   try {
     if (req.file?.location) {
-      await pool.query('UPDATE firmalar SET katalog_url=$1 WHERE id=$2', [req.file.location, req.session.firmaId]);
+      await pool.query('UPDATE firmalar SET katalog_url=$1, katalog_guncelleme_tarihi=NOW() WHERE id=$2', [req.file.location, req.session.firmaId]);
       req.flash('success', 'Katalog güncellendi.');
     } else {
       // dev ortamında storage yok — location null; kullanıcıya yine bilgi ver
