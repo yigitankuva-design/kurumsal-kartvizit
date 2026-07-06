@@ -410,6 +410,12 @@ router.get('/eczane/:id/detay', async (req, res) => {
 
 ```
 
+> **Not (dürüstlük):** `farkli_kisi_tahmini`, `COUNT(DISTINCT ip_hash)` ile hesaplanır ve
+> `ip_hash = NULL` olan (bu özellik devreye girmeden önce kaydedilmiş) okutmaları saymaz —
+> yani eski okutmalar "farklı kişi" tahminine dahil olmaz, ama toplam okutma sayısına dahildir.
+> Pratikte önemsiz: prod veritabanı bu iş paketinden önce temizlendiği için mevcut okutma sayısı
+> sıfır; deploy sonrası tüm okutmalar hash ile kaydedilir.
+
 - [ ] **Step 4: Run test to verify it passes**
 
 Run: `cd /c/Users/muham/kurumsal-kartvizit && npx jest tests/kurumsal.test.js`
