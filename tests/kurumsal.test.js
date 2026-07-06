@@ -366,4 +366,26 @@ describe('Kurumsal panel uçları', () => {
     expect(res.statusCode).toBe(404);
     await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczaneId]);
   });
+
+  test('Saha İstatistikleri sekmesinde 60+ gündür ziyaret edilmeyen eczaneler listelenir', async () => {
+    const eskiEczane = await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Eski Ziyaret Eczanesi', 'eskikod1', 'eskieczaci1') RETURNING id",
+      [kurumsalId]
+    );
+    await pool.query(
+      "INSERT INTO ziyaretler (calisan_id, eczane_id, created_at) VALUES (NULL, $1, NOW() - INTERVAL '90 days')",
+      [eskiEczane.rows[0].id]
+    );
+    const hicEczane = await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Hiç Ziyaret Edilmeyen Eczane', 'hickod1', 'hiceczaci1') RETURNING id",
+      [kurumsalId]
+    );
+
+    const res = await kurumsalAgent.get('/?tab=saha');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Eski Ziyaret Eczanesi');
+    expect(res.text).toContain('Hiç Ziyaret Edilmeyen Eczane');
+
+    await pool.query('DELETE FROM eczaneler WHERE id = ANY($1)', [[eskiEczane.rows[0].id, hicEczane.rows[0].id]]);
+  });
 });

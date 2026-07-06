@@ -537,6 +537,23 @@
 
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
   <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
+    <% if (sahaIstatistik.ziyaretEdilmeyenEczaneler.length) { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">⚠️ 60+ Gündür Ziyaret Edilmeyen Eczaneler</h3>
+      <ul>
+        <% sahaIstatistik.ziyaretEdilmeyenEczaneler.forEach(e => { %>
+          <li>
+            <%= e.ad %> —
+            <% if (e.sonZiyaret) { %>
+              Son ziyaret: <%= new Date(e.sonZiyaret).toLocaleDateString('tr-TR') %>
+            <% } else { %>
+              Hiç ziyaret edilmedi
+            <% } %>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+    <% } %>
     <% if (!sahaIstatistik.gunlukZiyaret.length && !sahaIstatistik.eczaneOkutma.length && !sahaIstatistik.tiklamaDagilimi.length) { %>
     <div class="table-wrap">
       <div class="empty-state">
