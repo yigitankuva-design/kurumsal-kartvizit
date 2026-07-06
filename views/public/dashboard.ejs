@@ -513,6 +513,7 @@
               <% } %>
             </td>
             <td>
+              <button type="button" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
               <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
                     onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
                 <button type="submit">Sil</button>
@@ -523,6 +524,15 @@
           <% if (!eczaneler.length) { %><tr><td colspan="7">Henüz eczane eklenmemiş.</td></tr><% } %>
         </tbody>
       </table>
+    </div>
+
+    <!-- Eczane Detay Modal -->
+    <div id="eczaneDetayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:60;padding:16px">
+      <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative">
+        <button type="button" onclick="document.getElementById('eczaneDetayModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer">✕</button>
+        <h3 id="eczaneDetayBaslik" style="margin-bottom:16px;font-size:16px;font-weight:700"></h3>
+        <div id="eczaneDetayIcerik" style="font-size:13px;line-height:1.7"></div>
+      </div>
     </div>
 
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
@@ -684,6 +694,51 @@
 
 <!-- Employee data for edit -->
 <script>
+  function elOlustur(etiket, metin, stiller) {
+    const el = document.createElement(etiket);
+    if (metin !== undefined) el.textContent = metin;
+    if (stiller) Object.assign(el.style, stiller);
+    return el;
+  }
+
+  async function eczaneDetayGoster(eczaneId, eczaneAdi) {
+    document.getElementById('eczaneDetayBaslik').textContent = eczaneAdi + ' — Detay';
+    const icerik = document.getElementById('eczaneDetayIcerik');
+    icerik.textContent = 'Yükleniyor...';
+    document.getElementById('eczaneDetayModal').style.display = 'flex';
+    try {
+      const res = await fetch('/kurumsal/eczane/' + eczaneId + '/detay');
+      const veri = await res.json();
+      icerik.textContent = '';
+      if (!res.ok) {
+        icerik.textContent = veri.error || 'Detay alınamadı.';
+        return;
+      }
+      icerik.appendChild(elOlustur('p', 'Toplam okutma: ' + veri.okutma_sayisi));
+      icerik.appendChild(elOlustur('p', 'Yaklaşık farklı kişi: ' + veri.farkli_kisi_tahmini));
+      icerik.appendChild(elOlustur('p', 'PDF açılma: ' + veri.pdf_acilma_sayisi));
+
+      icerik.appendChild(elOlustur('p', 'Tıklama dağılımı:', { marginTop: '10px', fontWeight: '700' }));
+      const tiklamaListesi = document.createElement('ul');
+      Object.keys(veri.tiklama_dagilimi).forEach(function(tip) {
+        tiklamaListesi.appendChild(elOlustur('li', tip + ': ' + veri.tiklama_dagilimi[tip]));
+      });
+      icerik.appendChild(tiklamaListesi);
+
+      if (veri.ziyaret_etkisi.length) {
+        icerik.appendChild(elOlustur('p', 'Ziyaret etkisi:', { marginTop: '10px', fontWeight: '700' }));
+        const ziyaretListesi = document.createElement('ul');
+        veri.ziyaret_etkisi.forEach(function(z) {
+          const tarih = new Date(z.ziyaret_tarihi).toLocaleDateString('tr-TR');
+          ziyaretListesi.appendChild(elOlustur('li', tarih + ' ziyaretinden sonra ' + z.sonraki_okutma_sayisi + ' okutma'));
+        });
+        icerik.appendChild(ziyaretListesi);
+      }
+    } catch (err) {
+      icerik.textContent = 'Detay alınamadı.';
+    }
+  }
+
   const overlay = document.getElementById('panelOverlay');
   let editId = null;
 
