@@ -305,4 +305,61 @@ router.post('/eczane/:id/onayla', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
+router.get('/eczane/:id/detay', async (req, res) => {
+  try {
+    const eczaneKontrol = await pool.query(
+      'SELECT id FROM eczaneler WHERE id=$1 AND firma_id=$2',
+      [req.params.id, req.session.firmaId]
+    );
+    if (!eczaneKontrol.rows.length) return res.status(404).json({ error: 'Eczane bulunamadı.' });
+
+    const okutma = await pool.query(
+      'SELECT COUNT(*) as toplam, COUNT(DISTINCT ip_hash) as farkli_kisi FROM raf_okutmalar WHERE eczane_id=$1',
+      [req.params.id]
+    );
+    const tiklama = await pool.query(
+      'SELECT tip, COUNT(*) as sayi FROM raf_tiklamalar WHERE eczane_id=$1 GROUP BY tip',
+      [req.params.id]
+    );
+    const pdf = await pool.query(
+      "SELECT COUNT(*) as sayi FROM eczaci_tiklamalar WHERE eczane_id=$1 AND tip='pdf'",
+      [req.params.id]
+    );
+    const ziyaretEtkisi = await pool.query(
+      `WITH ziyaret_sirali AS (
+        SELECT id, created_at,
+               LEAD(created_at) OVER (ORDER BY created_at) AS sonraki_ziyaret
+        FROM ziyaretler
+        WHERE eczane_id = $1
+      )
+      SELECT z.created_at AS ziyaret_tarihi,
+             (SELECT COUNT(*) FROM raf_okutmalar r
+              WHERE r.eczane_id = $1
+                AND r.created_at > z.created_at
+                AND r.created_at <= COALESCE(z.sonraki_ziyaret, NOW()))
+             AS sonraki_okutma_sayisi
+      FROM ziyaret_sirali z
+      ORDER BY z.created_at DESC`,
+      [req.params.id]
+    );
+
+    const tiklamaDagilimi = {};
+    tiklama.rows.forEach(r => { tiklamaDagilimi[r.tip] = Number(r.sayi); });
+
+    res.json({
+      okutma_sayisi: Number(okutma.rows[0].toplam),
+      farkli_kisi_tahmini: Number(okutma.rows[0].farkli_kisi),
+      tiklama_dagilimi: tiklamaDagilimi,
+      pdf_acilma_sayisi: Number(pdf.rows[0].sayi),
+      ziyaret_etkisi: ziyaretEtkisi.rows.map(r => ({
+        ziyaret_tarihi: r.ziyaret_tarihi,
+        sonraki_okutma_sayisi: Number(r.sonraki_okutma_sayisi),
+      })),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Detay alınamadı.' });
+  }
+});
+
 module.exports = router;

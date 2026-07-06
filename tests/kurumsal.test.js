@@ -322,4 +322,39 @@ describe('Kurumsal panel uçları', () => {
     expect(res.text).toContain('Eczane ile toplu yükleme');
     expect(res.text).toContain('/kurumsal/eczane-sablon');
   });
+
+  test('eczane detay ucu okutma/tıklama/pdf/ziyaret metriklerini döner', async () => {
+    const agent = kurumsalAgent;
+    const eczaneRes = await pool.query(
+      'INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, $2, $3, $4) RETURNING id',
+      [kurumsalId, 'Detay Test Eczanesi', 'detaykod1', 'detayeczaci1']
+    );
+    const eczaneId = eczaneRes.rows[0].id;
+
+    await pool.query("INSERT INTO raf_okutmalar (eczane_id, ip_hash) VALUES ($1, 'hashA'), ($1, 'hashA'), ($1, 'hashB')", [eczaneId]);
+    await pool.query("INSERT INTO raf_tiklamalar (eczane_id, tip) VALUES ($1, 'katalog'), ($1, 'website')", [eczaneId]);
+    await pool.query("INSERT INTO eczaci_tiklamalar (eczane_id, tip) VALUES ($1, 'pdf')", [eczaneId]);
+
+    const res = await agent.get(`/kurumsal/eczane/${eczaneId}/detay`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.okutma_sayisi).toBe(3);
+    expect(res.body.farkli_kisi_tahmini).toBe(2);
+    expect(res.body.tiklama_dagilimi.katalog).toBe(1);
+    expect(res.body.tiklama_dagilimi.website).toBe(1);
+    expect(res.body.pdf_acilma_sayisi).toBe(1);
+    expect(Array.isArray(res.body.ziyaret_etkisi)).toBe(true);
+
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczaneId]);
+  });
+
+  test('başka firmanın eczane detayı 404 döner', async () => {
+    const eczaneRes = await pool.query(
+      'INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, $2, $3, $4) RETURNING id',
+      [basicId, 'Baska Firma Eczanesi', 'baskakod1', 'baskaeczaci1']
+    );
+    const eczaneId = eczaneRes.rows[0].id;
+    const res = await kurumsalAgent.get(`/kurumsal/eczane/${eczaneId}/detay`);
+    expect(res.statusCode).toBe(404);
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczaneId]);
+  });
 });
