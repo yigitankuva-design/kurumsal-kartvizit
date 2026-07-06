@@ -123,6 +123,8 @@ async function migrate() {
       tip         TEXT NOT NULL,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS katalog_guncelleme_tarihi TIMESTAMP`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS son_gorulen_katalog_tarihi TIMESTAMP`,
   ];
 
   for (const sql of migrations) {
