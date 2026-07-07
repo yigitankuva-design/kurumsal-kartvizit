@@ -67,6 +67,27 @@ describe('Kurumsal panel uçları', () => {
     await pool.query('DELETE FROM firmalar WHERE id = $1', [digerKurumsalId]);
   });
 
+  test('kurumsal firma eczaneye yönetici notu ekleyebilir', async () => {
+    const agent = kurumsalAgent;
+    const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
+    const res = await agent
+      .post(`/kurumsal/eczane/${eczane.id}/yonetici-notu`)
+      .send({ yonetici_notu: 'Temsilci uğradığında eczacıya kampanya broşürü versin' });
+    expect(res.statusCode).toBe(302);
+    const kontrol = await pool.query('SELECT yonetici_notu FROM eczaneler WHERE id = $1', [eczane.id]);
+    expect(kontrol.rows[0].yonetici_notu).toBe('Temsilci uğradığında eczacıya kampanya broşürü versin');
+  });
+
+  test('başka firmanın eczanesine yönetici notu eklenemez', async () => {
+    const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
+    const digerKurumsalId = await firmaOlustur('kurumsal', 'k1digernot@example.com');
+    const agent = await girisYap('k1digernot@example.com');
+    await agent.post(`/kurumsal/eczane/${eczane.id}/yonetici-notu`).send({ yonetici_notu: 'HACKLENDI' });
+    const kontrol = await pool.query('SELECT yonetici_notu FROM eczaneler WHERE id = $1', [eczane.id]);
+    expect(kontrol.rows[0].yonetici_notu).toBe('Temsilci uğradığında eczacıya kampanya broşürü versin');
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerKurumsalId]);
+  });
+
   test('içerik linkleri güncellenir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/icerik').send({

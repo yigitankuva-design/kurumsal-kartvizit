@@ -216,7 +216,7 @@ router.post('/profil-olustur', requireBayiToken, mobilProfilLimiter, fotoUploadG
 });
 
 router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (req, res) => {
-  const { eczane_kod } = req.body;
+  const { eczane_kod, not } = req.body;
   if (!eczane_kod) {
     return res.status(400).json({ ok: false, error: 'Eczane kodu zorunlu.' });
   }
@@ -225,7 +225,7 @@ router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (r
     if (!calisanResult.rows.length) {
       return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
     }
-    const eczaneResult = await pool.query('SELECT id, firma_id, ad FROM eczaneler WHERE kod = $1', [eczane_kod]);
+    const eczaneResult = await pool.query('SELECT id, firma_id, ad, yonetici_notu FROM eczaneler WHERE kod = $1', [eczane_kod]);
     if (!eczaneResult.rows.length) {
       return res.status(404).json({ ok: false, error: 'Eczane bulunamadı.' });
     }
@@ -233,8 +233,11 @@ router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (r
     if (eczane.firma_id !== calisanResult.rows[0].firma_id) {
       return res.status(403).json({ ok: false, error: 'Bu eczaneye ziyaret kaydedemezsiniz.' });
     }
-    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [req.calisanId, eczane.id]);
-    res.status(201).json({ ok: true, eczaneAdi: eczane.ad });
+    await pool.query(
+      'INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, $3)',
+      [req.calisanId, eczane.id, not?.trim() || null]
+    );
+    res.status(201).json({ ok: true, eczaneAdi: eczane.ad, yoneticiNotu: eczane.yonetici_notu });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
@@ -244,7 +247,7 @@ router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (r
 router.get('/ziyaretlerim', requireCalisanToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT e.ad AS eczane_adi, z.created_at
+      `SELECT e.ad AS eczane_adi, z.created_at, z.temsilci_notu
        FROM ziyaretler z JOIN eczaneler e ON e.id = z.eczane_id
        WHERE z.calisan_id = $1
        ORDER BY z.created_at DESC`,

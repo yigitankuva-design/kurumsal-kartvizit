@@ -107,6 +107,22 @@ router.post('/eczane/:id/duzenle', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
+// Eczaneye özel yönetici notu güncelle (temsilci ziyaret kaydederken görür)
+router.post('/eczane/:id/yonetici-notu', async (req, res) => {
+  const { yonetici_notu } = req.body;
+  try {
+    await pool.query(
+      'UPDATE eczaneler SET yonetici_notu=$1 WHERE id=$2 AND firma_id=$3',
+      [yonetici_notu?.trim() || null, req.params.id, req.session.firmaId]
+    );
+    req.flash('success', 'Yönetici notu güncellendi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Güncellenemedi.');
+  }
+  res.redirect('/?tab=raf');
+});
+
 // Eczane sil
 router.post('/eczane/:id/sil', async (req, res) => {
   try {

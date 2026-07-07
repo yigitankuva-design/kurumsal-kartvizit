@@ -281,7 +281,7 @@ describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
     calisanId = calisanSonuc.rows[0].id;
 
     const eczaneSonuc = await pool.query(
-      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Ziyaret Eczanesi', 'ziyarkod') RETURNING id`,
+      `INSERT INTO eczaneler (firma_id, ad, kod, yonetici_notu) VALUES ($1, 'Ziyaret Eczanesi', 'ziyarkod', 'Bu eczaneye kampanya broşürü bırakılacak') RETURNING id`,
       [firmaId]
     );
     eczaneId = eczaneSonuc.rows[0].id;
@@ -300,15 +300,30 @@ describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
     await pool.query('DELETE FROM firmalar WHERE id = ANY($1)', [[firmaId, digerFirmaId]]);
   });
 
-  test('geçerli eczane_kod ile 201 döner, eczane adıyla birlikte ve ziyaretler tablosuna kayıt düşer', async () => {
+  test('geçerli eczane_kod ile 201 döner, eczane adı ve yönetici notuyla birlikte ve ziyaretler tablosuna kayıt düşer', async () => {
+    const res = await request(app)
+      .post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: 'ziyarkod', not: 'Eczacı yoğundu, tekrar uğranacak' });
+    expect(res.statusCode).toBe(201);
+    expect(res.body.eczaneAdi).toBe('Ziyaret Eczanesi');
+    expect(res.body.yoneticiNotu).toBe('Bu eczaneye kampanya broşürü bırakılacak');
+    const z = await pool.query('SELECT * FROM ziyaretler WHERE calisan_id = $1 AND eczane_id = $2', [calisanId, eczaneId]);
+    expect(z.rows.length).toBe(1);
+    expect(z.rows[0].temsilci_notu).toBe('Eczacı yoğundu, tekrar uğranacak');
+  });
+
+  test('not gönderilmezse temsilci_notu null kaydedilir', async () => {
     const res = await request(app)
       .post('/api/mobil/ziyaret-kaydet')
       .set('Authorization', `Bearer ${token}`)
       .send({ eczane_kod: 'ziyarkod' });
     expect(res.statusCode).toBe(201);
-    expect(res.body.eczaneAdi).toBe('Ziyaret Eczanesi');
-    const z = await pool.query('SELECT * FROM ziyaretler WHERE calisan_id = $1 AND eczane_id = $2', [calisanId, eczaneId]);
-    expect(z.rows.length).toBe(1);
+    const z = await pool.query(
+      'SELECT * FROM ziyaretler WHERE calisan_id = $1 AND eczane_id = $2 ORDER BY created_at DESC LIMIT 1',
+      [calisanId, eczaneId]
+    );
+    expect(z.rows[0].temsilci_notu).toBeNull();
   });
 
   test('başka firmanın eczanesiyle 403 döner', async () => {
@@ -359,7 +374,10 @@ describe('Mobil API — /api/mobil/ziyaretlerim', () => {
     );
     eczaneId = eczaneSonuc.rows[0].id;
 
-    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [calisanId, eczaneId]);
+    await pool.query(
+      'INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, $3)',
+      [calisanId, eczaneId, 'Stok yeterli']
+    );
 
     const girisRes = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: email, sifre });
     token = girisRes.body.token;
@@ -377,6 +395,7 @@ describe('Mobil API — /api/mobil/ziyaretlerim', () => {
     expect(res.body.ok).toBe(true);
     expect(res.body.ziyaretler.length).toBe(1);
     expect(res.body.ziyaretler[0].eczane_adi).toBe('Ziyaretlerim Eczanesi');
+    expect(res.body.ziyaretler[0].temsilci_notu).toBe('Stok yeterli');
   });
 
   test('token yoksa 401 döner', async () => {
