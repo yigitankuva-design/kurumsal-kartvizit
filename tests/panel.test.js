@@ -79,6 +79,17 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(c.rows[0].giris_sifre_hash).toBeNull();
   });
 
+  test('çalışan pasife alma formu (_method=PATCH gövdede) durumu değiştirir', async () => {
+    const agent = await girisYap(firmaEmail);
+    const mevcut = (await pool.query('SELECT id FROM calisanlar WHERE firma_id = $1', [firmaId])).rows[0];
+    const res = await agent.post(`/firma/panel/${mevcut.id}/durum`).send({
+      _method: 'PATCH', durum: 'pasif',
+    });
+    expect(res.statusCode).toBe(302);
+    const c = await pool.query('SELECT durum FROM calisanlar WHERE id = $1', [mevcut.id]);
+    expect(c.rows[0].durum).toBe('pasif');
+  });
+
   test('kurumsal firma çalışan panelinde giriş e-postası alanı görünür', async () => {
     const agent = await girisYap(firmaEmail);
     const res = await agent.get('/?tab=calisanlar');
