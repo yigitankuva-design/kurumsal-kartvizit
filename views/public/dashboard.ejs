@@ -301,6 +301,9 @@
             </td>
             <td>
               <div class="td-actions">
+                <% if (!c.foto_url) { %>
+                  <button class="btn btn-sm" style="background:#b45309;color:#fff;border:none" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>📷 Fotoğraf Ekle</button>
+                <% } %>
                 <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
                 <form method="POST" action="/firma/panel/<%= c.id %>/durum" style="margin:0">
                   <input type="hidden" name="_method" value="PATCH">
@@ -356,6 +359,9 @@
             </td>
             <td>
               <div class="td-actions">
+                <% if (!c.foto_url) { %>
+                  <button class="btn btn-sm" style="background:#b45309;color:#fff;border:none" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>📷 Fotoğraf Ekle</button>
+                <% } %>
                 <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
                 <form method="POST" action="/firma/panel/<%= c.id %>/durum" style="margin:0">
                   <input type="hidden" name="_method" value="PATCH">

@@ -21,11 +21,14 @@ async function girisYap(email) {
 }
 
 describe('routes/panel — temsilci giriş bilgisi', () => {
-  let firmaId;
+  let firmaId, agent;
   const firmaEmail = 'panelk2@example.com';
 
   beforeAll(async () => {
     firmaId = await firmaOlustur(firmaEmail);
+    // Tüm testler tek bir giriş yapılmış agent'ı paylaşır — her test kendi
+    // girişini yapsaydı createLoginLimiter'ın (10/15dk) sınırını aşardık.
+    agent = await girisYap(firmaEmail);
   });
 
   afterAll(async () => {
@@ -34,7 +37,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('giris_email + giris_sifre ile çalışan eklenince hash DB\'de saklanır', async () => {
-    const agent = await girisYap(firmaEmail);
     const res = await agent.post('/firma/panel/ekle').send({
       ad: 'Ali', soyad: 'Veli', kvkk: 'on',
       giris_email: 'ali.veli@example.com', giris_sifre: 'gizli123',
@@ -46,7 +48,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('giris_email verilip giris_sifre verilmezse çalışan eklenmez', async () => {
-    const agent = await girisYap(firmaEmail);
     const res = await agent.post('/firma/panel/ekle').send({
       ad: 'Şifresiz', soyad: 'Kişi', kvkk: 'on',
       giris_email: 'sifresiz@example.com',
@@ -57,7 +58,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('aynı giriş e-postasıyla ikinci çalışan eklenemez', async () => {
-    const agent = await girisYap(firmaEmail);
     const res = await agent.post('/firma/panel/ekle').send({
       ad: 'Ikinci', soyad: 'Kisi', kvkk: 'on',
       giris_email: 'ali.veli@example.com', giris_sifre: 'baskasifre',
@@ -68,7 +68,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('çalışan düzenlenirken giriş e-postası boşa çekilirse giriş devre dışı kalır', async () => {
-    const agent = await girisYap(firmaEmail);
     const mevcut = (await pool.query('SELECT id FROM calisanlar WHERE giris_email = $1', ['ali.veli@example.com'])).rows[0];
     const res = await agent.post(`/firma/panel/${mevcut.id}/duzenle`).send({
       ad: 'Ali', soyad: 'Veli', giris_email: '',
@@ -80,7 +79,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('çalışan pasife alma formu (_method=PATCH gövdede) durumu değiştirir', async () => {
-    const agent = await girisYap(firmaEmail);
     const mevcut = (await pool.query('SELECT id FROM calisanlar WHERE firma_id = $1', [firmaId])).rows[0];
     const res = await agent.post(`/firma/panel/${mevcut.id}/durum`).send({
       _method: 'PATCH', durum: 'pasif',
@@ -91,7 +89,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('kurumsal firma çalışan panelinde giriş e-postası alanı görünür', async () => {
-    const agent = await girisYap(firmaEmail);
     const res = await agent.get('/?tab=calisanlar');
     expect(res.statusCode).toBe(200);
     expect(res.text).toContain('Giriş E-postası');
@@ -99,7 +96,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
 
   test('Excel toplu yüklenen çalışan onayli=false ile eklenir', async () => {
     const XLSX = require('xlsx');
-    const agent = await girisYap(firmaEmail);
     const ws = XLSX.utils.aoa_to_sheet([
       ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'biyografi'],
       ['Toplu', 'Onaysiz', '', '', '', '', '', ''],
@@ -120,7 +116,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
 
   test('Excel toplu yüklemede instagram ve twitter kolonları da kaydedilir', async () => {
     const XLSX = require('xlsx');
-    const agent = await girisYap(firmaEmail);
     const ws = XLSX.utils.aoa_to_sheet([
       ['ad', 'soyad', 'linkedin', 'instagram', 'twitter'],
       ['Sosyal', 'Medya', 'https://linkedin.com/in/sosyal', '@sosyalmedya', '@sosyalx'],
@@ -141,7 +136,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('çalışan onaylama onayli=true yapar', async () => {
-    const agent = await girisYap(firmaEmail);
     const c = await pool.query(
       "INSERT INTO calisanlar (firma_id, ad, soyad, slug, onayli) VALUES ($1,'Onay','Bekleyen','onay-bekleyen',false) RETURNING id",
       [firmaId]
@@ -153,7 +147,6 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('pasif çalışan ayrı "Pasif Çalışanlar" bölümünde, aktif tablonun dışında gösterilir', async () => {
-    const agent = await girisYap(firmaEmail);
     const pasif = await pool.query(
       "INSERT INTO calisanlar (firma_id, ad, soyad, slug, durum) VALUES ($1,'Pasif','Kisi','pasif-kisi','pasif') RETURNING id",
       [firmaId]
@@ -167,5 +160,20 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(res.text).toContain('<details');
     expect(res.text.indexOf('Pasif Kisi')).toBeGreaterThan(res.text.indexOf('Pasif Çalışanlar ('));
     await pool.query('DELETE FROM calisanlar WHERE id = $1', [pasif.rows[0].id]);
+  });
+
+  test('foto_url boş olan çalışan için "Fotoğraf Ekle" kısayolu çıkar, doluysa çıkmaz', async () => {
+    const fotosuz = await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1,'Fotosuz','Kisi','fotosuz-kisi') RETURNING id",
+      [firmaId]
+    );
+    const fotolu = await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug, foto_url) VALUES ($1,'Fotolu','Kisi','fotolu-kisi','https://ornek.com/foto.jpg') RETURNING id",
+      [firmaId]
+    );
+    const res = await agent.get('/?tab=calisanlar');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Fotoğraf Ekle');
+    await pool.query('DELETE FROM calisanlar WHERE id = ANY($1)', [[fotosuz.rows[0].id, fotolu.rows[0].id]]);
   });
 });
