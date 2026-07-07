@@ -37,7 +37,9 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
   const maksOlcek = minOlcek * 3;
   let olcek = minOlcek;
   let konumX = (FOTO_KIRPICI_VIEWPORT - img.naturalWidth * olcek) / 2;
-  let konumY = (FOTO_KIRPICI_VIEWPORT - img.naturalHeight * olcek) / 2;
+  // Varsayılan olarak üste yasla (ortalamak yerine) — portre fotoğraflarda yüz
+  // genelde üst bölgede olur, ortalanmış kırpma kafayı kesiyordu.
+  let konumY = 0;
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000';
