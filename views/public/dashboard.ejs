@@ -468,7 +468,7 @@
       <h3 style="margin-bottom:12px">Logo</h3>
       <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #e5e7eb;margin-bottom:8px"><% } %>
       <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" style="margin-bottom:24px">
-        <input type="file" name="logo" accept="image/*" required>
+        <input type="file" name="logo" id="logoInput" accept="image/*" required>
         <button type="submit">Logoyu Yükle</button>
       </form>
 
@@ -867,6 +867,11 @@
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSlide(); });
+</script>
+<script src="/js/foto-kirpici.js"></script>
+<script>
+  fotoKirpiciBaglama('logoInput');
+  fotoKirpiciBaglama('f_foto');
 </script>
 </body>
 </html>
