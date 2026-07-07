@@ -235,7 +235,7 @@ app.get('/', async (req, res) => {
       eczaneler = eczanelerResult.rows;
     }
 
-    let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [] };
+    let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], tiklamaDagilimiEczaneBazli: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [] };
     if (tab === 'saha' && firma.paket === 'kurumsal') {
       const gunlukResult = await pool.query(
         `SELECT TO_CHAR(z.created_at, 'YYYY-MM-DD') AS gun, COUNT(*) AS sayi
@@ -265,6 +265,13 @@ app.get('/', async (req, res) => {
          GROUP BY t.tip ORDER BY sayi DESC`,
         [req.session.firmaId]
       );
+      const tiklamaEczaneBazliResult = await pool.query(
+        `SELECT e.ad AS eczane_ad, t.tip, COUNT(*) AS sayi
+         FROM raf_tiklamalar t JOIN eczaneler e ON e.id = t.eczane_id
+         WHERE e.firma_id = $1
+         GROUP BY e.id, e.ad, t.tip ORDER BY e.ad, sayi DESC`,
+        [req.session.firmaId]
+      );
       const ziyaretEdilmeyenResult = await pool.query(
         `SELECT e.ad, MAX(z.created_at) as son_ziyaret
          FROM eczaneler e
@@ -289,6 +296,7 @@ app.get('/', async (req, res) => {
         temsilciZiyaret: temsilciResult.rows.map(r => ({ ad: r.ad, soyad: r.soyad, sayi: Number(r.sayi) })),
         eczaneOkutma: eczaneIstatistikResult.rows.map(r => ({ ad: r.ad, sayi: Number(r.sayi) })),
         tiklamaDagilimi: tiklamaResult.rows.map(r => ({ tip: r.tip, sayi: Number(r.sayi) })),
+        tiklamaDagilimiEczaneBazli: tiklamaEczaneBazliResult.rows.map(r => ({ eczaneAd: r.eczane_ad, tip: r.tip, sayi: Number(r.sayi) })),
         ziyaretEdilmeyenEczaneler: ziyaretEdilmeyenResult.rows.map(r => ({ ad: r.ad, sonZiyaret: r.son_ziyaret })),
         ziyaretNotlari: notlarResult.rows.map(r => ({
           ad: r.ad, soyad: r.soyad, eczaneAd: r.eczane_ad, not: r.temsilci_notu, tarih: r.created_at

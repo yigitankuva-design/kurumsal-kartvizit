@@ -161,6 +161,24 @@ describe('Kurumsal panel uçları', () => {
     expect(res.text).toContain('Eczacı stok yetersiz olduğunu söyledi');
   });
 
+  test('İçerik Tıklama Dağılımı eczane bazlı detay tablosu gösterir', async () => {
+    const eczaneSonuc = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Tiklama Detay Eczanesi', 'tiklamadetay1') RETURNING id`,
+      [kurumsalId]
+    );
+    await pool.query(
+      `INSERT INTO raf_tiklamalar (eczane_id, tip) VALUES ($1, 'katalog'), ($1, 'katalog'), ($1, 'instagram')`,
+      [eczaneSonuc.rows[0].id]
+    );
+    const agent = kurumsalAgent;
+    const res = await agent.get('/?tab=saha');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('İçerik Tıklama Dağılımı — Eczane Bazlı Detay');
+    expect(res.text).toContain('Tiklama Detay Eczanesi');
+    expect(res.text).toContain('katalog');
+    expect(res.text).toContain('instagram');
+  });
+
   test('basic firma dashboardında Saha İstatistikleri sekmesi görünmez', async () => {
     const agent = basicAgent;
     const res = await agent.get('/');

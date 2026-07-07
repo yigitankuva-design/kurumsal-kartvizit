@@ -33,9 +33,14 @@ function fotoKirpiciModalAc(dosya, tamamlaninca) {
 }
 
 function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
-  const minOlcek = Math.max(FOTO_KIRPICI_VIEWPORT / img.naturalWidth, FOTO_KIRPICI_VIEWPORT / img.naturalHeight);
-  const maksOlcek = minOlcek * 3;
-  let olcek = minOlcek;
+  // kapsaOlcek: görsel kareyi tam kaplar (varsayılan, boşluk kalmaz).
+  // sigdirOlcek: görselin tamamı kareye sığar (daha fazla küçültmek isteyenler
+  // için — özellikle yatay/dikdörtgen logolarda kenarlarda boşluk bırakarak
+  // görselin kırpılmadan tam görünmesini sağlar).
+  const kapsaOlcek = Math.max(FOTO_KIRPICI_VIEWPORT / img.naturalWidth, FOTO_KIRPICI_VIEWPORT / img.naturalHeight);
+  const sigdirOlcek = Math.min(FOTO_KIRPICI_VIEWPORT / img.naturalWidth, FOTO_KIRPICI_VIEWPORT / img.naturalHeight);
+  const maksOlcek = kapsaOlcek * 3;
+  let olcek = kapsaOlcek;
   let konumX = (FOTO_KIRPICI_VIEWPORT - img.naturalWidth * olcek) / 2;
   // Varsayılan olarak üste yasla (ortalamak yerine) — portre fotoğraflarda yüz
   // genelde üst bölgede olur, ortalanmış kırpma kafayı kesiyordu.
@@ -52,7 +57,7 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
   baslik.style.cssText = 'color:#fff;font-weight:600;font-size:15px;align-self:flex-start';
 
   const viewport = document.createElement('div');
-  viewport.style.cssText = `width:${FOTO_KIRPICI_VIEWPORT}px;height:${FOTO_KIRPICI_VIEWPORT}px;overflow:hidden;position:relative;border-radius:8px;background:#000;touch-action:none;cursor:grab`;
+  viewport.style.cssText = `width:${FOTO_KIRPICI_VIEWPORT}px;height:${FOTO_KIRPICI_VIEWPORT}px;overflow:hidden;position:relative;border-radius:8px;background:#fff;touch-action:none;cursor:grab`;
 
   const resim = document.createElement('img');
   resim.src = img.src;
@@ -62,10 +67,18 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
   const sinirla = () => {
     const genislik = img.naturalWidth * olcek;
     const yukseklik = img.naturalHeight * olcek;
-    const minX = FOTO_KIRPICI_VIEWPORT - genislik;
-    const minY = FOTO_KIRPICI_VIEWPORT - yukseklik;
-    konumX = Math.min(0, Math.max(minX, konumX));
-    konumY = Math.min(0, Math.max(minY, konumY));
+    // Görsel bir eksende karenin tamamını kaplamıyorsa (küçültülmüşse) o
+    // eksende ortala; kaplıyorsa kenardan boşluk kalmayacak şekilde sınırla.
+    if (genislik <= FOTO_KIRPICI_VIEWPORT) {
+      konumX = (FOTO_KIRPICI_VIEWPORT - genislik) / 2;
+    } else {
+      konumX = Math.min(0, Math.max(FOTO_KIRPICI_VIEWPORT - genislik, konumX));
+    }
+    if (yukseklik <= FOTO_KIRPICI_VIEWPORT) {
+      konumY = (FOTO_KIRPICI_VIEWPORT - yukseklik) / 2;
+    } else {
+      konumY = Math.min(0, Math.max(FOTO_KIRPICI_VIEWPORT - yukseklik, konumY));
+    }
   };
 
   const uygula = () => {
@@ -78,11 +91,13 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
   slider.type = 'range';
   slider.min = '0';
   slider.max = '100';
-  slider.value = '0';
+  // Varsayılan değer 0 değil — kapsaOlcek'in [sigdirOlcek, maksOlcek] aralığındaki
+  // karşılığı (böylece slider açılışta görselin mevcut ölçeğini doğru gösterir).
+  slider.value = String(Math.round(((kapsaOlcek - sigdirOlcek) / (maksOlcek - sigdirOlcek)) * 100));
   slider.style.cssText = 'width:100%';
   slider.addEventListener('input', () => {
     const oran = Number(slider.value) / 100;
-    olcek = minOlcek + (maksOlcek - minOlcek) * oran;
+    olcek = sigdirOlcek + (maksOlcek - sigdirOlcek) * oran;
     uygula();
   });
 
@@ -113,6 +128,11 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
     canvas.width = FOTO_KIRPICI_CIKTI_BOYUTU;
     canvas.height = FOTO_KIRPICI_CIKTI_BOYUTU;
     const ctx = canvas.getContext('2d');
+    // JPEG şeffaflığı desteklemez — küçültülmüş (letterbox'lu) görsellerde
+    // boş kalan alanlar siyaha dönmesin diye önce beyazla dolduruluyor
+    // (kırpıcının kendi arka planıyla aynı, görünenle çıktı tutarlı olur).
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, FOTO_KIRPICI_CIKTI_BOYUTU, FOTO_KIRPICI_CIKTI_BOYUTU);
     const cikisOlcek = FOTO_KIRPICI_CIKTI_BOYUTU / FOTO_KIRPICI_VIEWPORT;
     ctx.drawImage(
       img,
