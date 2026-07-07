@@ -615,12 +615,14 @@
     </div>
   </div>
 
-  <% if (calisanlar.length) { %>
+  <% const aktifCalisanlar = calisanlar.filter(c => c.durum === 'aktif'); %>
+  <% const pasifCalisanlar = calisanlar.filter(c => c.durum === 'pasif'); %>
+  <% if (aktifCalisanlar.length) { %>
   <div class="table-wrap">
     <table>
       <thead><tr><th>Ad Soyad</th><th>Unvan / Departman</th><th>Profil URL</th><th>Durum</th><th>İşlem</th></tr></thead>
       <tbody>
-        <% calisanlar.forEach(c => { %>
+        <% aktifCalisanlar.forEach(c => { %>
         <tr>
           <td><div class="td-name"><%= c.ad %> <%= c.soyad %></div></td>
           <td>
@@ -649,7 +651,7 @@
       </tbody>
     </table>
   </div>
-  <% } else { %>
+  <% } else if (!pasifCalisanlar.length) { %>
   <div class="table-wrap">
     <div class="empty-state">
       <div class="empty-state-icon">👤</div>
@@ -658,6 +660,43 @@
       <button class="btn btn-gold" onclick="openKartSlide()">+ Yeni Kart</button>
     </div>
   </div>
+  <% } %>
+
+  <% if (pasifCalisanlar.length) { %>
+  <details class="table-wrap" style="padding:0">
+    <summary style="cursor:pointer;padding:14px 20px;font-weight:600;color:var(--text-muted)">Pasif Çalışanlar (<%= pasifCalisanlar.length %>)</summary>
+    <table>
+      <thead><tr><th>Ad Soyad</th><th>Unvan / Departman</th><th>Profil URL</th><th>Durum</th><th>İşlem</th></tr></thead>
+      <tbody>
+        <% pasifCalisanlar.forEach(c => { %>
+        <tr>
+          <td><div class="td-name"><%= c.ad %> <%= c.soyad %></div></td>
+          <td>
+            <div style="font-size:var(--fs-xs);color:var(--text-muted)"><%= c.unvan || '—' %></div>
+            <div class="td-sub"><%= c.departman || '' %></div>
+          </td>
+          <td class="td-url">
+            <a href="/bayi/<%= bayi.slug %>/<%= firma.slug %>/<%= c.slug %>" target="_blank">/bayi/<%= bayi.slug %>/<%= firma.slug %>/<%= c.slug %></a>
+          </td>
+          <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
+          <td>
+            <div class="td-actions">
+              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+              <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="margin:0">
+                <input type="hidden" name="durum" value="aktif">
+                <button type="submit" class="btn btn-danger-sm btn-sm">Aktif Et</button>
+              </form>
+              <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/sil" style="margin:0"
+                    onsubmit="return confirm('<%= c.ad %> <%= c.soyad %> silinecek. Emin misin?')">
+                <button type="submit" class="btn btn-danger-sm btn-sm">Sil</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </details>
   <% } %>
 
   <!-- SLIDE: YENİ / DÜZENLE KART -->

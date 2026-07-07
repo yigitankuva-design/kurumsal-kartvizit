@@ -151,4 +151,21 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     const r = await pool.query('SELECT onayli FROM calisanlar WHERE id = $1', [c.rows[0].id]);
     expect(r.rows[0].onayli).toBe(true);
   });
+
+  test('pasif çalışan ayrı "Pasif Çalışanlar" bölümünde, aktif tablonun dışında gösterilir', async () => {
+    const agent = await girisYap(firmaEmail);
+    const pasif = await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug, durum) VALUES ($1,'Pasif','Kisi','pasif-kisi','pasif') RETURNING id",
+      [firmaId]
+    );
+    const beklenenSayi = (await pool.query(
+      "SELECT COUNT(*) FROM calisanlar WHERE firma_id = $1 AND durum = 'pasif'", [firmaId]
+    )).rows[0].count;
+    const res = await agent.get('/?tab=calisanlar');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain(`Pasif Çalışanlar (${beklenenSayi})`);
+    expect(res.text).toContain('<details');
+    expect(res.text.indexOf('Pasif Kisi')).toBeGreaterThan(res.text.indexOf('Pasif Çalışanlar ('));
+    await pool.query('DELETE FROM calisanlar WHERE id = $1', [pasif.rows[0].id]);
+  });
 });
