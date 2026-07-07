@@ -18,6 +18,7 @@ const mobilApiRoutes = require('./routes/mobilApi');
 const kurumsalRoutes = require('./routes/kurumsal');
 const { router: odemeRoutes } = require('./routes/odeme');
 const publicRoutes = require('./routes/public');
+const dosyaRoutes = require('./routes/dosya');
 const { requireFirma, requireKurumsalPaket } = require('./middleware/authMiddleware');
 const { createLoginLimiter } = require('./middleware/rateLimiter');
 
@@ -72,6 +73,7 @@ app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
 app.use('/bayi', odemeRoutes);
 app.use('/api/mobil', mobilApiRoutes);
+app.use('/dosya', dosyaRoutes);
 app.use('/kurumsal', requireFirma, requireKurumsalPaket, kurumsalRoutes);
 
 // Tek giriş noktası: firma, bayi veya süperadmin — hangisi eşleşirse ona giriş yapılır

@@ -1,7 +1,7 @@
 const multer = require('multer');
 const sharp = require('sharp');
-const { S3Client } = require('@aws-sdk/client-s3');
 const { Upload } = require('@aws-sdk/lib-storage');
+const { buildS3Client } = require('../utils/s3');
 
 const MAX_FOTO_BOYUTU = 15 * 1024 * 1024;
 const IZINLI_MIME = ['image/jpeg', 'image/png', 'image/webp'];
@@ -14,16 +14,9 @@ function mimeKontrol(req, file, cb) {
   }
 }
 
-function buildS3Client() {
-  return new S3Client({
-    endpoint: process.env.RAILWAY_STORAGE_ENDPOINT,
-    region: 'auto',
-    credentials: {
-      accessKeyId: process.env.RAILWAY_STORAGE_ACCESS_KEY,
-      secretAccessKey: process.env.RAILWAY_STORAGE_SECRET_KEY,
-    },
-    forcePathStyle: true,
-  });
+function dosyaUrlOlustur(anahtar) {
+  const siteUrl = process.env.SITE_URL || 'https://www.nfckartify.com.tr';
+  return `${siteUrl}/dosya/${anahtar}`;
 }
 
 async function fotoIsle(buffer) {
@@ -71,7 +64,7 @@ function uploadMiddleware(klasor) {
           });
           await yukleme.done();
 
-          req.file.location = `${process.env.RAILWAY_STORAGE_ENDPOINT}/${process.env.RAILWAY_STORAGE_BUCKET}/${anahtar}`;
+          req.file.location = dosyaUrlOlustur(anahtar);
           next();
         } catch (err) {
           next(err);
@@ -118,7 +111,7 @@ function pdfUploadMiddleware(klasor) {
             },
           });
           await yukleme.done();
-          req.file.location = `${process.env.RAILWAY_STORAGE_ENDPOINT}/${process.env.RAILWAY_STORAGE_BUCKET}/${anahtar}`;
+          req.file.location = dosyaUrlOlustur(anahtar);
           next();
         } catch (err) {
           next(err);
