@@ -48,6 +48,14 @@ describe('Mobil API — /api/mobil/giris', () => {
     const res = await request(app).post('/api/mobil/giris').send({ giris_bilgisi: email });
     expect(res.statusCode).toBe(400);
   });
+
+  test('e-posta büyük/küçük harf duyarsız eşleşir', async () => {
+    const res = await request(app)
+      .post('/api/mobil/giris')
+      .send({ giris_bilgisi: email.toUpperCase(), sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
 });
 
 describe('Mobil API — /api/mobil/musteriler', () => {
@@ -252,6 +260,14 @@ describe('Mobil API — /api/mobil/temsilci-giris', () => {
       .send({ giris_email: 'yok@example.com', sifre: 'herhangi' });
     expect(res.statusCode).toBe(401);
   });
+
+  test('e-posta büyük/küçük harf duyarsız eşleşir', async () => {
+    const res = await request(app)
+      .post('/api/mobil/temsilci-giris')
+      .send({ giris_email: email.toUpperCase(), sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+  });
 });
 
 describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
@@ -450,6 +466,12 @@ describe('Mobil API — /api/mobil/firma-giris', () => {
   test('kayıtlı olmayan bilgi ile 401 döner', async () => {
     const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: 'yok@example.com', sifre: 'x' });
     expect(res.statusCode).toBe(401);
+  });
+
+  test('e-posta büyük/küçük harf duyarsız eşleşir', async () => {
+    const res = await request(app).post('/api/mobil/firma-giris').send({ giris_bilgisi: email.toUpperCase(), sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
   });
 });
 

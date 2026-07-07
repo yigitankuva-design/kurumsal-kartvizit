@@ -56,7 +56,7 @@ router.post('/giris', girisLimiter, async (req, res) => {
 
   try {
     const result = await pool.query(
-      'SELECT * FROM firmalar WHERE yetkili_email = $1 OR kullanici_adi = $1',
+      'SELECT * FROM firmalar WHERE LOWER(yetkili_email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)',
       [giris_bilgisi]
     );
 

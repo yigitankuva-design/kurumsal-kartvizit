@@ -93,7 +93,7 @@ app.post('/giris', girisLimiter, async (req, res) => {
     }
 
     const firmaSonuc = await pool.query(
-      'SELECT * FROM firmalar WHERE yetkili_email = $1 OR kullanici_adi = $1',
+      'SELECT * FROM firmalar WHERE LOWER(yetkili_email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)',
       [giris_bilgisi]
     );
     if (firmaSonuc.rows.length) {
@@ -105,7 +105,7 @@ app.post('/giris', girisLimiter, async (req, res) => {
     }
 
     const bayiSonuc = await pool.query(
-      'SELECT * FROM bayiler WHERE (email = $1 OR kullanici_adi = $1) AND aktif = true',
+      'SELECT * FROM bayiler WHERE (LOWER(email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)) AND aktif = true',
       [giris_bilgisi]
     );
     if (bayiSonuc.rows.length) {

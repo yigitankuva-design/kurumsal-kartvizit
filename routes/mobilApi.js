@@ -42,7 +42,7 @@ router.post('/giris', mobilGirisLimiter, async (req, res) => {
   }
   try {
     const result = await pool.query(
-      'SELECT * FROM bayiler WHERE (email = $1 OR kullanici_adi = $1) AND aktif = true',
+      'SELECT * FROM bayiler WHERE (LOWER(email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)) AND aktif = true',
       [giris_bilgisi]
     );
     if (!result.rows.length) {
@@ -69,7 +69,7 @@ router.post('/temsilci-giris', temsilciGirisLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Giriş e-postası ve şifre zorunlu.' });
   }
   try {
-    const result = await pool.query('SELECT * FROM calisanlar WHERE giris_email = $1', [giris_email]);
+    const result = await pool.query('SELECT * FROM calisanlar WHERE LOWER(giris_email) = LOWER($1)', [giris_email]);
     if (!result.rows.length || !result.rows[0].giris_sifre_hash) {
       return res.status(401).json({ ok: false, error: 'Giriş e-postası veya şifre hatalı.' });
     }
@@ -95,7 +95,7 @@ router.post('/firma-giris', firmaGirisLimiter, async (req, res) => {
   }
   try {
     const result = await pool.query(
-      'SELECT * FROM firmalar WHERE yetkili_email = $1 OR kullanici_adi = $1',
+      'SELECT * FROM firmalar WHERE LOWER(yetkili_email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)',
       [giris_bilgisi]
     );
     if (!result.rows.length || !result.rows[0].yetkili_sifre_hash) {

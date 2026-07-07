@@ -50,7 +50,7 @@ router.post('/giris', bayiGirisLimiter, async (req, res) => {
   }
   try {
     const result = await pool.query(
-      'SELECT * FROM bayiler WHERE (email = $1 OR kullanici_adi = $1) AND aktif = true',
+      'SELECT * FROM bayiler WHERE (LOWER(email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)) AND aktif = true',
       [giris_bilgisi]
     );
     if (!result.rows.length) {
