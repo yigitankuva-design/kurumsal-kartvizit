@@ -1,4 +1,4 @@
-const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir } = require('../utils/sosyalMedya');
+const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir, youtubeLinkOlustur } = require('../utils/sosyalMedya');
 
 describe('instagramLinkOlustur', () => {
   test('@ ile başlayan kullanıcı adını linke çevirir', () => {
@@ -60,5 +60,38 @@ describe('urlNormallestir', () => {
     expect(urlNormallestir(null)).toBeNull();
     expect(urlNormallestir('')).toBeNull();
     expect(urlNormallestir('   ')).toBeNull();
+  });
+});
+
+describe('tiktokLinkOlustur — gerçek hata senaryoları', () => {
+  test('# ile başlayan kullanıcı adını da linke çevirir', () => {
+    expect(tiktokLinkOlustur('#orzax')).toBe('https://tiktok.com/@orzax');
+  });
+
+  test('protokolsüz tiktok.com linkini kullanıcı adı sanmaz, https ekler', () => {
+    expect(tiktokLinkOlustur('tiktok.com/@orzax')).toBe('https://tiktok.com/@orzax');
+  });
+});
+
+describe('youtubeLinkOlustur', () => {
+  test('@ ile başlayan kanal adını linke çevirir', () => {
+    expect(youtubeLinkOlustur('@orzaxturkiye')).toBe('https://youtube.com/@orzaxturkiye');
+  });
+
+  test('@ olmadan girilen kanal adını da @ ekleyerek linke çevirir', () => {
+    expect(youtubeLinkOlustur('orzaxturkiye')).toBe('https://youtube.com/@orzaxturkiye');
+  });
+
+  test('protokolsüz youtube.com linkini kanal adı sanmaz, https ekler', () => {
+    expect(youtubeLinkOlustur('youtube.com/channel/UCxxxx')).toBe('https://youtube.com/channel/UCxxxx');
+  });
+
+  test('zaten tam link girilmişse dokunmaz', () => {
+    expect(youtubeLinkOlustur('https://youtube.com/@orzaxturkiye')).toBe('https://youtube.com/@orzaxturkiye');
+  });
+
+  test('boş/null için null döner', () => {
+    expect(youtubeLinkOlustur(null)).toBeNull();
+    expect(youtubeLinkOlustur('')).toBeNull();
   });
 });
