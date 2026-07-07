@@ -88,4 +88,11 @@ describe('Raf kartı public sayfası', () => {
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe(`/raf/${kod}`);
   });
+
+  test('youtube @kanal biçiminde kayıtlıysa tıklayınca doğru adrese yönlendirir', async () => {
+    await pool.query('UPDATE firmalar SET youtube = $1 WHERE id = $2', ['@orzaxturkiye', firmaId]);
+    const res = await request(app).get(`/raf/${kod}/tikla/youtube`);
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('https://youtube.com/@orzaxturkiye');
+  });
 });

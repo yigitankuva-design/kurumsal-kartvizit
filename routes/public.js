@@ -4,7 +4,7 @@ const { pool } = require('../db');
 const { vcfOlustur } = require('../utils/vcf');
 const { cevirmenOlustur } = require('../utils/i18n');
 const { youtubeIdCikar } = require('../utils/youtube');
-const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir } = require('../utils/sosyalMedya');
+const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir, youtubeLinkOlustur } = require('../utils/sosyalMedya');
 const { ipHashOlustur } = require('../utils/ipHash');
 
 const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
@@ -59,7 +59,7 @@ router.get('/raf/:kod/tikla/:tip', async (req, res) => {
       instagram: instagramLinkOlustur(veri.instagram),
       linkedin: urlNormallestir(veri.linkedin),
       twitter: twitterLinkOlustur(veri.twitter),
-      youtube: urlNormallestir(veri.youtube),
+      youtube: youtubeLinkOlustur(veri.youtube),
       tiktok: tiktokLinkOlustur(veri.tiktok),
       whatsapp: veri.whatsapp ? `https://wa.me/${veri.whatsapp.replace(/\D/g, '')}` : null,
     };
@@ -246,7 +246,7 @@ router.get('/:firmaSlug/:calisanSlug/t/:tip', async (req, res) => {
       linkedin: urlNormallestir(calisan.linkedin),
       instagram: instagramLinkOlustur(calisan.instagram),
       twitter: twitterLinkOlustur(calisan.twitter),
-      youtube: urlNormallestir(calisan.youtube),
+      youtube: youtubeLinkOlustur(calisan.youtube),
       website: urlNormallestir(calisan.website),
       whatsapp: calisan.whatsapp ? `https://wa.me/${calisan.whatsapp.replace(/\D/g, '')}` : null,
       tiktok: tiktokLinkOlustur(calisan.tiktok),
