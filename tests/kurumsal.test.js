@@ -330,6 +330,60 @@ describe('Kurumsal panel uçları', () => {
     expect(r.rows[0].onayli).toBe(true);
   });
 
+  test('toplu-islem: pasife-al seçilen eczaneleri pasif yapar', async () => {
+    const e1 = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1,'Toplu Ecz 1','topluecz1') RETURNING id`, [kurumsalId]);
+    const e2 = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1,'Toplu Ecz 2','topluecz2') RETURNING id`, [kurumsalId]);
+    const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({
+      idler: [e1.rows[0].id, e2.rows[0].id], islem: 'pasife-al',
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const r = await pool.query('SELECT durum FROM eczaneler WHERE id = ANY($1)', [[e1.rows[0].id, e2.rows[0].id]]);
+    expect(r.rows.every(row => row.durum === 'pasif')).toBe(true);
+    await pool.query('DELETE FROM eczaneler WHERE id = ANY($1)', [[e1.rows[0].id, e2.rows[0].id]]);
+  });
+
+  test('toplu-islem: onayla seçilen eczaneleri onaylar', async () => {
+    const e1 = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod, onayli) VALUES ($1,'Onaysiz Ecz','onaysizecz1', false) RETURNING id`, [kurumsalId]);
+    const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({
+      idler: [e1.rows[0].id], islem: 'onayla',
+    });
+    expect(res.statusCode).toBe(200);
+    const r = await pool.query('SELECT onayli FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
+    expect(r.rows[0].onayli).toBe(true);
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
+  });
+
+  test('toplu-islem: sil seçilen eczaneleri kalıcı siler', async () => {
+    const e1 = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1,'Silinecek Ecz','silinecekecz1') RETURNING id`, [kurumsalId]);
+    const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({
+      idler: [e1.rows[0].id], islem: 'sil',
+    });
+    expect(res.statusCode).toBe(200);
+    const r = await pool.query('SELECT id FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
+    expect(r.rows.length).toBe(0);
+  });
+
+  test('toplu-islem: başka firmanın eczanesine dokunmaz', async () => {
+    const digerFirma = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket) VALUES ('Diger Firma Ecz','diger-firma-ecz','digerfirmaecz@example.com','x','kurumsal') RETURNING id`
+    );
+    const eDiger = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1,'Diger Ecz','digerecz1') RETURNING id`, [digerFirma.rows[0].id]);
+    const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({
+      idler: [eDiger.rows[0].id], islem: 'sil',
+    });
+    expect(res.statusCode).toBe(200);
+    const r = await pool.query('SELECT id FROM eczaneler WHERE id = $1', [eDiger.rows[0].id]);
+    expect(r.rows.length).toBe(1); // silinmedi
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eDiger.rows[0].id]);
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirma.rows[0].id]);
+  });
+
+  test('toplu-islem: geçersiz islem değeri 400 döner', async () => {
+    const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({ idler: [1], islem: 'gecersiz' });
+    expect(res.statusCode).toBe(400);
+  });
+
   test('Excel sekmesinde eczane toplu yükleme bölümü görünür', async () => {
     const res = await kurumsalAgent.get('/?tab=excel');
     expect(res.statusCode).toBe(200);

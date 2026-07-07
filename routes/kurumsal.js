@@ -305,6 +305,30 @@ router.post('/eczane/:id/onayla', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
+// Eczane toplu işlem: onayla / pasife-al / aktif-yap / sil
+router.post('/eczane/toplu-islem', async (req, res) => {
+  const { idler, islem } = req.body;
+  const izinliIslemler = ['onayla', 'pasife-al', 'aktif-yap', 'sil'];
+  if (!Array.isArray(idler) || !idler.length || !izinliIslemler.includes(islem)) {
+    return res.status(400).json({ ok: false, error: 'Geçersiz istek.' });
+  }
+  try {
+    if (islem === 'onayla') {
+      await pool.query('UPDATE eczaneler SET onayli = true WHERE id = ANY($1) AND firma_id = $2', [idler, req.session.firmaId]);
+    } else if (islem === 'pasife-al') {
+      await pool.query("UPDATE eczaneler SET durum = 'pasif' WHERE id = ANY($1) AND firma_id = $2", [idler, req.session.firmaId]);
+    } else if (islem === 'aktif-yap') {
+      await pool.query("UPDATE eczaneler SET durum = 'aktif' WHERE id = ANY($1) AND firma_id = $2", [idler, req.session.firmaId]);
+    } else if (islem === 'sil') {
+      await pool.query('DELETE FROM eczaneler WHERE id = ANY($1) AND firma_id = $2', [idler, req.session.firmaId]);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'İşlem başarısız.' });
+  }
+});
+
 router.get('/eczane/:id/detay', async (req, res) => {
   try {
     const eczaneKontrol = await pool.query(
