@@ -134,7 +134,7 @@ router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
 router.get('/firma/eczanelerimiz', requireFirmaToken, async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 AND onayli = true ORDER BY created_at DESC`,
+      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 AND onayli = true AND durum = 'aktif' ORDER BY created_at DESC`,
       [req.firmaId]
     );
     res.json({ ok: true, eczaneler: result.rows });
@@ -267,7 +267,7 @@ router.get('/eczanelerim', requireCalisanToken, async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
     }
     const result = await pool.query(
-      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 AND onayli = true ORDER BY created_at DESC`,
+      `SELECT id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, eczaci_karta_yazildi, eczaci_kart_kilitli FROM eczaneler WHERE firma_id = $1 AND onayli = true AND durum = 'aktif' ORDER BY created_at DESC`,
       [calisanResult.rows[0].firma_id]
     );
     res.json({ ok: true, eczaneler: result.rows });

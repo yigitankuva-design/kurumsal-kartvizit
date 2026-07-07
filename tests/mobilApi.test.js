@@ -562,6 +562,19 @@ describe('Mobil API — /api/mobil/firma/eczanelerimiz', () => {
     expect(benim.musteri_karta_yazildi).toBe(false);
     expect(benim.eczaci_karta_yazildi).toBe(false);
   });
+
+  test('pasif durumdaki eczane listede görünmez', async () => {
+    const pasifEcz = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, durum) VALUES ($1,'Pasif Ecz Firma','pasifeczfirma1','pasif') RETURNING id`,
+      [firmaId]
+    );
+    const res = await request(app)
+      .get('/api/mobil/firma/eczanelerimiz')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.eczaneler.find(e => e.id === pasifEcz.rows[0].id)).toBeUndefined();
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [pasifEcz.rows[0].id]);
+  });
 });
 
 describe('Mobil API — /api/mobil/kart-yazildi', () => {
@@ -714,6 +727,17 @@ describe('Mobil API — /api/mobil/eczanelerim', () => {
     expect(res.body.eczaneler[0].kod).toBe('eczkend1');
     expect(res.body.eczaneler[0].adres).toBe('Merkez Mah.');
     expect(res.body.eczaneler[0].eczaci_kod).toBe('eczcaci01');
+  });
+
+  test('pasif durumdaki eczane listede görünmez', async () => {
+    const pasifEcz = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod, durum) VALUES ($1,'Pasif Ecz Mobil','pasifeczmobil1','pasif') RETURNING id`,
+      [firmaId]
+    );
+    const res = await request(app).get('/api/mobil/eczanelerim').set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.eczaneler.find(e => e.id === pasifEcz.rows[0].id)).toBeUndefined();
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [pasifEcz.rows[0].id]);
   });
 
   test('token yoksa 401 döner', async () => {
