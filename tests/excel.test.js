@@ -1,5 +1,5 @@
 const XLSX = require('xlsx');
-const { eczaneExcelParse } = require('../utils/excel');
+const { excelParse, eczaneExcelParse } = require('../utils/excel');
 
 function bufferOlustur(satirlar) {
   const ws = XLSX.utils.aoa_to_sheet(satirlar);
@@ -7,6 +7,20 @@ function bufferOlustur(satirlar) {
   XLSX.utils.book_append_sheet(wb, ws, 'Eczaneler');
   return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 }
+
+describe('utils/excel — excelParse', () => {
+  test('linkedin, instagram ve twitter kolonlarını okur', () => {
+    const buf = bufferOlustur([
+      ['ad', 'soyad', 'linkedin', 'instagram', 'twitter'],
+      ['Murat', 'Özdemir', 'https://linkedin.com/in/murat', '@murat', '@muratx'],
+    ]);
+    const { calisanlar, hatalar } = excelParse(buf);
+    expect(hatalar).toHaveLength(0);
+    expect(calisanlar[0].linkedin).toBe('https://linkedin.com/in/murat');
+    expect(calisanlar[0].instagram).toBe('@murat');
+    expect(calisanlar[0].twitter).toBe('@muratx');
+  });
+});
 
 describe('utils/excel — eczaneExcelParse', () => {
   test('geçerli satırları ad ve adres ile döner', () => {

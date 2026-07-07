@@ -85,8 +85,8 @@ router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) =>
 // Excel şablon indir
 router.get('/excel-sablon', (req, res) => {
   const ws = XLSX.utils.aoa_to_sheet([
-    ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'biyografi'],
-    ['Örnek', 'Kişi', 'Satış Müdürü', 'Satış', '+905001112233', 'ornek@firma.com', '', '']
+    ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'instagram', 'twitter', 'biyografi'],
+    ['Örnek', 'Kişi', 'Satış Müdürü', 'Satış', '+905001112233', 'ornek@firma.com', '', '', '', '']
   ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
@@ -108,9 +108,9 @@ router.post('/toplu-yukle', upload.single('excel'), async (req, res) => {
     try {
       const slug = await benzersizCalisanSlugOlustur(req.session.firmaId, c.ad, c.soyad);
       await pool.query(
-        `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, biyografi, slug, onayli)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, false)`,
-        [req.session.firmaId, c.ad, c.soyad, c.unvan, c.departman, c.telefon, c.email, c.linkedin, c.biyografi, slug]
+        `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, biyografi, slug, onayli)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, false)`,
+        [req.session.firmaId, c.ad, c.soyad, c.unvan, c.departman, c.telefon, c.email, c.linkedin, c.instagram, c.twitter, c.biyografi, slug]
       );
       eklenen++;
     } catch (err) {

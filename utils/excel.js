@@ -31,6 +31,8 @@ function excelParse(buffer) {
       telefon: String(row['telefon'] || '').trim() || null,
       email: email || null,
       linkedin: String(row['linkedin'] || '').trim() || null,
+      instagram: String(row['instagram'] || '').trim() || null,
+      twitter: String(row['twitter'] || '').trim() || null,
       biyografi: String(row['biyografi'] || '').trim() || null,
     });
   });

@@ -118,6 +118,28 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(c.rows[0].onayli).toBe(false);
   });
 
+  test('Excel toplu yüklemede instagram ve twitter kolonları da kaydedilir', async () => {
+    const XLSX = require('xlsx');
+    const agent = await girisYap(firmaEmail);
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['ad', 'soyad', 'linkedin', 'instagram', 'twitter'],
+      ['Sosyal', 'Medya', 'https://linkedin.com/in/sosyal', '@sosyalmedya', '@sosyalx'],
+    ]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
+    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const res = await agent.post('/firma/panel/toplu-yukle')
+      .attach('excel', buffer, { filename: 'test.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    expect(res.statusCode).toBe(302);
+    const c = await pool.query(
+      "SELECT instagram, twitter FROM calisanlar WHERE firma_id = $1 AND ad = 'Sosyal' AND soyad = 'Medya'",
+      [firmaId]
+    );
+    expect(c.rows.length).toBe(1);
+    expect(c.rows[0].instagram).toBe('@sosyalmedya');
+    expect(c.rows[0].twitter).toBe('@sosyalx');
+  });
+
   test('çalışan onaylama onayli=true yapar', async () => {
     const agent = await girisYap(firmaEmail);
     const c = await pool.query(
