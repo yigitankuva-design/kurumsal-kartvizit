@@ -517,18 +517,25 @@
         <button type="submit">Ekle</button>
       </form>
     </div>
+    <% const aktifEczaneler = eczaneler.filter(e => e.durum !== 'pasif'); const pasifEczaneler = eczaneler.filter(e => e.durum === 'pasif'); %>
+    <div class="table-wrap" style="padding:12px 20px;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button type="button" id="eczaneTopluOnaylaBtn" disabled onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
+      <button type="button" id="eczaneTopluPasifBtn" disabled onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
+      <button type="button" id="eczaneTopluSilBtn" disabled onclick="eczaneTopluIslem('sil')" style="color:#b91c1c">🗑 Toplu Sil</button>
+    </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th></th></tr></thead>
+        <thead><tr><th><input type="checkbox" id="eczaneTumSec" onchange="eczaneTumSecToggle(this)"></th><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th></th></tr></thead>
         <tbody>
-          <% eczaneler.forEach(e => { %>
+          <% aktifEczaneler.forEach(e => { %>
           <tr>
+            <td><input type="checkbox" class="eczane-sec" value="<%= e.id %>"></td>
             <td>
               <%= e.ad %>
               <% if (!e.onayli) { %>
                 <div style="margin-top:4px">
                   <span style="color:#b45309;font-size:12px">⏳ Onay Bekliyor</span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/onayla" style="display:inline"><button type="submit">Onayla</button></form>
+                  <button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button>
                 </div>
               <% } %>
             </td>
@@ -568,6 +575,7 @@
             </td>
             <td>
               <button type="button" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
+              <button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'pasife-al')" style="margin-right:6px">Pasife Al</button>
               <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
                     onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
                 <button type="submit">Sil</button>
@@ -575,10 +583,28 @@
             </td>
           </tr>
           <% }) %>
-          <% if (!eczaneler.length) { %><tr><td colspan="7">Henüz eczane eklenmemiş.</td></tr><% } %>
+          <% if (!aktifEczaneler.length) { %><tr><td colspan="8">Aktif eczane yok.</td></tr><% } %>
         </tbody>
       </table>
     </div>
+
+    <% if (pasifEczaneler.length) { %>
+    <details class="table-wrap" style="padding:0;margin-top:16px">
+      <summary style="padding:16px 20px;cursor:pointer;font-weight:600">Pasif Eczaneler (<%= pasifEczaneler.length %>)</summary>
+      <table>
+        <thead><tr><th>Eczane</th><th>Adres</th><th></th></tr></thead>
+        <tbody>
+          <% pasifEczaneler.forEach(e => { %>
+          <tr>
+            <td><%= e.ad %></td>
+            <td><%= e.adres || '-' %></td>
+            <td><button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'aktif-yap')">Aktif Yap</button></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </details>
+    <% } %>
 
     <!-- Eczane Detay Modal -->
     <div id="eczaneDetayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:60;padding:16px">
@@ -785,6 +811,67 @@
     if (stiller) Object.assign(el.style, stiller);
     return el;
   }
+
+  async function eczaneIslemGonder(idler, islem) {
+    if (islem === 'sil' && !confirm(idler.length + ' eczane silinsin mi? Okutma geçmişi de silinir.')) return;
+    if (islem === 'pasife-al' && !confirm(idler.length + ' eczane pasife alınsın mı?')) return;
+    sessionStorage.setItem('eczaneScrollY', String(window.scrollY));
+    try {
+      const res = await fetch('/kurumsal/eczane/toplu-islem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idler, islem }),
+      });
+      if (res.ok) {
+        window.location.reload();
+      } else {
+        alert('İşlem başarısız.');
+      }
+    } catch (err) {
+      alert('Bağlantı hatası.');
+    }
+  }
+
+  function eczaneTekIslem(id, islem) {
+    eczaneIslemGonder([id], islem);
+  }
+
+  function eczaneSecilenler() {
+    return [...document.querySelectorAll('.eczane-sec:checked')].map(el => Number(el.value));
+  }
+
+  function eczaneTopluIslem(islem) {
+    const idler = eczaneSecilenler();
+    if (!idler.length) return;
+    eczaneIslemGonder(idler, islem);
+  }
+
+  function eczaneTumSecToggle(kaynak) {
+    document.querySelectorAll('.eczane-sec').forEach(el => { el.checked = kaynak.checked; });
+    eczaneToplaButonDurumu();
+  }
+
+  function eczaneToplaButonDurumu() {
+    const varMi = eczaneSecilenler().length > 0;
+    ['eczaneTopluOnaylaBtn', 'eczaneTopluPasifBtn', 'eczaneTopluSilBtn'].forEach(id => {
+      const btn = document.getElementById(id);
+      if (btn) btn.disabled = !varMi;
+    });
+  }
+
+  document.addEventListener('change', (e) => {
+    if (e.target.classList && e.target.classList.contains('eczane-sec')) eczaneToplaButonDurumu();
+  });
+
+  // 'load' kullanılıyor ('DOMContentLoaded' değil): tablo tam yerleşmeden
+  // scrollTo hedefe ulaşamayabilir.
+  window.addEventListener('load', () => {
+    const kayitliScroll = sessionStorage.getItem('eczaneScrollY');
+    if (kayitliScroll !== null) {
+      window.scrollTo(0, Number(kayitliScroll));
+      sessionStorage.removeItem('eczaneScrollY');
+    }
+  });
 
   async function eczaneDetayGoster(eczaneId, eczaneAdi) {
     document.getElementById('eczaneDetayBaslik').textContent = eczaneAdi + ' — Detay';
