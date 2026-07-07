@@ -127,6 +127,7 @@ async function migrate() {
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS son_gorulen_katalog_tarihi TIMESTAMP`,
     `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS temsilci_notu TEXT`,
     `ALTER TABLE eczaneler DROP COLUMN IF EXISTS yonetici_notu`,
+    `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS durum TEXT DEFAULT 'aktif'`,
   ];
 
   for (const sql of migrations) {
