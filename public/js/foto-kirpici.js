@@ -40,7 +40,7 @@ function fotoKirpiciArayuzOlustur(img, tamamlaninca) {
   let konumY = (FOTO_KIRPICI_VIEWPORT - img.naturalHeight * olcek) / 2;
 
   const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000';
 
   const kutu = document.createElement('div');
   kutu.style.cssText = 'background:#1a1a1a;border-radius:12px;padding:20px;max-width:360px;width:100%;display:flex;flex-direction:column;gap:14px;align-items:center';
