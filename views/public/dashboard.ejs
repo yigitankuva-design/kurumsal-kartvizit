@@ -519,7 +519,7 @@
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th>Yönetici Notu</th><th></th></tr></thead>
+        <thead><tr><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th></th></tr></thead>
         <tbody>
           <% eczaneler.forEach(e => { %>
           <tr>
@@ -567,12 +567,6 @@
               <% } %>
             </td>
             <td>
-              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/yonetici-notu" style="display:flex;flex-direction:column;gap:4px;min-width:160px">
-                <textarea name="yonetici_notu" rows="2" placeholder="Temsilcinin göreceği not..." style="font-size:12px;resize:vertical"><%= e.yonetici_notu || '' %></textarea>
-                <button type="submit" style="align-self:flex-start">Notu Kaydet</button>
-              </form>
-            </td>
-            <td>
               <button type="button" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
               <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
                     onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
@@ -581,7 +575,7 @@
             </td>
           </tr>
           <% }) %>
-          <% if (!eczaneler.length) { %><tr><td colspan="8">Henüz eczane eklenmemiş.</td></tr><% } %>
+          <% if (!eczaneler.length) { %><tr><td colspan="7">Henüz eczane eklenmemiş.</td></tr><% } %>
         </tbody>
       </table>
     </div>
@@ -597,6 +591,20 @@
 
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
   <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
+    <% if (sahaIstatistik.ziyaretNotlari.length) { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">📝 Temsilci Ziyaret Notları</h3>
+      <ul>
+        <% sahaIstatistik.ziyaretNotlari.forEach(n => { %>
+          <li style="margin-bottom:8px">
+            <strong><%= n.eczaneAd %></strong> — <%= n.ad %> <%= n.soyad %>
+            (<%= new Date(n.tarih).toLocaleDateString('tr-TR') %>):
+            <%= n.not %>
+          </li>
+        <% }) %>
+      </ul>
+    </div>
+    <% } %>
     <% if (sahaIstatistik.ziyaretEdilmeyenEczaneler.length) { %>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px">
       <h3 style="margin-bottom:12px">⚠️ 60+ Gündür Ziyaret Edilmeyen Eczaneler</h3>

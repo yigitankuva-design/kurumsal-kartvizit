@@ -107,22 +107,6 @@ router.post('/eczane/:id/duzenle', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
-// Eczaneye özel yönetici notu güncelle (temsilci ziyaret kaydederken görür)
-router.post('/eczane/:id/yonetici-notu', async (req, res) => {
-  const { yonetici_notu } = req.body;
-  try {
-    await pool.query(
-      'UPDATE eczaneler SET yonetici_notu=$1 WHERE id=$2 AND firma_id=$3',
-      [yonetici_notu?.trim() || null, req.params.id, req.session.firmaId]
-    );
-    req.flash('success', 'Yönetici notu güncellendi.');
-  } catch (err) {
-    console.error(err);
-    req.flash('error', 'Güncellenemedi.');
-  }
-  res.redirect('/?tab=raf');
-});
-
 // Eczane sil
 router.post('/eczane/:id/sil', async (req, res) => {
   try {
@@ -188,7 +172,7 @@ router.post('/eczaci-pdf', guvenliUpload(eczaciPdfUpload, 'eczaci_pdf', '/?tab=i
 router.get('/ziyaretler-excel', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT c.ad AS temsilci_ad, c.soyad AS temsilci_soyad, e.ad AS eczane_ad, z.created_at
+      `SELECT c.ad AS temsilci_ad, c.soyad AS temsilci_soyad, e.ad AS eczane_ad, z.created_at, z.temsilci_notu
        FROM ziyaretler z
        JOIN calisanlar c ON c.id = z.calisan_id
        JOIN eczaneler e ON e.id = z.eczane_id
@@ -197,8 +181,8 @@ router.get('/ziyaretler-excel', async (req, res) => {
       [req.session.firmaId]
     );
     const ws = XLSX.utils.aoa_to_sheet([
-      ['Temsilci', 'Eczane', 'Tarih'],
-      ...result.rows.map(r => [`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at.toISOString()]),
+      ['Temsilci', 'Eczane', 'Tarih', 'Not'],
+      ...result.rows.map(r => [`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at.toISOString(), r.temsilci_notu || '']),
     ]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Ziyaretler');

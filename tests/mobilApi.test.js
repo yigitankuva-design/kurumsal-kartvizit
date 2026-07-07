@@ -281,7 +281,7 @@ describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
     calisanId = calisanSonuc.rows[0].id;
 
     const eczaneSonuc = await pool.query(
-      `INSERT INTO eczaneler (firma_id, ad, kod, yonetici_notu) VALUES ($1, 'Ziyaret Eczanesi', 'ziyarkod', 'Bu eczaneye kampanya broşürü bırakılacak') RETURNING id`,
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Ziyaret Eczanesi', 'ziyarkod') RETURNING id`,
       [firmaId]
     );
     eczaneId = eczaneSonuc.rows[0].id;
@@ -300,14 +300,13 @@ describe('Mobil API — /api/mobil/ziyaret-kaydet', () => {
     await pool.query('DELETE FROM firmalar WHERE id = ANY($1)', [[firmaId, digerFirmaId]]);
   });
 
-  test('geçerli eczane_kod ile 201 döner, eczane adı ve yönetici notuyla birlikte ve ziyaretler tablosuna kayıt düşer', async () => {
+  test('geçerli eczane_kod ile 201 döner, eczane adıyla ve girilen temsilci notuyla birlikte ziyaretler tablosuna kayıt düşer', async () => {
     const res = await request(app)
       .post('/api/mobil/ziyaret-kaydet')
       .set('Authorization', `Bearer ${token}`)
       .send({ eczane_kod: 'ziyarkod', not: 'Eczacı yoğundu, tekrar uğranacak' });
     expect(res.statusCode).toBe(201);
     expect(res.body.eczaneAdi).toBe('Ziyaret Eczanesi');
-    expect(res.body.yoneticiNotu).toBe('Bu eczaneye kampanya broşürü bırakılacak');
     const z = await pool.query('SELECT * FROM ziyaretler WHERE calisan_id = $1 AND eczane_id = $2', [calisanId, eczaneId]);
     expect(z.rows.length).toBe(1);
     expect(z.rows[0].temsilci_notu).toBe('Eczacı yoğundu, tekrar uğranacak');

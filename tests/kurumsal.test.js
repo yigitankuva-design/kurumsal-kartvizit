@@ -67,27 +67,6 @@ describe('Kurumsal panel uçları', () => {
     await pool.query('DELETE FROM firmalar WHERE id = $1', [digerKurumsalId]);
   });
 
-  test('kurumsal firma eczaneye yönetici notu ekleyebilir', async () => {
-    const agent = kurumsalAgent;
-    const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
-    const res = await agent
-      .post(`/kurumsal/eczane/${eczane.id}/yonetici-notu`)
-      .send({ yonetici_notu: 'Temsilci uğradığında eczacıya kampanya broşürü versin' });
-    expect(res.statusCode).toBe(302);
-    const kontrol = await pool.query('SELECT yonetici_notu FROM eczaneler WHERE id = $1', [eczane.id]);
-    expect(kontrol.rows[0].yonetici_notu).toBe('Temsilci uğradığında eczacıya kampanya broşürü versin');
-  });
-
-  test('başka firmanın eczanesine yönetici notu eklenemez', async () => {
-    const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
-    const digerKurumsalId = await firmaOlustur('kurumsal', 'k1digernot@example.com');
-    const agent = await girisYap('k1digernot@example.com');
-    await agent.post(`/kurumsal/eczane/${eczane.id}/yonetici-notu`).send({ yonetici_notu: 'HACKLENDI' });
-    const kontrol = await pool.query('SELECT yonetici_notu FROM eczaneler WHERE id = $1', [eczane.id]);
-    expect(kontrol.rows[0].yonetici_notu).toBe('Temsilci uğradığında eczacıya kampanya broşürü versin');
-    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerKurumsalId]);
-  });
-
   test('içerik linkleri güncellenir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/icerik').send({
@@ -168,13 +147,18 @@ describe('Kurumsal panel uçları', () => {
       `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Saha Eczanesi', 'sahakod1') RETURNING id`,
       [kurumsalId]
     );
-    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [calisanSonuc.rows[0].id, eczaneSonuc.rows[0].id]);
+    await pool.query(
+      'INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, $3)',
+      [calisanSonuc.rows[0].id, eczaneSonuc.rows[0].id, 'Eczacı stok yetersiz olduğunu söyledi']
+    );
 
     const agent = kurumsalAgent;
     const res = await agent.get('/?tab=saha');
     expect(res.statusCode).toBe(200);
     expect(res.text).toContain('chartGunluk');
     expect(res.text).not.toContain('Henüz veri yok');
+    expect(res.text).toContain('Temsilci Ziyaret Notları');
+    expect(res.text).toContain('Eczacı stok yetersiz olduğunu söyledi');
   });
 
   test('basic firma dashboardında Saha İstatistikleri sekmesi görünmez', async () => {
@@ -197,7 +181,7 @@ describe('Kurumsal panel uçları', () => {
     const wb = XLSX.read(res.body, { type: 'buffer' });
     const ws = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
-    expect(rows[0]).toEqual(['Temsilci', 'Eczane', 'Tarih']);
+    expect(rows[0]).toEqual(['Temsilci', 'Eczane', 'Tarih', 'Not']);
     expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
 
