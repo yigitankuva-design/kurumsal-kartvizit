@@ -424,9 +424,73 @@ git commit -m "Hiyerarsi T4: dashboard amiri secimi + ekip yoneticisi checkbox U
 - Modify: `routes/mobilApi.js`
 - Test: `tests/mobilApi.test.js`
 
+> **ÖNEMLİ (gözden geçirmede tespit edildi):** `tests/mobilApi.test.js`'te `calisanOlustur`/`eczaneOlustur`/`calisanTokenUret` **YOK** — dosya ham `pool.query` insert kullanıyor, token'ı login ucuyla alıyor ve sadece `bayiTokenDogrula` import ediyor. Her `describe` bloğunun kendi `firmaId`'si var. Bu yüzden Task 5, 6, 7, 8, 10'un tüm backend testleri **bu Task'ın Step 0'ında kurulan tek bir yeni ortak `describe` bloğunun içine** yazılır — yardımcılar orada tanımlanır.
+
+- [ ] **Step 0: Hiyerarşi testleri için ortak describe bloğu + yardımcıları kur**
+
+`tests/mobilApi.test.js`'in en üstündeki import satırına `calisanTokenUret`'i ekle:
+
+```javascript
+const { bayiTokenDogrula, calisanTokenUret } = require('../utils/jwt');
+```
+
+Dosyanın **sonuna** (son `describe` bloğunun kapanışından sonra) yeni bir ortak blok ekle. Task 5-8 ve Task 10'un backend testleri bu bloğun içine, işaretlenen `// >>> Task N testleri buraya <<<` yorumunun olduğu yere eklenir:
+
+```javascript
+describe('Mobil API — Ekip / Hiyerarşi', () => {
+  let firmaId;
+  let eczaneSayaci = 0;
+
+  beforeAll(async () => {
+    const f = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Ekip Test Firma', 'ekip-test-firma', 'ekiptest@example.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = f.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  // Yardımcı: firmaya çalışan oluşturur. secenekler: { amiri_id, ekip_yoneticisi, giris_email, giris_sifre }
+  let calisanSayaci = 0;
+  async function calisanOlustur(fId, secenekler = {}) {
+    calisanSayaci += 1;
+    const slug = `ekip-calisan-${calisanSayaci}-${Date.now()}`;
+    let girisEmail = null, girisSifreHash = null;
+    if (secenekler.giris_email) {
+      girisEmail = secenekler.giris_email;
+      girisSifreHash = await bcrypt.hash(secenekler.giris_sifre || 'test1234', 8);
+    }
+    const r = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, amiri_id, ekip_yoneticisi, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Ekip', 'Uye', $2, $3, $4, $5, $6) RETURNING id`,
+      [fId, slug, secenekler.amiri_id || null, secenekler.ekip_yoneticisi === true, girisEmail, girisSifreHash]
+    );
+    return { id: r.rows[0].id };
+  }
+
+  async function eczaneOlustur(fId) {
+    eczaneSayaci += 1;
+    const r = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Ekip Eczanesi', $2) RETURNING id, kod`,
+      [fId, `ekipkod${eczaneSayaci}${Date.now() % 100000}`]
+    );
+    return { id: r.rows[0].id, kod: r.rows[0].kod };
+  }
+
+  // >>> Task 5 testleri buraya <<<
+  // >>> Task 6 testleri buraya <<<
+  // >>> Task 7 testleri buraya <<<
+  // >>> Task 8 testleri buraya <<<
+  // >>> Task 10 Step 4 testi buraya <<<
+});
+```
+
 - [ ] **Step 1: Write the failing test**
 
-`tests/mobilApi.test.js`'e (mevcut `describe` bloğu içine) ekle:
+Yukarıdaki bloğun `// >>> Task 5 testleri buraya <<<` satırının yerine ekle:
 
 ```javascript
   test('/ekibim: ekip yöneticisi olmayan 403 alır', async () => {
@@ -451,8 +515,6 @@ git commit -m "Hiyerarsi T4: dashboard amiri secimi + ekip yoneticisi checkbox U
     expect(kayit.toplam_ziyaret).toBe(1);
   });
 ```
-
-**Bağlam:** `tests/mobilApi.test.js`'te `calisanOlustur`/`eczaneOlustur` yardımcı fonksiyonları zaten mevcutsa (mevcut testlerin kurulumunda kullanılan desen) aynen kullan; yoksa dosyanın en üstündeki mevcut kurulum bloğuna bakıp aynı deseni izleyerek ekle (bu plan yazılırken dosyanın tam güncel hali tekrar okunmalı).
 
 - [ ] **Step 2: Run test to verify it fails**
 
@@ -529,6 +591,8 @@ git commit -m "Hiyerarsi T5: GET /api/mobil/ekibim ucu"
 - Test: `tests/mobilApi.test.js`
 
 - [ ] **Step 1: Write the failing test**
+
+Task 5 Step 0'da kurulan `describe('Mobil API — Ekip / Hiyerarşi', ...)` bloğunun `// >>> Task 6 testleri buraya <<<` satırının yerine ekle (`calisanOlustur`/`eczaneOlustur`/`calisanTokenUret` o bloktan gelir):
 
 ```javascript
   test('/ekibim/:id/ziyaretler: direkt amiri notu dahil ziyaretleri görür', async () => {
@@ -611,6 +675,8 @@ git commit -m "Hiyerarsi T6: GET /api/mobil/ekibim/:id/ziyaretler - sadece direk
 
 - [ ] **Step 1: Write the failing test**
 
+Task 5 Step 0'daki ortak bloğun `// >>> Task 7 testleri buraya <<<` satırının yerine ekle:
+
 ```javascript
   test('/ekip-ozeti: bugünkü toplam ziyaret ve sıfır ziyaretli temsilci sayısını döner', async () => {
     const mudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true });
@@ -691,6 +757,8 @@ git commit -m "Hiyerarsi T7: GET /api/mobil/ekip-ozeti ucu"
 - Test: `tests/mobilApi.test.js`
 
 - [ ] **Step 1: Write the failing test**
+
+Task 5 Step 0'daki ortak bloğun `// >>> Task 8 testleri buraya <<<` satırının yerine ekle:
 
 ```javascript
   test('ziyaret-kaydet: lat/lng gönderilirse kaydedilir', async () => {
@@ -782,25 +850,34 @@ git commit -m "Hiyerarsi T8: ziyaret-kaydet ucuna lat/lng destegi"
 
 **Files:**
 - Modify: `app.js`
-- Test: `tests/panel.test.js` veya ilgili dashboard testi (mevcut test dosyalarından hangisi `sahaIstatistik`/`/?tab=saha` render'ını test ediyorsa oraya eklenecek — plan uygulanırken `grep -rn "sahaIstatistik" tests/` ile doğrulanmalı)
+- Test: `tests/panel.test.js`
 
-**Bağlam:** `app.js:285-303`'teki `notlarResult` sorgusu şu an `z.temsilci_notu`'yu doğrudan firma sahibine döndürüyor. Bunun yerine not İÇERİĞİ kaldırılır, sadece kimin-hangi-eczaneye-ne-zaman ziyaret yaptığı ve not OLUP OLMADIĞI (boolean) bilgisi kalır.
+**Bağlam:** `app.js:285-303`'teki `notlarResult` sorgusu şu an `z.temsilci_notu`'yu doğrudan firma sahibine döndürüyor. Bunun yerine not İÇERİĞİ kaldırılır, sadece kimin-hangi-eczaneye-ne-zaman ziyaret yaptığı ve not OLUP OLMADIĞI (boolean) bilgisi kalır. **Not:** `tests/panel.test.js`'te `calisanOlustur`/`eczaneOlustur` yardımcıları YOK (sadece `firmaOlustur`/`girisYap` var) — bu yüzden aşağıdaki test ham `pool.query` insert kullanır. `agent` ve `firmaId` describe scope'unda (satır 24 `let firmaId, agent`) mevcuttur; `agent` kurumsal bir firmaya giriş yapmıştır (satır 27-31), dolayısıyla `/?tab=saha` bu firma için render edilir.
 
 - [ ] **Step 1: Write the failing test**
 
-İlgili test dosyasına (dashboard render'ını `GET /` ile test eden bir test varsa oraya; yoksa `tests/panel.test.js`'e yeni bir test olarak) ekle:
+`tests/panel.test.js`'in mevcut `describe` bloğunun içine ekle (ham insert ile — yardımcı fonksiyon yok):
 
 ```javascript
   test('saha istatistikleri sayfası temsilci_notu içeriğini firma sahibine göstermez', async () => {
-    const temsilci = await calisanOlustur(firmaId, {});
-    const eczane = await eczaneOlustur(firmaId);
+    const calisan = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Not', 'Test', $2) RETURNING id",
+      [firmaId, `not-test-calisan-${Date.now()}`]
+    )).rows[0].id;
+    const eczane = (await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Not Test Eczanesi', $2) RETURNING id",
+      [firmaId, `notkod${Date.now() % 100000}`]
+    )).rows[0].id;
     await pool.query(
       "INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, 'GİZLİ-NOT-İÇERİĞİ')",
-      [temsilci.id, eczane.id]
+      [calisan, eczane]
     );
     const res = await agent.get('/?tab=saha');
     expect(res.statusCode).toBe(200);
     expect(res.text).not.toContain('GİZLİ-NOT-İÇERİĞİ');
+
+    await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczane]);
   });
 ```
 
@@ -857,7 +934,17 @@ Ve `app.js:301-303`'teki mevcut hali:
 
 - [ ] **Step 4: `views/public/dashboard.ejs`'teki Saha İstatistikleri notlar tablosunu güncelle**
 
-`views/public/dashboard.ejs`'te `sahaIstatistik.ziyaretNotlari`'nin render edildiği bölümü bul (`grep -n "ziyaretNotlari" views/public/dashboard.ejs`) — `<%= n.not %>` şeklinde not METNİNİ basan satırı şununla değiştir: `<span style="color:#9ca3af;font-style:italic">Not girildi (içerik sadece bağlı olduğu yöneticiye mobilde görünür)</span>`. **Bu adım, dosyanın o anki tam güncel hali okunduktan sonra uygulanmalı** — plan yazılırken satır numarası doğrulanmadı.
+`views/public/dashboard.ejs:628`'deki mevcut satır (gözden geçirmede doğrulandı):
+
+```html
+            <%= n.not %>
+```
+
+Şununla değiştir:
+
+```html
+            <span style="color:#9ca3af;font-style:italic">Not girildi (içerik sadece bağlı olduğu yöneticiye mobilde görünür)</span>
+```
 
 - [ ] **Step 5: Run test to verify it passes**
 
@@ -1016,11 +1103,11 @@ Ayrıca `ziyaretKaydet` fonksiyonuna (satır 50-56) `lat`/`lng` parametreleri ek
 
 - [ ] **Step 4: Backend testi ekle + doğrula**
 
-`tests/mobilApi.test.js`'e ekle:
+Task 5 Step 0'daki ortak bloğun `// >>> Task 10 Step 4 testi buraya <<<` satırının yerine ekle (`calisanOlustur`, Step 0'da `giris_sifre`'yi bcrypt ile `giris_sifre_hash`'e yazacak şekilde tanımlanmıştır):
 
 ```javascript
   test('/temsilci-giris: ekipYoneticisi alanını döner', async () => {
-    const mudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true, giris_email: 'ekipyon@example.com', giris_sifre: 'test1234' });
+    await calisanOlustur(firmaId, { ekip_yoneticisi: true, giris_email: 'ekipyon@example.com', giris_sifre: 'test1234' });
     const res = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: 'ekipyon@example.com', sifre: 'test1234' });
     expect(res.body.calisan.ekipYoneticisi).toBe(true);
   });
@@ -1028,8 +1115,6 @@ Ayrıca `ziyaretKaydet` fonksiyonuna (satır 50-56) `lat`/`lng` parametreleri ek
 
 Run: `cd /c/Users/muham/kurumsal-kartvizit && npx jest tests/mobilApi.test.js`
 Expected: PASS.
-
-**Not:** `calisanOlustur` yardımcı fonksiyonunun `giris_sifre`'yi bcrypt ile hash'leyip hash'lediğini (`giris_sifre_hash`) doğrudan yazması gerekir — mevcut yardımcı fonksiyonun tam imzası bu adım uygulanırken `tests/mobilApi.test.js`'in başından kontrol edilmeli.
 
 - [ ] **Step 5: Commit**
 
