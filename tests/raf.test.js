@@ -95,4 +95,49 @@ describe('Raf kartı public sayfası', () => {
     expect(res.statusCode).toBe(302);
     expect(res.headers.location).toBe('https://youtube.com/@orzaxturkiye');
   });
+
+  test('aktif ürünler raf sayfasında görünür, pasif ürün görünmez', async () => {
+    await pool.query(
+      "INSERT INTO urunler (firma_id, ad, aciklama, aktif) VALUES ($1, 'Aktif Ürün', 'Açıklama', true)",
+      [firmaId]
+    );
+    await pool.query("INSERT INTO urunler (firma_id, ad, aktif) VALUES ($1, 'Pasif Ürün', false)", [firmaId]);
+
+    const res = await request(app).get(`/raf/${kod}`);
+    expect(res.text).toContain('Aktif Ürün');
+    expect(res.text).not.toContain('Pasif Ürün');
+
+    await pool.query('DELETE FROM urunler WHERE firma_id = $1', [firmaId]);
+  });
+
+  test('PDF\'li ürüne tıklama kaydedilir ve PDF\'e yönlendirir', async () => {
+    const urunId = (await pool.query(
+      "INSERT INTO urunler (firma_id, ad, pdf_url, aktif) VALUES ($1, 'PDF Ürünü', 'https://ornek.com/urun.pdf', true) RETURNING id",
+      [firmaId]
+    )).rows[0].id;
+
+    const res = await request(app).get(`/raf/${kod}/urun/${urunId}/tikla`);
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('https://ornek.com/urun.pdf');
+
+    const sayi = (await pool.query('SELECT COUNT(*) FROM urun_tiklamalar WHERE urun_id = $1', [urunId])).rows[0].count;
+    expect(Number(sayi)).toBe(1);
+
+    await pool.query('DELETE FROM urunler WHERE id = $1', [urunId]);
+  });
+
+  test('başka firmanın ürününe tıklama 404 döner', async () => {
+    const digerFirma = await pool.query(
+      "INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket) VALUES ('Diğer', 'raf-urun-diger', 'rafurundiger@example.com', 'x', 'kurumsal') RETURNING id"
+    );
+    const digerUrunId = (await pool.query(
+      "INSERT INTO urunler (firma_id, ad, aktif) VALUES ($1, 'Diğer Ürün', true) RETURNING id",
+      [digerFirma.rows[0].id]
+    )).rows[0].id;
+
+    const res = await request(app).get(`/raf/${kod}/urun/${digerUrunId}/tikla`);
+    expect(res.statusCode).toBe(404);
+
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirma.rows[0].id]);
+  });
 });

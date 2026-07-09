@@ -34,8 +34,12 @@ router.get('/raf/:kod', async (req, res) => {
     } catch (kayitHatasi) {
       console.error('raf okutma kaydı başarısız:', kayitHatasi);
     }
+    const urunlerSonuc = await pool.query(
+      'SELECT id, ad, aciklama, foto_url, pdf_url FROM urunler WHERE firma_id = (SELECT firma_id FROM eczaneler WHERE id = $1) AND aktif = true ORDER BY sira',
+      [veri.eczane_id]
+    );
     const qrHedef = `${req.protocol}://${req.get('host')}/raf/${veri.kod}`;
-    res.render('public/raf', { title: veri.firma_ad, veri, qrHedef, layout: false });
+    res.render('public/raf', { title: veri.firma_ad, veri, urunler: urunlerSonuc.rows, qrHedef, layout: false });
   } catch (err) {
     console.error(err);
     res.status(500).render('public/404', { title: 'Hata', mesaj: 'Bir hata oluştu.', layout: false });
@@ -69,6 +73,30 @@ router.get('/raf/:kod/tikla/:tip', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.redirect(`/raf/${kod}`);
+  }
+});
+
+// Ürün tıklama takibi + yönlendirme (PDF'li ürünler için)
+router.get('/raf/:kod/urun/:urunId/tikla', async (req, res) => {
+  try {
+    const veri = await eczaneGetir(req.params.kod);
+    if (!veri) return res.status(404).send('Bulunamadı.');
+
+    const urunSonuc = await pool.query(
+      'SELECT pdf_url FROM urunler WHERE id = $1 AND firma_id = (SELECT firma_id FROM eczaneler WHERE id = $2) AND aktif = true',
+      [req.params.urunId, veri.eczane_id]
+    );
+    if (!urunSonuc.rows.length) return res.status(404).send('Bulunamadı.');
+
+    await pool.query('INSERT INTO urun_tiklamalar (urun_id, eczane_id) VALUES ($1, $2)', [req.params.urunId, veri.eczane_id]);
+
+    if (urunSonuc.rows[0].pdf_url) {
+      return res.redirect(urunSonuc.rows[0].pdf_url);
+    }
+    res.redirect(`/raf/${req.params.kod}`);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Bir hata oluştu.');
   }
 });
 
