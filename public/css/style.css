@@ -153,7 +153,6 @@ body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: 
   flex-direction: column;
   align-items: center;
   position: relative;
-  overflow: hidden;
 }
 
 .profil-header::after {
@@ -437,29 +436,6 @@ body { font-family: 'Plus Jakarta Sans', -apple-system, sans-serif; background: 
 .hata-kart { text-align: center; padding: 64px 32px; background: var(--surface); border-radius: var(--radius-lg); max-width: 400px; width: 100%; }
 .hata-kart h1 { font-size: 72px; font-weight: 800; color: var(--border); margin-bottom: 8px; letter-spacing: -4px; }
 .hata-kart p { color: var(--text-muted); font-size: 15px; }
-
-/* Dil seçici */
-.dil-secici {
-  display: flex;
-  justify-content: center;
-  gap: 4px;
-  margin-bottom: 12px;
-}
-.dil-secici a {
-  padding: 4px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  text-decoration: none;
-  color: #6b7280;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-}
-.dil-secici a.aktif {
-  color: #fff;
-  background: #111827;
-  border-color: #111827;
-}
 
 /* Masaüstünde telefon çerçevesi görünümü */
 @media (min-width: 768px) {
