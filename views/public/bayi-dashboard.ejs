@@ -513,7 +513,9 @@
           fotoState.zoomIndex = 0;
           const olcek = fotoState.baseScale;
           fotoState.offsetX = (KUTU_BOYUTU - img.naturalWidth * olcek) / 2;
-          fotoState.offsetY = (KUTU_BOYUTU - img.naturalHeight * olcek) / 2;
+          // Varsayılan olarak üste yasla (ortalamak yerine) — portre fotoğraflarda
+          // yüz genelde üst bölgede olur, ortalanmış kırpma kafayı kesiyordu.
+          fotoState.offsetY = 0;
           document.getElementById('m_foto_img').src = ev.target.result;
           document.getElementById('m_foto_img').style.display = 'block';
           document.getElementById('m_cropper_empty').style.display = 'none';
@@ -778,6 +780,7 @@
       document.getElementById('kartEditFotoWrap').style.display = 'flex';
       document.getElementById('k_kvkk').required = false;
       fillKartForm(c);
+      document.getElementById('k_foto_edit').value = '';
       document.getElementById('kartOverlay').classList.add('open');
       document.body.style.overflow = 'hidden';
     }
@@ -800,6 +803,11 @@
       const manuelAdres = document.getElementById('k_adres_manuel');
       if (manuelAdres) manuelAdres.value = c.adres || '';
     }
+  </script>
+  <script src="/js/foto-kirpici.js"></script>
+  <script>
+    fotoKirpiciBaglama('k_foto');
+    fotoKirpiciBaglama('k_foto_edit');
   </script>
 
 <% } %>
