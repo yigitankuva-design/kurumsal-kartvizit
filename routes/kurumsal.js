@@ -10,6 +10,8 @@ const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload'
 const logoUpload = uploadMiddleware('firma-logolar');
 const katalogUpload = pdfUploadMiddleware('kataloglar');
 const eczaciPdfUpload = pdfUploadMiddleware('eczaci-dokumanlar');
+const urunFotoUpload = uploadMiddleware('urunler');
+const urunPdfUpload = pdfUploadMiddleware('urun-dokumanlar');
 const excelUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // upload middleware dizisini hata yakalayarak çalıştırır (bayi.js'teki desenle aynı)
@@ -383,6 +385,93 @@ router.get('/eczane/:id/detay', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Detay alınamadı.' });
+  }
+});
+
+// Ürün ekle
+router.post('/urunler', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), async (req, res) => {
+  const { ad, aciklama } = req.body;
+  if (!ad || !ad.trim()) {
+    req.flash('error', 'Ürün adı zorunlu.');
+    return res.redirect('/?tab=urunler');
+  }
+  try {
+    const siraSonuc = await pool.query('SELECT COALESCE(MAX(sira), -1) + 1 AS sonraki FROM urunler WHERE firma_id = $1', [req.session.firmaId]);
+    await pool.query(
+      'INSERT INTO urunler (firma_id, ad, aciklama, foto_url, sira) VALUES ($1, $2, $3, $4, $5)',
+      [req.session.firmaId, ad.trim(), aciklama || null, req.file?.location || null, siraSonuc.rows[0].sonraki]
+    );
+    req.flash('success', 'Ürün eklendi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Ürün eklenemedi.');
+  }
+  res.redirect('/?tab=urunler');
+});
+
+// Ürün düzenle
+router.put('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), async (req, res) => {
+  const { ad, aciklama, aktif } = req.body;
+  if (!ad || !ad.trim()) {
+    req.flash('error', 'Ürün adı zorunlu.');
+    return res.redirect('/?tab=urunler');
+  }
+  try {
+    if (req.file?.location) {
+      await pool.query(
+        'UPDATE urunler SET ad=$1, aciklama=$2, aktif=$3, foto_url=$4 WHERE id=$5 AND firma_id=$6',
+        [ad.trim(), aciklama || null, aktif !== 'false', req.file.location, req.params.id, req.session.firmaId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE urunler SET ad=$1, aciklama=$2, aktif=$3 WHERE id=$4 AND firma_id=$5',
+        [ad.trim(), aciklama || null, aktif !== 'false', req.params.id, req.session.firmaId]
+      );
+    }
+    req.flash('success', 'Ürün güncellendi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Güncellenemedi.');
+  }
+  res.redirect('/?tab=urunler');
+});
+
+// Ürün sil
+router.delete('/urunler/:id', async (req, res) => {
+  try {
+    await pool.query('DELETE FROM urunler WHERE id=$1 AND firma_id=$2', [req.params.id, req.session.firmaId]);
+    req.flash('success', 'Ürün silindi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Silinemedi.');
+  }
+  res.redirect('/?tab=urunler');
+});
+
+// Ürün PDF yükle
+router.post('/urunler/:id/pdf', guvenliUpload(urunPdfUpload, 'pdf', '/?tab=urunler'), async (req, res) => {
+  try {
+    if (req.file?.location) {
+      await pool.query('UPDATE urunler SET pdf_url=$1 WHERE id=$2 AND firma_id=$3', [req.file.location, req.params.id, req.session.firmaId]);
+      req.flash('success', 'Ürün dokümanı yüklendi.');
+    } else {
+      req.flash('error', 'Dosya kaydedilemedi (depolama yapılandırılmamış).');
+    }
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Doküman yüklenemedi.');
+  }
+  res.redirect('/?tab=urunler');
+});
+
+// Ürün sırasını güncelle
+router.put('/urunler/:id/sira', async (req, res) => {
+  try {
+    await pool.query('UPDATE urunler SET sira=$1 WHERE id=$2 AND firma_id=$3', [req.body.sira, req.params.id, req.session.firmaId]);
+    res.redirect('/?tab=urunler');
+  } catch (err) {
+    console.error(err);
+    res.redirect('/?tab=urunler');
   }
 });
 

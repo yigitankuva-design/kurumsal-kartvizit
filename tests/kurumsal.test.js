@@ -465,4 +465,62 @@ describe('Kurumsal panel uçları', () => {
 
     await pool.query('DELETE FROM eczaneler WHERE id = ANY($1)', [[eskiEczane.rows[0].id, hicEczane.rows[0].id]]);
   });
+
+  test('ürün eklenir, listelenir, güncellenir, silinir', async () => {
+    const agent = kurumsalAgent;
+    const ekle = await agent.post('/kurumsal/urunler').send({ ad: 'Test Ürünü', aciklama: 'Açıklama metni' });
+    expect(ekle.statusCode).toBe(302);
+
+    const liste = await pool.query('SELECT * FROM urunler WHERE firma_id = $1', [kurumsalId]);
+    expect(liste.rows.length).toBe(1);
+    expect(liste.rows[0].ad).toBe('Test Ürünü');
+    expect(liste.rows[0].aktif).toBe(true);
+    const urunId = liste.rows[0].id;
+
+    const guncelle = await agent.put(`/kurumsal/urunler/${urunId}`).send({ ad: 'Güncel Ürün', aciklama: 'Yeni açıklama', aktif: 'false' });
+    expect(guncelle.statusCode).toBe(302);
+    const guncelKontrol = await pool.query('SELECT ad, aktif FROM urunler WHERE id = $1', [urunId]);
+    expect(guncelKontrol.rows[0].ad).toBe('Güncel Ürün');
+    expect(guncelKontrol.rows[0].aktif).toBe(false);
+
+    const sil = await agent.delete(`/kurumsal/urunler/${urunId}`);
+    expect(sil.statusCode).toBe(302);
+    const silKontrol = await pool.query('SELECT * FROM urunler WHERE id = $1', [urunId]);
+    expect(silKontrol.rows.length).toBe(0);
+  });
+
+  test('başka firmanın ürünü düzenlenemez/silinemez', async () => {
+    const urunRes = await pool.query(
+      "INSERT INTO urunler (firma_id, ad) VALUES ($1, 'Yabancı Ürün') RETURNING id",
+      [kurumsalId]
+    );
+    const urunId = urunRes.rows[0].id;
+    const digerId = await firmaOlustur('kurumsal', 'k1urundigeri@example.com');
+    const digerAgent = await girisYap('k1urundigeri@example.com');
+
+    await digerAgent.put(`/kurumsal/urunler/${urunId}`).send({ ad: 'HACKLENDI' });
+    const kontrol = await pool.query('SELECT ad FROM urunler WHERE id = $1', [urunId]);
+    expect(kontrol.rows[0].ad).toBe('Yabancı Ürün');
+
+    await digerAgent.delete(`/kurumsal/urunler/${urunId}`);
+    const silKontrol = await pool.query('SELECT * FROM urunler WHERE id = $1', [urunId]);
+    expect(silKontrol.rows.length).toBe(1);
+
+    await pool.query('DELETE FROM urunler WHERE id = $1', [urunId]);
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [digerId]);
+  });
+
+  test('ürün sırası güncellenir', async () => {
+    const a = (await pool.query("INSERT INTO urunler (firma_id, ad, sira) VALUES ($1, 'A', 0) RETURNING id", [kurumsalId])).rows[0].id;
+    const b = (await pool.query("INSERT INTO urunler (firma_id, ad, sira) VALUES ($1, 'B', 1) RETURNING id", [kurumsalId])).rows[0].id;
+
+    await kurumsalAgent.put(`/kurumsal/urunler/${a}/sira`).send({ sira: 1 });
+    await kurumsalAgent.put(`/kurumsal/urunler/${b}/sira`).send({ sira: 0 });
+
+    const kontrol = await pool.query('SELECT id, sira FROM urunler WHERE id = ANY($1) ORDER BY sira', [[a, b]]);
+    expect(kontrol.rows[0].id).toBe(b);
+    expect(kontrol.rows[1].id).toBe(a);
+
+    await pool.query('DELETE FROM urunler WHERE id = ANY($1)', [[a, b]]);
+  });
 });
