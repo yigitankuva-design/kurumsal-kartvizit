@@ -128,6 +128,23 @@ async function migrate() {
     `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS temsilci_notu TEXT`,
     `ALTER TABLE eczaneler DROP COLUMN IF EXISTS yonetici_notu`,
     `ALTER TABLE eczaneler ADD COLUMN IF NOT EXISTS durum TEXT DEFAULT 'aktif'`,
+    `CREATE TABLE IF NOT EXISTS urunler (
+      id          SERIAL PRIMARY KEY,
+      firma_id    INTEGER REFERENCES firmalar(id) ON DELETE CASCADE,
+      ad          TEXT NOT NULL,
+      aciklama    TEXT,
+      foto_url    TEXT,
+      pdf_url     TEXT,
+      sira        INTEGER DEFAULT 0,
+      aktif       BOOLEAN DEFAULT true,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE TABLE IF NOT EXISTS urun_tiklamalar (
+      id          SERIAL PRIMARY KEY,
+      urun_id     INTEGER REFERENCES urunler(id) ON DELETE CASCADE,
+      eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {
