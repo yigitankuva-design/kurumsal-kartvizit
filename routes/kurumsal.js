@@ -410,7 +410,10 @@ router.post('/urunler', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), 
 });
 
 // Ürün düzenle
-router.put('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), async (req, res) => {
+// Ürün düzenleme — hem POST hem PUT (multipart formlarda method-override _method
+// alanını okuyamaz, çünkü express.urlencoded() multipart body'yi parse edemez —
+// panel.js'teki duzenleHandler ile aynı desen)
+async function urunDuzenleHandler(req, res) {
   const { ad, aciklama, aktif } = req.body;
   if (!ad || !ad.trim()) {
     req.flash('error', 'Ürün adı zorunlu.');
@@ -434,7 +437,9 @@ router.put('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'
     req.flash('error', 'Güncellenemedi.');
   }
   res.redirect('/?tab=urunler');
-});
+}
+router.post('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), urunDuzenleHandler);
+router.put('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), urunDuzenleHandler);
 
 // Ürün sil
 router.delete('/urunler/:id', async (req, res) => {

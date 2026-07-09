@@ -235,6 +235,10 @@ app.get('/', async (req, res) => {
       eczaneler = eczanelerResult.rows;
     }
 
+    const urunlerSonuc = firma.paket === 'kurumsal'
+      ? await pool.query('SELECT * FROM urunler WHERE firma_id = $1 ORDER BY sira', [firma.id])
+      : { rows: [] };
+
     let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], tiklamaDagilimiEczaneBazli: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [] };
     if (tab === 'saha' && firma.paket === 'kurumsal') {
       const gunlukResult = await pool.query(
@@ -306,7 +310,7 @@ app.get('/', async (req, res) => {
 
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
-      toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik
+      toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows
     });
   } catch (err) {
     console.error(err);

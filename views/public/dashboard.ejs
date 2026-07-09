@@ -253,9 +253,10 @@
     <a href="/?tab=analytics"  class="dash-tab <%= tab === 'analytics'  ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
     <% if (firma.paket === 'kurumsal') { %>
-    <a href="/?tab=icerik" class="dash-tab <%= tab === 'icerik' ? 'active' : '' %>">İçerik</a>
-    <a href="/?tab=raf"    class="dash-tab <%= tab === 'raf'    ? 'active' : '' %>">Raf Kartları</a>
-    <a href="/?tab=saha"   class="dash-tab <%= tab === 'saha'   ? 'active' : '' %>">Saha İstatistikleri</a>
+    <a href="/?tab=icerik"  class="dash-tab <%= tab === 'icerik'  ? 'active' : '' %>">İçerik</a>
+    <a href="/?tab=urunler" class="dash-tab <%= tab === 'urunler' ? 'active' : '' %>">Ürünler</a>
+    <a href="/?tab=raf"     class="dash-tab <%= tab === 'raf'     ? 'active' : '' %>">Raf Kartları</a>
+    <a href="/?tab=saha"    class="dash-tab <%= tab === 'saha'    ? 'active' : '' %>">Saha İstatistikleri</a>
     <% } %>
   </div>
 
@@ -505,6 +506,79 @@
         <input type="file" name="eczaci_pdf" accept="application/pdf" required>
         <button type="submit">Dokümanı Yükle</button>
       </form>
+    </div>
+
+  <!-- TAB: ÜRÜNLER -->
+  <% } else if (tab === 'urunler' && firma.paket === 'kurumsal') { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:560px">
+      <h3 style="margin-bottom:12px">Yeni Ürün Ekle</h3>
+      <form method="POST" action="/kurumsal/urunler" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px">
+        <input name="ad" placeholder="Ürün adı *" required>
+        <textarea name="aciklama" placeholder="Kısa açıklama" rows="3"></textarea>
+        <input type="file" name="foto" id="urunFotoInput" accept="image/*">
+        <button type="submit">Ekle</button>
+      </form>
+    </div>
+
+    <% if (urunler.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Foto</th><th>Ad</th><th>Durum</th><th>PDF</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <% urunler.forEach(u => { %>
+          <tr>
+            <td><% if (u.foto_url) { %><img src="<%= u.foto_url %>" alt="" style="width:44px;height:44px;border-radius:8px;object-fit:cover"><% } else { %>—<% } %></td>
+            <td class="td-name"><%= u.ad %></td>
+            <td><span class="badge badge-<%= u.aktif ? 'aktif' : 'pasif' %>"><%= u.aktif ? 'Aktif' : 'Pasif' %></span></td>
+            <td>
+              <% if (u.pdf_url) { %><a href="<%= u.pdf_url %>" target="_blank">Görüntüle</a><% } %>
+              <form method="POST" action="/kurumsal/urunler/<%= u.id %>/pdf" enctype="multipart/form-data" style="margin-top:4px">
+                <input type="file" name="pdf" accept="application/pdf" style="max-width:140px">
+                <button type="submit" class="btn btn-sm">Yükle</button>
+              </form>
+            </td>
+            <td>
+              <div class="td-actions">
+                <button class="btn btn-border btn-sm" onclick='urunDuzenleAc(<%- JSON.stringify(u) %>)'>Düzenle</button>
+                <form method="POST" action="/kurumsal/urunler/<%= u.id %>" style="display:inline">
+                  <input type="hidden" name="_method" value="DELETE">
+                  <button type="submit" class="btn btn-danger-sm btn-sm" onclick="return confirm('<%= u.ad %> silinsin mi?')">Sil</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } else { %>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-state-icon">📦</div>
+        <div class="empty-state-title">Henüz ürün yok</div>
+        <div class="empty-state-sub">Eklediğiniz ürünler raf kartı sayfasında görünür</div>
+      </div>
+    </div>
+    <% } %>
+
+    <!-- Ürün Düzenle Modal -->
+    <div id="urunDuzenleModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:60;padding:16px">
+      <div style="background:#fff;border-radius:12px;padding:24px;max-width:420px;width:100%;position:relative">
+        <button type="button" onclick="document.getElementById('urunDuzenleModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer">✕</button>
+        <h3 style="margin-bottom:16px;font-size:16px;font-weight:700">Ürün Düzenle</h3>
+        <form id="urunDuzenleForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px">
+          <input type="hidden" name="_method" value="PUT">
+          <input type="hidden" name="aktif" id="urunDuzenleAktifGizli" value="true">
+          <input id="urunDuzenleAd" name="ad" placeholder="Ürün adı *" required>
+          <textarea id="urunDuzenleAciklama" name="aciklama" placeholder="Kısa açıklama" rows="3"></textarea>
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+            <input type="checkbox" id="urunDuzenleAktifKutu" onchange="document.getElementById('urunDuzenleAktifGizli').value = this.checked ? 'true' : 'false'">
+            Raf kartı sayfasında görünsün
+          </label>
+          <input type="file" name="foto" id="urunDuzenleFotoInput" accept="image/*">
+          <button type="submit">Kaydet</button>
+        </form>
+      </div>
     </div>
 
   <!-- TAB: RAF KARTLARI -->
@@ -982,11 +1056,23 @@
   }
 
   document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSlide(); });
+
+  function urunDuzenleAc(u) {
+    document.getElementById('urunDuzenleForm').action = '/kurumsal/urunler/' + u.id;
+    document.getElementById('urunDuzenleAd').value = u.ad;
+    document.getElementById('urunDuzenleAciklama').value = u.aciklama || '';
+    document.getElementById('urunDuzenleAktifKutu').checked = u.aktif;
+    document.getElementById('urunDuzenleAktifGizli').value = u.aktif ? 'true' : 'false';
+    document.getElementById('urunDuzenleFotoInput').value = '';
+    document.getElementById('urunDuzenleModal').style.display = 'flex';
+  }
 </script>
 <script src="/js/foto-kirpici.js"></script>
 <script>
   fotoKirpiciBaglama('logoInput');
   fotoKirpiciBaglama('f_foto');
+  fotoKirpiciBaglama('urunFotoInput');
+  fotoKirpiciBaglama('urunDuzenleFotoInput');
 </script>
 </body>
 </html>
