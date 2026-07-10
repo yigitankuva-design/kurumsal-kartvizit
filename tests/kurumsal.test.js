@@ -524,4 +524,22 @@ describe('Kurumsal panel uçları', () => {
 
     await pool.query('DELETE FROM urunler WHERE id = ANY($1)', [[a, b]]);
   });
+
+  test('kurumsal firma indirim ayarlarını günceller', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.post('/kurumsal/indirim-ayar').send({ indirim_aktif: 'true', indirim_yuzdesi: '10' });
+    expect(res.statusCode).toBe(302);
+    const f = await pool.query('SELECT indirim_aktif, indirim_yuzdesi FROM firmalar WHERE id = $1', [kurumsalId]);
+    expect(f.rows[0].indirim_aktif).toBe(true);
+    expect(f.rows[0].indirim_yuzdesi).toBe(10);
+  });
+
+  test('geçersiz yüzde (0 veya 101) reddedilir', async () => {
+    const agent = kurumsalAgent;
+    await agent.post('/kurumsal/indirim-ayar').send({ indirim_aktif: 'true', indirim_yuzdesi: '5' });
+    const res = await agent.post('/kurumsal/indirim-ayar').send({ indirim_aktif: 'true', indirim_yuzdesi: '101' });
+    expect(res.statusCode).toBe(302);
+    const f = await pool.query('SELECT indirim_yuzdesi FROM firmalar WHERE id = $1', [kurumsalId]);
+    expect(f.rows[0].indirim_yuzdesi).toBe(5); // değişmedi
+  });
 });

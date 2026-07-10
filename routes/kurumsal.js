@@ -388,6 +388,27 @@ router.get('/eczane/:id/detay', async (req, res) => {
   }
 });
 
+// İndirim kampanyası ayarları
+router.post('/indirim-ayar', async (req, res) => {
+  const { indirim_aktif, indirim_yuzdesi } = req.body;
+  const yuzde = parseInt(indirim_yuzdesi, 10);
+  if (!Number.isInteger(yuzde) || yuzde < 1 || yuzde > 100) {
+    req.flash('error', 'Yüzde 1-100 arasında olmalı.');
+    return res.redirect('/?tab=indirim');
+  }
+  try {
+    await pool.query(
+      'UPDATE firmalar SET indirim_aktif=$1, indirim_yuzdesi=$2 WHERE id=$3',
+      [indirim_aktif === 'true', yuzde, req.session.firmaId]
+    );
+    req.flash('success', 'İndirim ayarları güncellendi.');
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Güncellenemedi.');
+  }
+  res.redirect('/?tab=indirim');
+});
+
 // Ürün ekle
 router.post('/urunler', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'), async (req, res) => {
   const { ad, aciklama } = req.body;
