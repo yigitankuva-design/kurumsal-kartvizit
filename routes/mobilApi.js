@@ -312,6 +312,25 @@ router.get('/ekibim', requireCalisanToken, async (req, res) => {
   }
 });
 
+router.get('/ekibim/:calisanId/ziyaretler', requireCalisanToken, async (req, res) => {
+  try {
+    const gecerli = await amiriGecerliMi(req.calisanId, req.params.calisanId);
+    if (!gecerli) return res.status(403).json({ ok: false, error: 'Bu kişinin ziyaretlerini görüntüleme yetkiniz yok.' });
+
+    const result = await pool.query(
+      `SELECT e.ad AS eczane_adi, z.created_at, z.temsilci_notu, z.lat, z.lng
+       FROM ziyaretler z JOIN eczaneler e ON e.id = z.eczane_id
+       WHERE z.calisan_id = $1
+       ORDER BY z.created_at DESC`,
+      [req.params.calisanId]
+    );
+    res.json({ ok: true, ziyaretler: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 async function tokenSahibiCoz(token) {
   let payload;
   try {

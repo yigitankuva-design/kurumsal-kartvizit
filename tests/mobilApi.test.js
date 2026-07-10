@@ -889,4 +889,30 @@ describe('Mobil API — Ekip / Hiyerarşi', () => {
     expect(kayit).toBeDefined();
     expect(kayit.toplam_ziyaret).toBe(1);
   });
+
+  test('/ekibim/:id/ziyaretler: direkt amiri notu dahil ziyaretleri görür', async () => {
+    const mudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true });
+    const temsilci = await calisanOlustur(firmaId, { amiri_id: mudur.id });
+    const eczane = await eczaneOlustur(firmaId);
+    await pool.query(
+      "INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu, lat, lng) VALUES ($1, $2, 'Gizli not', 41.0, 29.0)",
+      [temsilci.id, eczane.id]
+    );
+
+    const token = calisanTokenUret(mudur.id);
+    const res = await request(app).get(`/api/mobil/ekibim/${temsilci.id}/ziyaretler`).set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ziyaretler[0].temsilci_notu).toBe('Gizli not');
+    expect(res.body.ziyaretler[0].lat).toBe(41.0);
+  });
+
+  test('/ekibim/:id/ziyaretler: dolaylı üst müdür (amirinin amiri) 403 alır', async () => {
+    const ustMudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true });
+    const altMudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true, amiri_id: ustMudur.id });
+    const temsilci = await calisanOlustur(firmaId, { amiri_id: altMudur.id });
+
+    const token = calisanTokenUret(ustMudur.id);
+    const res = await request(app).get(`/api/mobil/ekibim/${temsilci.id}/ziyaretler`).set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(403);
+  });
 });
