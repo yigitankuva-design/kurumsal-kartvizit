@@ -958,4 +958,10 @@ describe('Mobil API — Ekip / Hiyerarşi', () => {
     const kontrol = await pool.query('SELECT lat FROM ziyaretler WHERE calisan_id = $1 ORDER BY id DESC LIMIT 1', [temsilci.id]);
     expect(kontrol.rows[0].lat).toBeNull();
   });
+
+  test('/temsilci-giris: ekipYoneticisi alanını döner', async () => {
+    await calisanOlustur(firmaId, { ekip_yoneticisi: true, giris_email: 'ekipyon@example.com', giris_sifre: 'test1234' });
+    const res = await request(app).post('/api/mobil/temsilci-giris').send({ giris_email: 'ekipyon@example.com', sifre: 'test1234' });
+    expect(res.body.calisan.ekipYoneticisi).toBe(true);
+  });
 });

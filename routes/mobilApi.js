@@ -80,7 +80,7 @@ router.post('/temsilci-giris', temsilciGirisLimiter, async (req, res) => {
       return res.status(401).json({ ok: false, error: 'Giriş e-postası veya şifre hatalı.' });
     }
     const token = calisanTokenUret(calisan.id);
-    res.json({ ok: true, token, calisan: { id: calisan.id, ad: calisan.ad, soyad: calisan.soyad, firmaId: calisan.firma_id } });
+    res.json({ ok: true, token, calisan: { id: calisan.id, ad: calisan.ad, soyad: calisan.soyad, firmaId: calisan.firma_id, ekipYoneticisi: calisan.ekip_yoneticisi } });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
