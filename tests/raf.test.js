@@ -140,4 +140,35 @@ describe('Raf kartı public sayfası', () => {
 
     await pool.query('DELETE FROM firmalar WHERE id = $1', [digerFirma.rows[0].id]);
   });
+
+  describe('İndirim kodu alma', () => {
+    test('kampanya kapalıyken 403 döner', async () => {
+      await pool.query('UPDATE firmalar SET indirim_aktif = false WHERE id = $1', [firmaId]);
+      const res = await request(app).post(`/raf/${kod}/indirim-kodu-al`);
+      expect(res.statusCode).toBe(403);
+      expect(res.body.ok).toBe(false);
+    });
+
+    test('kampanya açıkken 6 haneli kod üretir', async () => {
+      await pool.query('UPDATE firmalar SET indirim_aktif = true, indirim_yuzdesi = 5 WHERE id = $1', [firmaId]);
+      const res = await request(app).post(`/raf/${kod}/indirim-kodu-al`);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.kod).toMatch(/^[0-9]{6}$/);
+      expect(res.body.yuzde).toBe(5);
+    });
+
+    test('aynı tarayıcı (cookie) tekrar istek attığında aynı kod döner', async () => {
+      const agent = request.agent(app);
+      const ilk = await agent.post(`/raf/${kod}/indirim-kodu-al`);
+      const ikinci = await agent.post(`/raf/${kod}/indirim-kodu-al`);
+      expect(ikinci.body.kod).toBe(ilk.body.kod);
+    });
+
+    test('farklı tarayıcılar (cookie yok) farklı kod alır', async () => {
+      const birinci = await request(app).post(`/raf/${kod}/indirim-kodu-al`);
+      const ikinci = await request(app).post(`/raf/${kod}/indirim-kodu-al`);
+      expect(birinci.body.kod).not.toBe(ikinci.body.kod);
+    });
+  });
 });

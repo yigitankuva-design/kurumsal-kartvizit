@@ -6,6 +6,8 @@ const { cevirmenOlustur } = require('../utils/i18n');
 const { youtubeIdCikar } = require('../utils/youtube');
 const { instagramLinkOlustur, twitterLinkOlustur, tiktokLinkOlustur, urlNormallestir, youtubeLinkOlustur } = require('../utils/sosyalMedya');
 const { ipHashOlustur } = require('../utils/ipHash');
+const { benzersizIndirimKoduUret } = require('../utils/indirimKod');
+const { createJsonLimiter } = require('../middleware/rateLimiter');
 
 const RAF_TIKLAMA_TIPLERI = ['katalog', 'website', 'instagram', 'linkedin', 'twitter', 'youtube', 'tiktok', 'whatsapp'];
 
@@ -13,7 +15,8 @@ async function eczaneGetir(kod) {
   const result = await pool.query(
     `SELECT e.id as eczane_id, e.ad as eczane_ad, e.kod,
             f.ad as firma_ad, f.logo_url, f.marka_rengi, f.katalog_url,
-            f.website, f.instagram, f.linkedin, f.twitter, f.youtube, f.tiktok, f.whatsapp
+            f.website, f.instagram, f.linkedin, f.twitter, f.youtube, f.tiktok, f.whatsapp,
+            f.indirim_aktif, f.indirim_yuzdesi
      FROM eczaneler e JOIN firmalar f ON f.id = e.firma_id
      WHERE e.kod = $1`,
     [kod]
@@ -97,6 +100,42 @@ router.get('/raf/:kod/urun/:urunId/tikla', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send('Bir hata oluştu.');
+  }
+});
+
+// İndirim kodu al — günde/eczane başına cookie ile tekilleştirilir
+router.post('/raf/:kod/indirim-kodu-al', createJsonLimiter('Çok fazla istek. Lütfen biraz sonra tekrar deneyin.'), async (req, res) => {
+  try {
+    const veri = await eczaneGetir(req.params.kod);
+    if (!veri) return res.status(404).json({ ok: false, error: 'Bulunamadı.' });
+    if (!veri.indirim_aktif) return res.status(403).json({ ok: false, error: 'İndirim kampanyası aktif değil.' });
+
+    let cerezId = req.cookies?.indirim_cerez_id;
+    if (!cerezId) {
+      cerezId = require('crypto').randomBytes(16).toString('hex');
+      res.cookie('indirim_cerez_id', cerezId, { maxAge: 365 * 24 * 60 * 60 * 1000, httpOnly: true, sameSite: 'lax' });
+    }
+
+    const mevcut = await pool.query(
+      `SELECT kod, yuzde FROM indirim_kodlari
+       WHERE eczane_id = $1 AND cerez_id = $2 AND olusturulma_tarihi::date = CURRENT_DATE
+       ORDER BY id DESC LIMIT 1`,
+      [veri.eczane_id, cerezId]
+    );
+    if (mevcut.rows.length) {
+      return res.json({ ok: true, kod: mevcut.rows[0].kod, yuzde: mevcut.rows[0].yuzde });
+    }
+
+    const firmaIdSonuc = await pool.query('SELECT firma_id FROM eczaneler WHERE id = $1', [veri.eczane_id]);
+    const yeniKod = await benzersizIndirimKoduUret();
+    await pool.query(
+      'INSERT INTO indirim_kodlari (firma_id, eczane_id, kod, yuzde, cerez_id) VALUES ($1, $2, $3, $4, $5)',
+      [firmaIdSonuc.rows[0].firma_id, veri.eczane_id, yeniKod, veri.indirim_yuzdesi, cerezId]
+    );
+    res.json({ ok: true, kod: yeniKod, yuzde: veri.indirim_yuzdesi });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Bir hata oluştu.' });
   }
 });
 
