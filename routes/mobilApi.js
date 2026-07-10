@@ -217,7 +217,7 @@ router.post('/profil-olustur', requireBayiToken, mobilProfilLimiter, fotoUploadG
 });
 
 router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (req, res) => {
-  const { eczane_kod, not } = req.body;
+  const { eczane_kod, not, lat, lng } = req.body;
   if (!eczane_kod) {
     return res.status(400).json({ ok: false, error: 'Eczane kodu zorunlu.' });
   }
@@ -234,9 +234,11 @@ router.post('/ziyaret-kaydet', requireCalisanToken, mobilProfilLimiter, async (r
     if (eczane.firma_id !== calisanResult.rows[0].firma_id) {
       return res.status(403).json({ ok: false, error: 'Bu eczaneye ziyaret kaydedemezsiniz.' });
     }
+    const latSayi = lat !== undefined && lat !== null && lat !== '' ? Number(lat) : null;
+    const lngSayi = lng !== undefined && lng !== null && lng !== '' ? Number(lng) : null;
     await pool.query(
-      'INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, $3)',
-      [req.calisanId, eczane.id, not?.trim() || null]
+      'INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu, lat, lng) VALUES ($1, $2, $3, $4, $5)',
+      [req.calisanId, eczane.id, not?.trim() || null, latSayi, lngSayi]
     );
     res.status(201).json({ ok: true, eczaneAdi: eczane.ad });
   } catch (err) {

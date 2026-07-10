@@ -929,4 +929,33 @@ describe('Mobil API — Ekip / Hiyerarşi', () => {
     expect(res.body.bugunki_ziyaret_sayisi).toBe(1);
     expect(res.body.ziyaret_yapmayan_sayisi).toBe(1);
   });
+
+  test('ziyaret-kaydet: lat/lng gönderilirse kaydedilir', async () => {
+    const temsilci = await calisanOlustur(firmaId, { giris_email: 'lattest@example.com' });
+    const eczane = await eczaneOlustur(firmaId);
+    const token = calisanTokenUret(temsilci.id);
+
+    const res = await request(app).post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: eczane.kod, lat: '41.015137', lng: '28.979530' });
+
+    expect(res.statusCode).toBe(201);
+    const kontrol = await pool.query('SELECT lat, lng FROM ziyaretler WHERE calisan_id = $1 ORDER BY id DESC LIMIT 1', [temsilci.id]);
+    expect(Number(kontrol.rows[0].lat)).toBeCloseTo(41.015137);
+    expect(Number(kontrol.rows[0].lng)).toBeCloseTo(28.979530);
+  });
+
+  test('ziyaret-kaydet: lat/lng gönderilmezse null kaydedilir, ziyaret yine kaydedilir', async () => {
+    const temsilci = await calisanOlustur(firmaId, { giris_email: 'nolattest@example.com' });
+    const eczane = await eczaneOlustur(firmaId);
+    const token = calisanTokenUret(temsilci.id);
+
+    const res = await request(app).post('/api/mobil/ziyaret-kaydet')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ eczane_kod: eczane.kod });
+
+    expect(res.statusCode).toBe(201);
+    const kontrol = await pool.query('SELECT lat FROM ziyaretler WHERE calisan_id = $1 ORDER BY id DESC LIMIT 1', [temsilci.id]);
+    expect(kontrol.rows[0].lat).toBeNull();
+  });
 });
