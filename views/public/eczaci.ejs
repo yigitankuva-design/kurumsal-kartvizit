@@ -53,6 +53,13 @@
           <a class="btn" href="/eczaci/<%= eczaciKod %>/tikla/pdf" target="_blank">📄 Eğitim Dokümanını Aç (PDF)</a>
         <% } %>
       <% } %>
+      <div class="baslik" style="margin-top:4px">İndirim Kodu Doğrula</div>
+      <div style="display:flex;gap:8px">
+        <input id="indirimKoduInput" type="text" maxlength="6" placeholder="6 haneli kod"
+               style="flex:1;padding:12px;border-radius:10px;border:1px solid #e5e7eb;font-size:16px;letter-spacing:2px;text-align:center">
+        <button class="btn" type="button" onclick="indirimDogrula()" style="width:auto;padding:12px 18px">Doğrula</button>
+      </div>
+      <div id="indirim-dogrula-sonuc" style="display:none;font-size:13px;text-align:center;font-weight:600"></div>
       <button class="btn-qr" onclick="document.getElementById('qr-modal').classList.add('aktif')">
         📱 QR Kodu Göster
       </button>
@@ -71,5 +78,33 @@
       </a>
     </div>
   </div>
+  <script>
+    function indirimDogrula() {
+      const kod = document.getElementById('indirimKoduInput').value.trim();
+      const sonucDiv = document.getElementById('indirim-dogrula-sonuc');
+      sonucDiv.style.display = 'block';
+      sonucDiv.style.color = '#374151';
+      sonucDiv.textContent = 'Kontrol ediliyor...';
+      fetch('/eczaci/<%= eczaciKod %>/indirim-dogrula', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kod })
+      })
+        .then(res => res.json())
+        .then(govde => {
+          if (govde.ok) {
+            sonucDiv.style.color = '#16a34a';
+            sonucDiv.textContent = '✓ Onaylandı — %' + govde.yuzde + ' indirim uygulayabilirsiniz.';
+          } else {
+            sonucDiv.style.color = '#dc2626';
+            sonucDiv.textContent = govde.error;
+          }
+        })
+        .catch(() => {
+          sonucDiv.style.color = '#dc2626';
+          sonucDiv.textContent = 'Bağlantı hatası.';
+        });
+    }
+  </script>
 </body>
 </html>
