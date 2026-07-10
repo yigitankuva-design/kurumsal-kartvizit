@@ -331,6 +331,37 @@ router.get('/ekibim/:calisanId/ziyaretler', requireCalisanToken, async (req, res
   }
 });
 
+router.get('/ekip-ozeti', requireCalisanToken, async (req, res) => {
+  try {
+    const kontrol = await pool.query('SELECT ekip_yoneticisi FROM calisanlar WHERE id = $1', [req.calisanId]);
+    if (!kontrol.rows.length) return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
+    if (!kontrol.rows[0].ekip_yoneticisi) return res.status(403).json({ ok: false, error: 'Yetkiniz yok.' });
+
+    const altIdler = await calisanAltZinciriIdleri(req.calisanId);
+    if (!altIdler.length) return res.json({ ok: true, bugunki_ziyaret_sayisi: 0, ziyaret_yapmayan_sayisi: 0 });
+
+    const bugunkuSonuc = await pool.query(
+      `SELECT COUNT(*) AS sayi FROM ziyaretler WHERE calisan_id = ANY($1) AND created_at >= CURRENT_DATE`,
+      [altIdler]
+    );
+    const yapmayanSonuc = await pool.query(
+      `SELECT COUNT(*) AS sayi FROM calisanlar
+       WHERE id = ANY($1) AND id NOT IN (
+         SELECT DISTINCT calisan_id FROM ziyaretler WHERE calisan_id = ANY($1) AND created_at >= CURRENT_DATE
+       )`,
+      [altIdler]
+    );
+    res.json({
+      ok: true,
+      bugunki_ziyaret_sayisi: Number(bugunkuSonuc.rows[0].sayi),
+      ziyaret_yapmayan_sayisi: Number(yapmayanSonuc.rows[0].sayi),
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 async function tokenSahibiCoz(token) {
   let payload;
   try {

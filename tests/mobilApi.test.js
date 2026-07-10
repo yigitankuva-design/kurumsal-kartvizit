@@ -915,4 +915,18 @@ describe('Mobil API — Ekip / Hiyerarşi', () => {
     const res = await request(app).get(`/api/mobil/ekibim/${temsilci.id}/ziyaretler`).set('Authorization', `Bearer ${token}`);
     expect(res.statusCode).toBe(403);
   });
+
+  test('/ekip-ozeti: bugünkü toplam ziyaret ve sıfır ziyaretli temsilci sayısını döner', async () => {
+    const mudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true });
+    const aktifTemsilci = await calisanOlustur(firmaId, { amiri_id: mudur.id });
+    const pasifTemsilci = await calisanOlustur(firmaId, { amiri_id: mudur.id });
+    const eczane = await eczaneOlustur(firmaId);
+    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [aktifTemsilci.id, eczane.id]);
+
+    const token = calisanTokenUret(mudur.id);
+    const res = await request(app).get('/api/mobil/ekip-ozeti').set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.bugunki_ziyaret_sayisi).toBe(1);
+    expect(res.body.ziyaret_yapmayan_sayisi).toBe(1);
+  });
 });
