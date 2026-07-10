@@ -241,6 +241,29 @@ app.get('/', async (req, res) => {
       ? await pool.query('SELECT * FROM urunler WHERE firma_id = $1 ORDER BY sira', [firma.id])
       : { rows: [] };
 
+    let indirimIstatistik = { toplamUretilen: 0, toplamKullanilan: 0, eczaneBazli: [] };
+    if (tab === 'indirim' && firma.paket === 'kurumsal') {
+      const toplamResult = await pool.query(
+        `SELECT COUNT(*) AS uretilen, COUNT(*) FILTER (WHERE kullanildi) AS kullanilan
+         FROM indirim_kodlari WHERE firma_id = $1`,
+        [req.session.firmaId]
+      );
+      const eczaneBazliResult = await pool.query(
+        `SELECT e.ad, COUNT(*) FILTER (WHERE i.kullanildi) AS kullanilan_sayi
+         FROM indirim_kodlari i JOIN eczaneler e ON e.id = i.eczane_id
+         WHERE i.firma_id = $1
+         GROUP BY e.id, e.ad
+         HAVING COUNT(*) FILTER (WHERE i.kullanildi) > 0
+         ORDER BY kullanilan_sayi DESC`,
+        [req.session.firmaId]
+      );
+      indirimIstatistik = {
+        toplamUretilen: Number(toplamResult.rows[0].uretilen),
+        toplamKullanilan: Number(toplamResult.rows[0].kullanilan),
+        eczaneBazli: eczaneBazliResult.rows.map(r => ({ ad: r.ad, kullanilanSayi: Number(r.kullanilan_sayi) })),
+      };
+    }
+
     let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], tiklamaDagilimiEczaneBazli: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [] };
     if (tab === 'saha' && firma.paket === 'kurumsal') {
       const gunlukResult = await pool.query(
@@ -312,7 +335,8 @@ app.get('/', async (req, res) => {
 
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
-      toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows
+      toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
+      indirimIstatistik
     });
   } catch (err) {
     console.error(err);
