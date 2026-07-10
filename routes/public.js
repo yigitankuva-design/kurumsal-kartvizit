@@ -186,6 +186,43 @@ router.get('/eczaci/:kod', async (req, res) => {
   }
 });
 
+// İndirim kodu doğrula — eczacı kendi eczacı sayfasında kodu girer
+router.post('/eczaci/:kod/indirim-dogrula', createJsonLimiter('Çok fazla deneme yaptınız. Lütfen biraz sonra tekrar deneyin.'), async (req, res) => {
+  const kod = (req.body.kod || '').trim();
+  try {
+    const eczaneSonuc = await pool.query('SELECT id AS eczane_id FROM eczaneler WHERE eczaci_kod = $1', [req.params.kod]);
+    if (!eczaneSonuc.rows.length) return res.status(404).json({ ok: false, error: 'Eczane bulunamadı.' });
+    const eczaneId = eczaneSonuc.rows[0].eczane_id;
+
+    if (!kod) return res.status(400).json({ ok: false, error: 'Kod girilmedi.' });
+
+    const guncelleme = await pool.query(
+      `UPDATE indirim_kodlari
+       SET kullanildi = true, kullanilma_tarihi = NOW()
+       WHERE kod = $1 AND eczane_id = $2 AND kullanildi = false AND olusturulma_tarihi::date = CURRENT_DATE
+       RETURNING yuzde`,
+      [kod, eczaneId]
+    );
+    if (guncelleme.rows.length) {
+      return res.json({ ok: true, yuzde: guncelleme.rows[0].yuzde });
+    }
+
+    const mevcut = await pool.query(
+      `SELECT eczane_id, kullanildi, (olusturulma_tarihi::date = CURRENT_DATE) AS bugun
+       FROM indirim_kodlari WHERE kod = $1`,
+      [kod]
+    );
+    if (!mevcut.rows.length) return res.status(404).json({ ok: false, error: 'Kod geçersiz.' });
+    const satir = mevcut.rows[0];
+    if (satir.eczane_id !== eczaneId) return res.status(403).json({ ok: false, error: 'Bu kod bu eczaneye ait değil.' });
+    if (!satir.bugun) return res.status(410).json({ ok: false, error: 'Bu kodun süresi dolmuş.' });
+    return res.status(409).json({ ok: false, error: 'Bu kod zaten kullanılmış.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Bir hata oluştu.' });
+  }
+});
+
 async function profilGetir(firmaSlug, calisanSlug, bayiSlug = null) {
   let query, params;
 

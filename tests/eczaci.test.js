@@ -88,4 +88,65 @@ describe('Eczacı kartı public sayfası', () => {
     expect(res.text).toContain('İçerik henüz eklenmedi.');
     await pool.query('DELETE FROM firmalar WHERE id = $1', [bosFirma.rows[0].id]);
   });
+
+  describe('İndirim kodu doğrulama', () => {
+    async function kodOlustur(eId, fId, yuzde = 5) {
+      const r = await pool.query(
+        `INSERT INTO indirim_kodlari (firma_id, eczane_id, kod, yuzde, cerez_id)
+         VALUES ($1, $2, $3, $4, 'test-cerez') RETURNING kod`,
+        [fId, eId, String(Math.floor(100000 + Math.random() * 900000)), yuzde]
+      );
+      return r.rows[0].kod;
+    }
+
+    test('geçerli kod onaylanır ve kullanıldı işaretlenir', async () => {
+      const kod = await kodOlustur(eczaneId, firmaId, 5);
+      const res = await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod });
+      expect(res.statusCode).toBe(200);
+      expect(res.body.ok).toBe(true);
+      expect(res.body.yuzde).toBe(5);
+      const satir = await pool.query('SELECT kullanildi FROM indirim_kodlari WHERE kod = $1', [kod]);
+      expect(satir.rows[0].kullanildi).toBe(true);
+    });
+
+    test('zaten kullanılmış kod reddedilir', async () => {
+      const kod = await kodOlustur(eczaneId, firmaId, 5);
+      await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod });
+      const res = await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod });
+      expect(res.statusCode).toBe(409);
+      expect(res.body.ok).toBe(false);
+    });
+
+    test('başka eczanenin kodu reddedilir', async () => {
+      const basHash = await bcrypt.hash('x', 4);
+      const basFirma = await pool.query(
+        `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+         VALUES ('Baska Firma Indirim', 'baska-firma-indirim', 'baskaindirim@example.com', $1, 'kurumsal') RETURNING id`,
+        [basHash]
+      );
+      const basEczane = await pool.query(
+        `INSERT INTO eczaneler (firma_id, ad, kod, eczaci_kod) VALUES ($1, 'Baska Eczane', 'baskaraf1', 'baskaeczaci1') RETURNING id`,
+        [basFirma.rows[0].id]
+      );
+      const kod = await kodOlustur(basEczane.rows[0].id, basFirma.rows[0].id, 5);
+      const res = await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod });
+      expect(res.statusCode).toBe(403);
+      await pool.query('DELETE FROM firmalar WHERE id = $1', [basFirma.rows[0].id]);
+    });
+
+    test('süresi dolmuş (dünkü) kod reddedilir', async () => {
+      const kod = await kodOlustur(eczaneId, firmaId, 5);
+      await pool.query(
+        "UPDATE indirim_kodlari SET olusturulma_tarihi = NOW() - INTERVAL '1 day' WHERE kod = $1",
+        [kod]
+      );
+      const res = await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod });
+      expect(res.statusCode).toBe(410);
+    });
+
+    test('olmayan kod reddedilir', async () => {
+      const res = await request(app).post(`/eczaci/${eczaciKod}/indirim-dogrula`).send({ kod: '000000' });
+      expect(res.statusCode).toBe(404);
+    });
+  });
 });
