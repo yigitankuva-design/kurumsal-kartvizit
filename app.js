@@ -6,6 +6,7 @@ const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const ejsLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
@@ -37,6 +38,7 @@ app.set('layout', 'layout');
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(cookieParser());
 app.use(methodOverride((req) => {
   if (req.body && typeof req.body === 'object' && '_method' in req.body) {
     const method = req.body._method;
