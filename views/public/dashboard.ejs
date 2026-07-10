@@ -837,6 +837,21 @@
             <label>Giriş Şifresi</label>
             <input type="password" name="giris_sifre" id="f_giris_sifre" placeholder="Boş bırakılırsa değişmez">
           </div>
+          <div class="field">
+            <label>Bağlı Olduğu Yönetici</label>
+            <select name="amiri_id" id="f_amiri_id">
+              <option value="">— Doğrudan firma sahibine bağlı —</option>
+              <% calisanlar.forEach(diger => { %>
+                <option value="<%= diger.id %>" data-calisan-id="<%= diger.id %>"><%= diger.ad %> <%= diger.soyad %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="field">
+            <label style="display:flex;align-items:center;gap:6px">
+              <input type="checkbox" name="ekip_yoneticisi" id="f_ekip_yoneticisi" value="true" style="width:auto">
+              Ekip yöneticisi (kendine bağlı ekibi mobilde görebilir)
+            </label>
+          </div>
           <% } %>
 
           <hr class="field-sep">
@@ -1022,6 +1037,16 @@
     document.getElementById('f_kvkk').required = false;
     fillForm(c);
     document.getElementById('f_foto').value = '';
+    const amiriSelect = document.getElementById('f_amiri_id');
+    if (amiriSelect) {
+      // kendisini seçenekler arasından gizle (kendine bağlı olamaz)
+      Array.from(amiriSelect.options).forEach(opt => {
+        opt.style.display = opt.value === String(c.id) ? 'none' : '';
+      });
+      amiriSelect.value = c.amiri_id || '';
+    }
+    const ekipKutu = document.getElementById('f_ekip_yoneticisi');
+    if (ekipKutu) ekipKutu.checked = !!c.ekip_yoneticisi;
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
@@ -1040,11 +1065,13 @@
   }
 
   function clearForm() {
-    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi','foto','giris_email','giris_sifre'].forEach(f => {
+    ['ad','soyad','unvan','departman','telefon','email','linkedin','instagram','twitter','website','biyografi','foto','giris_email','giris_sifre','amiri_id'].forEach(f => {
       const el = document.getElementById('f_' + f);
       if (el) el.value = '';
     });
     document.getElementById('f_kvkk').checked = false;
+    const ekipKutu = document.getElementById('f_ekip_yoneticisi');
+    if (ekipKutu) ekipKutu.checked = false;
   }
 
   function fillForm(c) {
