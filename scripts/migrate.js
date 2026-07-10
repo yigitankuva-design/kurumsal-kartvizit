@@ -145,6 +145,10 @@ async function migrate() {
       eczane_id   INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS amiri_id INTEGER REFERENCES calisanlar(id) ON DELETE SET NULL`,
+    `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS ekip_yoneticisi BOOLEAN DEFAULT false`,
+    `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION`,
+    `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION`,
   ];
 
   for (const sql of migrations) {
