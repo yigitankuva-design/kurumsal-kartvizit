@@ -8,6 +8,7 @@ const multer = require('multer');
 const { excelParse } = require('../utils/excel');
 const { uploadMiddleware } = require('../middleware/upload');
 const { biyografiTemizle } = require('../utils/sanitize');
+const { calisanAltZinciriIdleri } = require('../utils/hiyerarsi');
 
 const fotoUpload = uploadMiddleware('calisanlar');
 
@@ -160,7 +161,7 @@ router.get('/:id/duzenle', async (req, res) => {
 
 // Çalışan düzenleme — hem POST hem PUT (slide-in panel PUT kullanır)
 async function duzenleHandler(req, res) {
-  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, giris_email, giris_sifre } = req.body;
+  const { ad, soyad, unvan, departman, telefon, email, linkedin, instagram, twitter, youtube, website, whatsapp, tiktok, sahibinden, hurriyet_emlak, adres, google_yorum_link, biyografi, ilaclar, giris_email, giris_sifre, amiri_id, ekip_yoneticisi } = req.body;
   if (!ad || !soyad) {
     req.flash('error', 'Ad ve soyad zorunlu.');
     return res.redirect('/');
@@ -212,6 +213,23 @@ async function duzenleHandler(req, res) {
         [girisEmailDeger, req.params.id, req.session.firmaId]
       );
     }
+
+    const amiriIdDeger = amiri_id && amiri_id.trim() ? Number(amiri_id) : null;
+    if (amiriIdDeger !== null) {
+      if (amiriIdDeger === Number(req.params.id)) {
+        req.flash('error', 'Bir kişi kendi amiri olamaz.');
+        return res.redirect('/');
+      }
+      const altZincir = await calisanAltZinciriIdleri(req.params.id);
+      if (altZincir.includes(amiriIdDeger)) {
+        req.flash('error', 'Bu kişi zaten bu zincirde — döngü oluşur.');
+        return res.redirect('/');
+      }
+    }
+    await pool.query(
+      'UPDATE calisanlar SET amiri_id=$1, ekip_yoneticisi=$2 WHERE id=$3 AND firma_id=$4',
+      [amiriIdDeger, ekip_yoneticisi === 'true', req.params.id, req.session.firmaId]
+    );
 
     req.flash('success', 'Çalışan güncellendi.');
     res.redirect('/');

@@ -176,4 +176,39 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(res.text).toContain('Fotoğraf Ekle');
     await pool.query('DELETE FROM calisanlar WHERE id = ANY($1)', [[fotosuz.rows[0].id, fotolu.rows[0].id]]);
   });
+
+  test('çalışana amiri ve ekip yöneticisi ataması yapılabilir', async () => {
+    const mudur = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1,'Test','Müdür','test-mudur-ptest') RETURNING id",
+      [firmaId]
+    )).rows[0].id;
+    const temsilci = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1,'Test','Temsilci','test-temsilci-ptest') RETURNING id",
+      [firmaId]
+    )).rows[0].id;
+
+    await agent.put(`/firma/panel/${mudur}/duzenle`).send({ ad: 'Test', soyad: 'Müdür', ekip_yoneticisi: 'true' });
+    await agent.put(`/firma/panel/${temsilci}/duzenle`).send({ ad: 'Test', soyad: 'Temsilci', amiri_id: String(mudur) });
+
+    const kontrol = await pool.query('SELECT amiri_id, ekip_yoneticisi FROM calisanlar WHERE id = ANY($1) ORDER BY id', [[mudur, temsilci]]);
+    expect(kontrol.rows.find(r => r.amiri_id === null).ekip_yoneticisi).toBe(true);
+
+    const temsilciKontrol = await pool.query('SELECT amiri_id FROM calisanlar WHERE id = $1', [temsilci]);
+    expect(temsilciKontrol.rows[0].amiri_id).toBe(mudur);
+
+    await pool.query('DELETE FROM calisanlar WHERE id = ANY($1)', [[mudur, temsilci]]);
+  });
+
+  test('döngü oluşturacak amiri ataması reddedilir', async () => {
+    const a = (await pool.query("INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1,'A','Kisi','a-kisi-ptest') RETURNING id", [firmaId])).rows[0].id;
+    const b = (await pool.query("INSERT INTO calisanlar (firma_id, ad, soyad, slug, amiri_id) VALUES ($1,'B','Kisi','b-kisi-ptest',$2) RETURNING id", [firmaId, a])).rows[0].id;
+
+    const res = await agent.put(`/firma/panel/${a}/duzenle`).send({ ad: 'A', soyad: 'Kisi', amiri_id: String(b) });
+    expect(res.statusCode).toBe(302);
+
+    const kontrol = await pool.query('SELECT amiri_id FROM calisanlar WHERE id = $1', [a]);
+    expect(kontrol.rows[0].amiri_id).toBeNull();
+
+    await pool.query('DELETE FROM calisanlar WHERE id = ANY($1)', [[a, b]]);
+  });
 });
