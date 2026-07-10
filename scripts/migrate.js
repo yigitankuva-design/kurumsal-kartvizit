@@ -149,6 +149,19 @@ async function migrate() {
     `ALTER TABLE calisanlar ADD COLUMN IF NOT EXISTS ekip_yoneticisi BOOLEAN DEFAULT false`,
     `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION`,
     `ALTER TABLE ziyaretler ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION`,
+    `CREATE TABLE IF NOT EXISTS indirim_kodlari (
+      id                  SERIAL PRIMARY KEY,
+      firma_id            INTEGER REFERENCES firmalar(id) ON DELETE CASCADE,
+      eczane_id           INTEGER REFERENCES eczaneler(id) ON DELETE CASCADE,
+      kod                 TEXT UNIQUE NOT NULL,
+      yuzde               INTEGER NOT NULL,
+      cerez_id            TEXT NOT NULL,
+      kullanildi          BOOLEAN DEFAULT false,
+      olusturulma_tarihi  TIMESTAMP DEFAULT NOW(),
+      kullanilma_tarihi   TIMESTAMP
+    )`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS indirim_aktif BOOLEAN DEFAULT false`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS indirim_yuzdesi INTEGER DEFAULT 5`,
   ];
 
   for (const sql of migrations) {
