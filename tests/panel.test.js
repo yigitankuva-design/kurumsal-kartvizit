@@ -211,4 +211,25 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
 
     await pool.query('DELETE FROM calisanlar WHERE id = ANY($1)', [[a, b]]);
   });
+
+  test('saha istatistikleri sayfası temsilci_notu içeriğini firma sahibine göstermez', async () => {
+    const calisan = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Not', 'Test', $2) RETURNING id",
+      [firmaId, `not-test-calisan-${Date.now()}`]
+    )).rows[0].id;
+    const eczane = (await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Not Test Eczanesi', $2) RETURNING id",
+      [firmaId, `notkod${Date.now() % 100000}`]
+    )).rows[0].id;
+    await pool.query(
+      "INSERT INTO ziyaretler (calisan_id, eczane_id, temsilci_notu) VALUES ($1, $2, 'GİZLİ-NOT-İÇERİĞİ')",
+      [calisan, eczane]
+    );
+    const res = await agent.get('/?tab=saha');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).not.toContain('GİZLİ-NOT-İÇERİĞİ');
+
+    await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczane]);
+  });
 });

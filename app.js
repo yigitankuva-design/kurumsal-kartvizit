@@ -287,7 +287,7 @@ app.get('/', async (req, res) => {
         [req.session.firmaId]
       );
       const notlarResult = await pool.query(
-        `SELECT c.ad, c.soyad, e.ad AS eczane_ad, z.temsilci_notu, z.created_at
+        `SELECT c.ad, c.soyad, e.ad AS eczane_ad, z.created_at
          FROM ziyaretler z
          JOIN calisanlar c ON c.id = z.calisan_id
          JOIN eczaneler e ON e.id = z.eczane_id
@@ -303,7 +303,7 @@ app.get('/', async (req, res) => {
         tiklamaDagilimiEczaneBazli: tiklamaEczaneBazliResult.rows.map(r => ({ eczaneAd: r.eczane_ad, tip: r.tip, sayi: Number(r.sayi) })),
         ziyaretEdilmeyenEczaneler: ziyaretEdilmeyenResult.rows.map(r => ({ ad: r.ad, sonZiyaret: r.son_ziyaret })),
         ziyaretNotlari: notlarResult.rows.map(r => ({
-          ad: r.ad, soyad: r.soyad, eczaneAd: r.eczane_ad, not: r.temsilci_notu, tarih: r.created_at
+          ad: r.ad, soyad: r.soyad, eczaneAd: r.eczane_ad, notVarMi: true, tarih: r.created_at
         })),
       };
     }

@@ -158,7 +158,8 @@ describe('Kurumsal panel uçları', () => {
     expect(res.text).toContain('chartGunluk');
     expect(res.text).not.toContain('Henüz veri yok');
     expect(res.text).toContain('Temsilci Ziyaret Notları');
-    expect(res.text).toContain('Eczacı stok yetersiz olduğunu söyledi');
+    // Not içeriği artık firma sahibine gösterilmiyor (sadece not olduğu bilgisi) — bkz. Hiyerarsi T9
+    expect(res.text).not.toContain('Eczacı stok yetersiz olduğunu söyledi');
   });
 
   test('İçerik Tıklama Dağılımı eczane bazlı detay tablosu gösterir', async () => {
