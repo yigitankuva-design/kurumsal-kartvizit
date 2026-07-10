@@ -6,6 +6,7 @@ const { bayiTokenUret, calisanTokenUret, firmaTokenUret, firmaTokenDogrula } = r
 const { createJsonLimiter } = require('../middleware/rateLimiter');
 const { requireBayiToken, requireCalisanToken, requireFirmaToken } = require('../middleware/tokenAuth');
 const { uploadMiddleware } = require('../middleware/upload');
+const { calisanAltZinciriIdleri, amiriGecerliMi } = require('../utils/hiyerarsi');
 const {
   profilOlustur,
   GecersizProfilHatasi,
@@ -271,6 +272,40 @@ router.get('/eczanelerim', requireCalisanToken, async (req, res) => {
       [calisanResult.rows[0].firma_id]
     );
     res.json({ ok: true, eczaneler: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
+router.get('/ekibim', requireCalisanToken, async (req, res) => {
+  try {
+    const kontrol = await pool.query('SELECT ekip_yoneticisi FROM calisanlar WHERE id = $1', [req.calisanId]);
+    if (!kontrol.rows.length) return res.status(401).json({ ok: false, error: 'Çalışan bulunamadı.' });
+    if (!kontrol.rows[0].ekip_yoneticisi) return res.status(403).json({ ok: false, error: 'Bu ekranı görüntüleme yetkiniz yok.' });
+
+    const altIdler = await calisanAltZinciriIdleri(req.calisanId);
+    if (!altIdler.length) return res.json({ ok: true, ekip: [] });
+
+    const result = await pool.query(
+      `SELECT c.id, c.ad, c.soyad,
+              COUNT(z.id) AS toplam_ziyaret,
+              MAX(z.created_at) AS son_ziyaret
+       FROM calisanlar c
+       LEFT JOIN ziyaretler z ON z.calisan_id = c.id
+       WHERE c.id = ANY($1)
+       GROUP BY c.id, c.ad, c.soyad
+       ORDER BY c.ad, c.soyad`,
+      [altIdler]
+    );
+    res.json({
+      ok: true,
+      ekip: result.rows.map(r => ({
+        id: r.id, ad: r.ad, soyad: r.soyad,
+        toplam_ziyaret: Number(r.toplam_ziyaret),
+        son_ziyaret: r.son_ziyaret,
+      })),
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: 'Sunucu hatası.' });

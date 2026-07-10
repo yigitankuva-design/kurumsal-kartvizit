@@ -3,7 +3,7 @@ const request = require('supertest');
 const bcrypt = require('bcrypt');
 const app = require('../app');
 const { pool } = require('../db');
-const { bayiTokenDogrula } = require('../utils/jwt');
+const { bayiTokenDogrula, calisanTokenUret } = require('../utils/jwt');
 
 describe('Mobil API — /api/mobil/giris', () => {
   let bayiId;
@@ -822,5 +822,71 @@ describe('Mobil API — /api/mobil/katalog-durumu ve /katalog-gorundu', () => {
   test('token olmadan 401 döner', async () => {
     const res = await request(app).get('/api/mobil/katalog-durumu');
     expect(res.statusCode).toBe(401);
+  });
+});
+
+describe('Mobil API — Ekip / Hiyerarşi', () => {
+  let firmaId;
+  let eczaneSayaci = 0;
+
+  beforeAll(async () => {
+    const f = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('Ekip Test Firma', 'ekip-test-firma', 'ekiptest@example.com', 'x', 'kurumsal') RETURNING id`
+    );
+    firmaId = f.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  // Yardımcı: firmaya çalışan oluşturur. secenekler: { amiri_id, ekip_yoneticisi, giris_email, giris_sifre }
+  let calisanSayaci = 0;
+  async function calisanOlustur(fId, secenekler = {}) {
+    calisanSayaci += 1;
+    const slug = `ekip-calisan-${calisanSayaci}-${Date.now()}`;
+    let girisEmail = null, girisSifreHash = null;
+    if (secenekler.giris_email) {
+      girisEmail = secenekler.giris_email;
+      girisSifreHash = await bcrypt.hash(secenekler.giris_sifre || 'test1234', 8);
+    }
+    const r = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, amiri_id, ekip_yoneticisi, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Ekip', 'Uye', $2, $3, $4, $5, $6) RETURNING id`,
+      [fId, slug, secenekler.amiri_id || null, secenekler.ekip_yoneticisi === true, girisEmail, girisSifreHash]
+    );
+    return { id: r.rows[0].id };
+  }
+
+  async function eczaneOlustur(fId) {
+    eczaneSayaci += 1;
+    const r = await pool.query(
+      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Ekip Eczanesi', $2) RETURNING id, kod`,
+      [fId, `ekipkod${eczaneSayaci}${Date.now() % 100000}`]
+    );
+    return { id: r.rows[0].id, kod: r.rows[0].kod };
+  }
+
+  test('/ekibim: ekip yöneticisi olmayan 403 alır', async () => {
+    const temsilci = await calisanOlustur(firmaId, { giris_email: 'ekibim-temsilci@example.com' });
+    const token = calisanTokenUret(temsilci.id);
+    const res = await request(app).get('/api/mobil/ekibim').set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(403);
+  });
+
+  test('/ekibim: yönetici altındaki her temsilci için ziyaret özeti döner', async () => {
+    const mudur = await calisanOlustur(firmaId, { ekip_yoneticisi: true });
+    const temsilci = await calisanOlustur(firmaId, { amiri_id: mudur.id });
+    const eczane = await eczaneOlustur(firmaId);
+    await pool.query('INSERT INTO ziyaretler (calisan_id, eczane_id) VALUES ($1, $2)', [temsilci.id, eczane.id]);
+
+    const token = calisanTokenUret(mudur.id);
+    const res = await request(app).get('/api/mobil/ekibim').set('Authorization', `Bearer ${token}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    const kayit = res.body.ekip.find(e => e.id === temsilci.id);
+    expect(kayit).toBeDefined();
+    expect(kayit.toplam_ziyaret).toBe(1);
   });
 });
