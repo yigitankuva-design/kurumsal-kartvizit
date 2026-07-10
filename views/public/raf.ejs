@@ -65,6 +65,10 @@
       <% if (veri.whatsapp) { %>
         <a class="btn btn-dis" href="/raf/<%= veri.kod %>/tikla/whatsapp">💬 WhatsApp</a>
       <% } %>
+      <% if (veri.indirim_aktif) { %>
+      <button class="btn btn-katalog" type="button" onclick="indirimKoduAl()">🎁 İndirim Kodu Al</button>
+      <div id="indirim-sonuc" style="display:none;text-align:center;padding:10px;background:#f9fafb;border-radius:10px"></div>
+      <% } %>
       <button class="btn-qr" onclick="document.getElementById('qr-modal').classList.add('aktif')">
         📱 QR Kodu Göster
       </button>
@@ -120,6 +124,35 @@
       document.getElementById('urun-modal-baslik').textContent = ad;
       document.getElementById('urun-modal-aciklama').textContent = aciklama;
       document.getElementById('urun-modal').classList.add('aktif');
+    }
+
+    function indirimKoduAl() {
+      const sonucDiv = document.getElementById('indirim-sonuc');
+      sonucDiv.style.display = 'block';
+      sonucDiv.textContent = 'Yükleniyor...';
+      fetch('/raf/<%= veri.kod %>/indirim-kodu-al', { method: 'POST' })
+        .then(res => res.json())
+        .then(govde => {
+          sonucDiv.textContent = '';
+          if (govde.ok) {
+            const kodDiv = document.createElement('div');
+            kodDiv.style.cssText = 'font-size:28px;font-weight:800;letter-spacing:3px;color:#1a1a2e';
+            kodDiv.textContent = govde.kod;
+            const aciklamaDiv = document.createElement('div');
+            aciklamaDiv.style.cssText = 'font-size:12px;color:#6b7280;margin-top:6px';
+            aciklamaDiv.textContent = 'Bu kodu kasada eczacınıza gösterin. %' + govde.yuzde + ' indirim, bugün gece yarısına kadar geçerli.';
+            sonucDiv.appendChild(kodDiv);
+            sonucDiv.appendChild(aciklamaDiv);
+          } else {
+            sonucDiv.style.color = '#dc2626';
+            sonucDiv.style.fontSize = '13px';
+            sonucDiv.textContent = govde.error;
+          }
+        })
+        .catch(() => {
+          sonucDiv.style.color = '#dc2626';
+          sonucDiv.textContent = 'Bağlantı hatası.';
+        });
     }
   </script>
 </body>
