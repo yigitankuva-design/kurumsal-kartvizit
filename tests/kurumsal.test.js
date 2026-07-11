@@ -228,6 +228,24 @@ describe('Kurumsal panel uçları', () => {
     expect(res.statusCode).toBe(302);
   });
 
+  test('haftalık özet PDF raporu geçerli bir PDF döner', async () => {
+    const agent = kurumsalAgent;
+    const res = await agent.get('/kurumsal/rapor-pdf').buffer(true).parse((res, cb) => {
+      res.setEncoding('binary');
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => cb(null, Buffer.from(data, 'binary')));
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('application/pdf');
+    expect(res.body.slice(0, 5).toString()).toBe('%PDF-');
+  });
+
+  test('basic firma PDF raporuna erişemez', async () => {
+    const res = await basicAgent.get('/kurumsal/rapor-pdf');
+    expect(res.statusCode).toBe(302);
+  });
+
   test('eczacı içeriği güncellenir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/eczaci-icerik').send({

@@ -2,12 +2,20 @@ const express = require('express');
 const router = express.Router();
 const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
+const PDFDocument = require('pdfkit');
 const multer = require('multer');
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
 const { eczaneExcelParse } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 const { islemKaydet } = require('../utils/islemGecmisi');
+
+// pdfkit'in yerleşik fontları (Helvetica) Türkçe'ye özgü karakterleri (ı, ş, ğ vb.)
+// desteklemediği için PDF çıktısında sadeleştirilmiş (ASCII) metin kullanılır.
+const TURKCE_HARF_HARITASI = { İ: 'I', I: 'I', ı: 'i', Ş: 'S', ş: 's', Ğ: 'G', ğ: 'g', Ü: 'U', ü: 'u', Ö: 'O', ö: 'o', Ç: 'C', ç: 'c', '↑': '+', '↓': '-' };
+function pdfMetin(deger) {
+  return String(deger).replace(/[İIışŞğĞüÜöÖçÇ↑↓]/g, (harf) => TURKCE_HARF_HARITASI[harf] || harf);
+}
 
 const logoUpload = uploadMiddleware('firma-logolar');
 const katalogUpload = pdfUploadMiddleware('kataloglar');
@@ -282,6 +290,157 @@ router.get('/rapor-excel', async (req, res) => {
   } catch (err) {
     console.error(err);
     req.flash('error', 'Rapor oluşturulamadı.');
+    res.redirect('/?tab=genel');
+  }
+});
+
+// Haftalık özet PDF raporu (pdfkit ile vektör grafiklerle çizilir, harici bağımlılık gerektirmez)
+router.get('/rapor-pdf', async (req, res) => {
+  try {
+    const firmaId = req.session.firmaId;
+    const firmaSonuc = await pool.query('SELECT ad FROM firmalar WHERE id = $1', [firmaId]);
+    const firmaAdi = firmaSonuc.rows[0].ad;
+
+    const buDonemSonuc = await pool.query(
+      `SELECT COUNT(*) AS toplam, COUNT(*) FILTER (WHERE lt.tip = 'profil_goruntuleme') AS goruntuleme
+       FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+       WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '7 days'`,
+      [firmaId]
+    );
+    const oncekiDonemSonuc = await pool.query(
+      `SELECT COUNT(*) AS toplam, COUNT(*) FILTER (WHERE lt.tip = 'profil_goruntuleme') AS goruntuleme
+       FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+       WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '14 days' AND lt.created_at < NOW() - INTERVAL '7 days'`,
+      [firmaId]
+    );
+    const gunlukSonuc = await pool.query(
+      `SELECT DATE(lt.created_at) AS gun, COUNT(*) AS sayi
+       FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+       WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '14 days'
+       GROUP BY gun ORDER BY gun`,
+      [firmaId]
+    );
+    const dagilimSonuc = await pool.query(
+      `SELECT lt.tip, COUNT(*) AS sayi
+       FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+       WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '30 days'
+       GROUP BY lt.tip ORDER BY sayi DESC LIMIT 6`,
+      [firmaId]
+    );
+    const liderlikSonuc = await pool.query(
+      `SELECT c.ad, c.soyad, COUNT(*) AS sayi
+       FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+       WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '30 days'
+       GROUP BY c.id, c.ad, c.soyad ORDER BY sayi DESC LIMIT 5`,
+      [firmaId]
+    );
+
+    const buDonem = buDonemSonuc.rows[0];
+    const oncekiDonem = oncekiDonemSonuc.rows[0];
+    const yuzdeDegisim = (yeni, eski) => {
+      yeni = Number(yeni); eski = Number(eski);
+      if (eski === 0) return yeni > 0 ? null : 0;
+      return Math.round(((yeni - eski) / eski) * 100);
+    };
+    const tiklamaDegisim = yuzdeDegisim(buDonem.toplam, oncekiDonem.toplam);
+    const goruntulemeDegisim = yuzdeDegisim(buDonem.goruntuleme, oncekiDonem.goruntuleme);
+
+    const bugunUtc = new Date();
+    bugunUtc.setUTCHours(0, 0, 0, 0);
+    const gunlukHarita = {};
+    gunlukSonuc.rows.forEach(r => { gunlukHarita[r.gun.toISOString().slice(0, 10)] = Number(r.sayi); });
+    const sparkline = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(bugunUtc);
+      d.setUTCDate(d.getUTCDate() - i);
+      sparkline.push(gunlukHarita[d.toISOString().slice(0, 10)] || 0);
+    }
+
+    const degisimEtiketi = (deger) => {
+      if (deger === null) return 'yeni veri';
+      if (deger > 0) return `↑ %${deger}`;
+      if (deger < 0) return `↓ %${Math.abs(deger)}`;
+      return 'değişim yok';
+    };
+    const degisimRenk = (deger) => {
+      if (deger === null || deger === 0) return '#6b6a63';
+      return deger > 0 ? '#16a34a' : '#dc2626';
+    };
+
+    res.setHeader('Content-Disposition', 'attachment; filename="haftalik-ozet.pdf"');
+    res.setHeader('Content-Type', 'application/pdf');
+
+    const doc = new PDFDocument({ size: 'A4', margin: 50 });
+    doc.pipe(res);
+
+    doc.fontSize(20).fillColor('#c8a84b').text('NFCKartify', 50, 50, { continued: true }).fillColor('#1c1c20').text(pdfMetin(' — Haftalık Özet Raporu'));
+    doc.fontSize(11).fillColor('#6b6a63').text(pdfMetin(firmaAdi));
+    doc.text(new Date().toLocaleDateString('tr-TR'));
+    doc.moveDown(1);
+
+    const kpiY = doc.y;
+    const kutuGenislik = 220;
+    doc.roundedRect(50, kpiY, kutuGenislik, 70, 6).stroke('#e4e1d5');
+    doc.fontSize(22).fillColor('#1c1c20').text(String(buDonem.toplam), 62, kpiY + 10);
+    doc.fontSize(9).fillColor('#6b6a63').text(pdfMetin('Son 7 gün — toplam tıklama'), 62, kpiY + 38);
+    doc.fontSize(9).fillColor(degisimRenk(tiklamaDegisim)).text(pdfMetin(degisimEtiketi(tiklamaDegisim)), 62, kpiY + 52);
+
+    doc.roundedRect(50 + kutuGenislik + 20, kpiY, kutuGenislik, 70, 6).stroke('#e4e1d5');
+    doc.fontSize(22).fillColor('#1c1c20').text(String(buDonem.goruntuleme), 62 + kutuGenislik + 20, kpiY + 10);
+    doc.fontSize(9).fillColor('#6b6a63').text(pdfMetin('Son 7 gün — profil görüntüleme'), 62 + kutuGenislik + 20, kpiY + 38);
+    doc.fontSize(9).fillColor(degisimRenk(goruntulemeDegisim)).text(pdfMetin(degisimEtiketi(goruntulemeDegisim)), 62 + kutuGenislik + 20, kpiY + 52);
+
+    doc.x = 50;
+    doc.y = kpiY + 95;
+
+    doc.fontSize(13).fillColor('#1c1c20').text(pdfMetin('Son 14 Gün — Tıklama Trendi'));
+    doc.moveDown(0.3);
+    const grafikX = 50, grafikY = doc.y, grafikGenislik = 490, grafikYukseklik = 80;
+    const maxDeger = Math.max(1, ...sparkline);
+    doc.rect(grafikX, grafikY, grafikGenislik, grafikYukseklik).stroke('#e4e1d5');
+    const adimX = grafikGenislik / (sparkline.length - 1);
+    doc.strokeColor('#c8a84b').lineWidth(2);
+    sparkline.forEach((deger, i) => {
+      const x = grafikX + i * adimX;
+      const y = grafikY + grafikYukseklik - (deger / maxDeger) * (grafikYukseklik - 10) - 5;
+      if (i === 0) doc.moveTo(x, y); else doc.lineTo(x, y);
+    });
+    doc.stroke();
+    doc.x = 50;
+    doc.y = grafikY + grafikYukseklik + 20;
+
+    if (dagilimSonuc.rows.length) {
+      doc.fontSize(13).fillColor('#1c1c20').text(pdfMetin('Tıklama Dağılımı — Son 30 Gün'));
+      doc.moveDown(0.3);
+      const barMax = Math.max(...dagilimSonuc.rows.map(r => Number(r.sayi)));
+      const barGenislikMax = 300;
+      dagilimSonuc.rows.forEach(r => {
+        const y = doc.y;
+        const genislik = Math.max(4, (Number(r.sayi) / barMax) * barGenislikMax);
+        doc.rect(150, y, genislik, 14).fill('#c8a84b');
+        doc.fontSize(9).fillColor('#1c1c20').text(pdfMetin(r.tip), 50, y + 2, { width: 95 });
+        doc.fillColor('#6b6a63').text(String(r.sayi), 150 + genislik + 6, y + 2);
+        doc.x = 50;
+        doc.y = y + 18;
+      });
+      doc.moveDown(0.5);
+    }
+
+    if (liderlikSonuc.rows.length) {
+      doc.fontSize(13).fillColor('#1c1c20').text(pdfMetin('Liderlik Tablosu — Son 30 Gün'));
+      doc.moveDown(0.3);
+      liderlikSonuc.rows.forEach((r, i) => {
+        doc.fontSize(10).fillColor('#1c1c20').text(pdfMetin(`${i + 1}. ${r.ad} ${r.soyad}`), 50, doc.y, { continued: true, width: 300 });
+        doc.fillColor('#6b6a63').text(pdfMetin(`  ${r.sayi} etkileşim`));
+      });
+    }
+
+    doc.fontSize(8).fillColor('#9a9890').text(pdfMetin('NFCKartify tarafından oluşturuldu — nfckartify.com.tr'), 50, doc.page.height - 60);
+
+    doc.end();
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'PDF raporu oluşturulamadı.');
     res.redirect('/?tab=genel');
   }
 });
