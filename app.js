@@ -333,10 +333,13 @@ app.get('/', async (req, res) => {
       };
     }
 
+    const ara = req.query.ara || '';
+    const sayfa = parseInt(req.query.sayfa, 10) || 1;
+
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
       toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
-      indirimIstatistik
+      indirimIstatistik, ara, sayfa
     });
   } catch (err) {
     console.error(err);

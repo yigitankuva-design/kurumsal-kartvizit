@@ -269,8 +269,25 @@
 
   <!-- TAB: ÇALIŞANLAR -->
   <% if (tab === 'calisanlar') { %>
-    <% const aktifCalisanlar = calisanlar.filter(c => c.durum === 'aktif'); %>
-    <% const pasifCalisanlar = calisanlar.filter(c => c.durum === 'pasif'); %>
+    <% const aramaMetni = (ara || '').toLowerCase().trim(); %>
+    <% const calisanlarFiltreli = aramaMetni
+         ? calisanlar.filter(c => (c.ad + ' ' + c.soyad + ' ' + (c.email || '')).toLowerCase().includes(aramaMetni))
+         : calisanlar; %>
+    <% const aktifCalisanlarTum = calisanlarFiltreli.filter(c => c.durum === 'aktif'); %>
+    <% const pasifCalisanlar = calisanlarFiltreli.filter(c => c.durum === 'pasif'); %>
+    <% const SAYFA_BOYUTU = 20; %>
+    <% const toplamSayfa = Math.max(1, Math.ceil(aktifCalisanlarTum.length / SAYFA_BOYUTU)); %>
+    <% const mevcutSayfa = Math.min(Math.max(sayfa || 1, 1), toplamSayfa); %>
+    <% const aktifCalisanlar = aktifCalisanlarTum.slice((mevcutSayfa - 1) * SAYFA_BOYUTU, mevcutSayfa * SAYFA_BOYUTU); %>
+
+    <form method="GET" action="/" style="margin-bottom:16px;display:flex;gap:8px;max-width:380px;align-items:center">
+      <input type="hidden" name="tab" value="calisanlar">
+      <input type="text" name="ara" placeholder="İsim veya e-posta ara..." value="<%= ara || '' %>"
+             style="flex:1;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:var(--fs-sm);font-family:inherit">
+      <button type="submit" class="btn btn-border btn-sm">Ara</button>
+      <% if (ara) { %><a href="/?tab=calisanlar" class="btn btn-ghost btn-sm">Temizle</a><% } %>
+    </form>
+
     <% if (aktifCalisanlar.length) { %>
     <div class="table-wrap">
       <table>
@@ -325,6 +342,17 @@
         </tbody>
       </table>
     </div>
+    <% if (toplamSayfa > 1) { %>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:16px 0">
+      <% if (mevcutSayfa > 1) { %>
+        <a class="btn btn-border btn-sm" href="/?tab=calisanlar&ara=<%= encodeURIComponent(ara || '') %>&sayfa=<%= mevcutSayfa - 1 %>">← Önceki</a>
+      <% } %>
+      <span style="font-size:var(--fs-xs);color:var(--text-muted)">Sayfa <%= mevcutSayfa %> / <%= toplamSayfa %></span>
+      <% if (mevcutSayfa < toplamSayfa) { %>
+        <a class="btn btn-border btn-sm" href="/?tab=calisanlar&ara=<%= encodeURIComponent(ara || '') %>&sayfa=<%= mevcutSayfa + 1 %>">Sonraki →</a>
+      <% } %>
+    </div>
+    <% } %>
     <% } else if (!pasifCalisanlar.length) { %>
     <div class="table-wrap">
       <div class="empty-state">
