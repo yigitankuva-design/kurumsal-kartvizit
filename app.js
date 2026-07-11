@@ -227,7 +227,12 @@ app.get('/', async (req, res) => {
     const aktifSayisi = calisanlar.filter(c => c.durum === 'aktif').length;
     const pasifSayisi = calisanlar.filter(c => c.durum === 'pasif').length;
     const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
-    const tab = req.query.tab || 'calisanlar';
+    let tab = req.query.tab || 'calisanlar';
+    const CALISAN_ROLU_TABLARI = ['calisanlar', 'istatistik', 'excel', 'genel', 'analytics', 'gecmis'];
+    const SAHA_ROLU_TABLARI = ['icerik', 'urunler', 'indirim', 'raf', 'saha', 'genel', 'analytics', 'gecmis'];
+    if (req.session.rol === 'sadece_calisan' && !CALISAN_ROLU_TABLARI.includes(tab)) tab = 'calisanlar';
+    if (req.session.rol === 'sadece_saha' && !SAHA_ROLU_TABLARI.includes(tab)) tab = 'genel';
+    if (tab === 'kullanicilar' && req.session.rol && req.session.rol !== 'tam_yetkili') tab = 'genel';
 
     let islemGecmisi = [];
     if (tab === 'gecmis') {
@@ -236,6 +241,15 @@ app.get('/', async (req, res) => {
         [req.session.firmaId]
       );
       islemGecmisi = gResult.rows;
+    }
+
+    let kullanicilarListesi = [];
+    if (tab === 'kullanicilar' && (!req.session.rol || req.session.rol === 'tam_yetkili')) {
+      const kullanicilarSonuc = await pool.query(
+        'SELECT id, ad, email, rol, created_at FROM firma_kullanicilari WHERE firma_id = $1 ORDER BY created_at DESC',
+        [req.session.firmaId]
+      );
+      kullanicilarListesi = kullanicilarSonuc.rows;
     }
 
     let genelBakis = null;
@@ -457,7 +471,7 @@ app.get('/', async (req, res) => {
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
       toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
-      indirimIstatistik, ara, sayfa, islemGecmisi, genelBakis
+      indirimIstatistik, ara, sayfa, islemGecmisi, genelBakis, kullanicilarListesi, rol: req.session.rol
     });
   } catch (err) {
     console.error(err);
