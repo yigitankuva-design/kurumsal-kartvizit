@@ -204,6 +204,30 @@ describe('Kurumsal panel uçları', () => {
     expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
 
+  test('gelişmiş rapor Excel çıktısı 4 sayfa içerir ve doğru başlıklara sahiptir', async () => {
+    const ExcelJS = require('exceljs');
+    const agent = kurumsalAgent;
+    const res = await agent.get('/kurumsal/rapor-excel').buffer(true).parse((res, cb) => {
+      res.setEncoding('binary');
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => cb(null, Buffer.from(data, 'binary')));
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('spreadsheetml');
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.body);
+    const sayfaAdlari = wb.worksheets.map(ws => ws.name);
+    expect(sayfaAdlari).toEqual(['Ziyaretler', 'Eczane Özeti', 'Temsilci Özeti', 'İndirim Kullanımı']);
+    const ziyaretlerSayfa = wb.getWorksheet('Ziyaretler');
+    expect(ziyaretlerSayfa.getRow(1).values.slice(1)).toEqual(['Temsilci', 'Eczane', 'Tarih', 'Not']);
+  });
+
+  test('basic firma gelişmiş rapor Excel\'ine erişemez', async () => {
+    const res = await basicAgent.get('/kurumsal/rapor-excel');
+    expect(res.statusCode).toBe(302);
+  });
+
   test('eczacı içeriği güncellenir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.post('/kurumsal/eczaci-icerik').send({

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const multer = require('multer');
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
@@ -200,6 +201,88 @@ router.get('/ziyaretler-excel', async (req, res) => {
     console.error(err);
     req.flash('error', 'Excel oluşturulamadı.');
     res.redirect('/?tab=saha');
+  }
+});
+
+// Çok sayfalı gelişmiş rapor (Ziyaretler, Eczane Özeti, Temsilci Özeti, İndirim Kullanımı)
+router.get('/rapor-excel', async (req, res) => {
+  try {
+    const firmaId = req.session.firmaId;
+
+    const ziyaretlerSonuc = await pool.query(
+      `SELECT c.ad AS temsilci_ad, c.soyad AS temsilci_soyad, e.ad AS eczane_ad, z.created_at, z.temsilci_notu
+       FROM ziyaretler z
+       JOIN calisanlar c ON c.id = z.calisan_id
+       JOIN eczaneler e ON e.id = z.eczane_id
+       WHERE c.firma_id = $1
+       ORDER BY z.created_at DESC`,
+      [firmaId]
+    );
+    const eczaneOzetSonuc = await pool.query(
+      `SELECT e.ad,
+         (SELECT COUNT(*) FROM raf_okutmalar r WHERE r.eczane_id = e.id) AS raf_okutma,
+         (SELECT COUNT(*) FROM eczaci_okutmalar eo WHERE eo.eczane_id = e.id) AS eczaci_okutma,
+         (SELECT COUNT(*) FROM ziyaretler z WHERE z.eczane_id = e.id) AS ziyaret_sayisi,
+         (SELECT MAX(z.created_at) FROM ziyaretler z WHERE z.eczane_id = e.id) AS son_ziyaret
+       FROM eczaneler e WHERE e.firma_id = $1 ORDER BY e.ad`,
+      [firmaId]
+    );
+    const temsilciOzetSonuc = await pool.query(
+      `SELECT c.ad, c.soyad, COUNT(*) AS ziyaret_sayisi, COUNT(DISTINCT z.eczane_id) AS benzersiz_eczane
+       FROM ziyaretler z JOIN calisanlar c ON c.id = z.calisan_id
+       WHERE c.firma_id = $1
+       GROUP BY c.id, c.ad, c.soyad ORDER BY ziyaret_sayisi DESC`,
+      [firmaId]
+    );
+    const indirimSonuc = await pool.query(
+      `SELECT e.ad AS eczane_ad, i.kod, i.yuzde, i.olusturulma_tarihi, i.kullanildi, i.kullanilma_tarihi
+       FROM indirim_kodlari i JOIN eczaneler e ON e.id = i.eczane_id
+       WHERE i.firma_id = $1
+       ORDER BY i.olusturulma_tarihi DESC`,
+      [firmaId]
+    );
+
+    const wb = new ExcelJS.Workbook();
+    const basliklariUygula = (ws, basliklar) => {
+      ws.addRow(basliklar);
+      const baslikSatiri = ws.getRow(1);
+      baslikSatiri.font = { bold: true, color: { argb: 'FF000000' } };
+      baslikSatiri.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8A84B' } };
+      ws.columns.forEach(col => { col.width = 22; });
+    };
+
+    const wsZiyaret = wb.addWorksheet('Ziyaretler');
+    basliklariUygula(wsZiyaret, ['Temsilci', 'Eczane', 'Tarih', 'Not']);
+    ziyaretlerSonuc.rows.forEach(r => {
+      wsZiyaret.addRow([`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at, r.temsilci_notu || '']);
+    });
+
+    const wsEczane = wb.addWorksheet('Eczane Özeti');
+    basliklariUygula(wsEczane, ['Eczane', 'Raf Okutma', 'Eczacı Okutma', 'Ziyaret Sayısı', 'Son Ziyaret']);
+    eczaneOzetSonuc.rows.forEach(r => {
+      wsEczane.addRow([r.ad, Number(r.raf_okutma), Number(r.eczaci_okutma), Number(r.ziyaret_sayisi), r.son_ziyaret || '']);
+    });
+
+    const wsTemsilci = wb.addWorksheet('Temsilci Özeti');
+    basliklariUygula(wsTemsilci, ['Temsilci', 'Ziyaret Sayısı', 'Benzersiz Eczane']);
+    temsilciOzetSonuc.rows.forEach(r => {
+      wsTemsilci.addRow([`${r.ad} ${r.soyad}`, Number(r.ziyaret_sayisi), Number(r.benzersiz_eczane)]);
+    });
+
+    const wsIndirim = wb.addWorksheet('İndirim Kullanımı');
+    basliklariUygula(wsIndirim, ['Eczane', 'Kod', 'Yüzde', 'Oluşturulma', 'Kullanıldı', 'Kullanılma Tarihi']);
+    indirimSonuc.rows.forEach(r => {
+      wsIndirim.addRow([r.eczane_ad, r.kod, r.yuzde, r.olusturulma_tarihi, r.kullanildi ? 'Evet' : 'Hayır', r.kullanilma_tarihi || '']);
+    });
+
+    const buffer = await wb.xlsx.writeBuffer();
+    res.setHeader('Content-Disposition', 'attachment; filename="rapor.xlsx"');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (err) {
+    console.error(err);
+    req.flash('error', 'Rapor oluşturulamadı.');
+    res.redirect('/?tab=genel');
   }
 });
 

@@ -477,6 +477,13 @@ var aktifGrup = tabGrubuBul(tab);
       </table>
       <% } %>
     </div>
+    <% if (firma.paket === 'kurumsal') { %>
+    <div class="table-wrap" style="padding:20px;margin-top:16px">
+      <h3 style="margin-bottom:12px">Gelişmiş Rapor</h3>
+      <p style="font-size:var(--fs-sm);color:var(--text-muted);margin-bottom:12px">Ziyaretler, eczane özeti, temsilci özeti ve indirim kullanımını tek dosyada indirin.</p>
+      <a href="/kurumsal/rapor-excel" class="btn btn-border" style="height:36px;">⬇ Gelişmiş Raporu İndir (.xlsx)</a>
+    </div>
+    <% } %>
     <% } %>
 
   <!-- TAB: ÇALIŞANLAR -->
