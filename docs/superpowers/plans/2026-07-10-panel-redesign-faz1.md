@@ -19,7 +19,7 @@
 
 - [ ] **Step 1: `:root` bloğuna warning değişkenlerini ekle**
 
-`--danger-dim: rgba(239,68,68,0.1);` satırından hemen sonra ekle:
+**NOT:** Bu iki satır çalışma ağacında ZATEN eklenmiş (önceki oturumda), ama commit edilmemiş durumda (`git status` `M views/public/dashboard.ejs` gösterir). Dosyada `--warning` satırlarının varlığını kontrol et — varsa bu adımı atla, doğrudan Step 2'ye geç. Yoksa `--danger-dim: rgba(239,68,68,0.1);` satırından hemen sonra ekle:
 
 ```css
       --warning: #f59e0b;
@@ -172,7 +172,10 @@ Yeni: <button type="submit" class="btn btn-gold">Ekle</button>
 ```
 ```
 Eski: <button type="submit">Kaydet</button>   (Ürün Düzenle modalı içinde, #urunDuzenleForm)
-Yeni: <button type="submit" class="btn btn-submit">Kaydet</button>
+Yeni: <button type="submit" class="btn btn-gold">Kaydet</button>
+```
+(Not: `.btn-submit` KULLANMA — o sınıf `flex:1` içeriyor ve modal formu `flex-direction:column` olduğu için butonu dikeyde anormal uzatır. Diğer form submit'leriyle tutarlı `.btn btn-gold` kullan.)
+```
 ```
 
 - [ ] **Step 3: İndirim sekmesi "Kaydet" butonu**
@@ -193,13 +196,13 @@ Yeni: <button type="submit" class="btn btn-gold">Ekle</button>
 
 ```
 Eski: <button type="button" id="eczaneTopluOnaylaBtn" disabled onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
-Yeni: <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm">✓ Toplu Onayla</button>
+Yeni: <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
 ```
 ```
 Eski: <button type="button" id="eczaneTopluPasifBtn" disabled onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
 Yeni: <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
 ```
-(İlk butonda `onclick` zaten var, sadece `class` ekleniyor — dikkatli birleştir.)
+(Her iki butonda da `onclick` zaten var, sadece `class` ekleniyor — mevcut `onclick`'i SİLME, birleştir.)
 
 - [ ] **Step 6: Çalışan listesi satır aksiyonları (Kaldır, Yazıldı işaretle)**
 
