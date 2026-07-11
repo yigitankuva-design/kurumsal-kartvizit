@@ -162,6 +162,15 @@ async function migrate() {
     )`,
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS indirim_aktif BOOLEAN DEFAULT false`,
     `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS indirim_yuzdesi INTEGER DEFAULT 5`,
+    `CREATE TABLE IF NOT EXISTS islem_gecmisi (
+      id          SERIAL PRIMARY KEY,
+      firma_id    INTEGER REFERENCES firmalar(id) ON DELETE CASCADE,
+      islem       TEXT NOT NULL,
+      hedef_tip   TEXT,
+      hedef_id    INTEGER,
+      aciklama    TEXT,
+      created_at  TIMESTAMP DEFAULT NOW()
+    )`,
   ];
 
   for (const sql of migrations) {
