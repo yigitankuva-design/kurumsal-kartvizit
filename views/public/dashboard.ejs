@@ -258,6 +258,7 @@
     <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
     <a href="/?tab=analytics"  class="dash-tab <%= tab === 'analytics'  ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
+    <a href="/?tab=gecmis"     class="dash-tab <%= tab === 'gecmis'     ? 'active' : '' %>">İşlem Geçmişi</a>
     <% if (firma.paket === 'kurumsal') { %>
     <a href="/?tab=icerik"  class="dash-tab <%= tab === 'icerik'  ? 'active' : '' %>">İçerik</a>
     <a href="/?tab=urunler" class="dash-tab <%= tab === 'urunler' ? 'active' : '' %>">Ürünler</a>
@@ -495,6 +496,43 @@
         </div>
         <button type="submit" class="btn btn-gold" style="height:36px;">Yükle ve İçe Aktar</button>
       </form>
+    </div>
+    <% } %>
+
+  <!-- TAB: İŞLEM GEÇMİŞİ -->
+  <% } else if (tab === 'gecmis') { %>
+    <% const islemEtiketleri = {
+         calisan_pasife_alindi: 'Çalışan pasife alındı',
+         calisan_sifre_degisti: 'Çalışan giriş şifresi değiştirildi',
+         eczane_silindi: 'Eczane silindi',
+         eczane_toplu_onayla: 'Eczaneler toplu onaylandı',
+         eczane_toplu_pasife_al: 'Eczaneler toplu pasife alındı',
+         eczane_toplu_aktif_yap: 'Eczaneler toplu aktif edildi',
+         eczane_toplu_sil: 'Eczaneler toplu silindi',
+         indirim_ayar_degisti: 'İndirim kampanyası ayarları değiştirildi',
+       }; %>
+    <% if (islemGecmisi.length) { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tarih</th><th>İşlem</th><th>Detay</th></tr></thead>
+        <tbody>
+          <% islemGecmisi.forEach(g => { %>
+          <tr>
+            <td class="td-sub"><%= new Date(g.created_at).toLocaleString('tr-TR') %></td>
+            <td class="td-name"><%= islemEtiketleri[g.islem] || g.islem %></td>
+            <td><%= g.aciklama || '—' %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } else { %>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-state-icon">📋</div>
+        <div class="empty-state-title">Henüz işlem geçmişi yok</div>
+        <div class="empty-state-sub">Silme, pasife alma gibi riskli işlemler burada listelenir</div>
+      </div>
     </div>
     <% } %>
 

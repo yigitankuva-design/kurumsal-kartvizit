@@ -214,6 +214,15 @@ app.get('/', async (req, res) => {
     const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
     const tab = req.query.tab || 'calisanlar';
 
+    let islemGecmisi = [];
+    if (tab === 'gecmis') {
+      const gResult = await pool.query(
+        'SELECT * FROM islem_gecmisi WHERE firma_id = $1 ORDER BY created_at DESC LIMIT 100',
+        [req.session.firmaId]
+      );
+      islemGecmisi = gResult.rows;
+    }
+
     let linkAnalytics = [];
     if (tab === 'analytics' && calisanlar.length) {
       const aResult = await pool.query(
@@ -339,7 +348,7 @@ app.get('/', async (req, res) => {
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
       toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
-      indirimIstatistik, ara, sayfa
+      indirimIstatistik, ara, sayfa, islemGecmisi
     });
   } catch (err) {
     console.error(err);

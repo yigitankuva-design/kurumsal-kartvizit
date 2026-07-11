@@ -262,4 +262,13 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     expect(r.rows.length).toBe(1);
     await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
   });
+
+  test('İşlem Geçmişi sekmesi kayıtları listeler', async () => {
+    const { islemKaydet } = require('../utils/islemGecmisi');
+    await islemKaydet(firmaId, 'eczane_silindi', 'eczane', 999, 'Görünüm Testi Eczanesi');
+    const res = await agent.get('/?tab=gecmis');
+    expect(res.statusCode).toBe(200);
+    expect(res.text).toContain('Eczane silindi');
+    expect(res.text).toContain('Görünüm Testi Eczanesi');
+  });
 });
