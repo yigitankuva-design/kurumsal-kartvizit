@@ -80,6 +80,54 @@
     .nav-center { font-size: var(--fs-sm); color: var(--text-muted); font-weight: var(--fw-medium); }
     .nav-right { display: flex; align-items: center; gap: 8px; }
 
+    /* ── APP SHELL (sidebar + main) ── */
+    .app-shell { display: flex; min-height: 100vh; }
+    .app-sidebar {
+      width: 218px; flex-shrink: 0;
+      background: var(--bg2); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      position: sticky; top: 0; height: 100vh;
+    }
+    .sidebar-logo { font-size: var(--fs-base); font-weight: var(--fw-bold); letter-spacing: -0.02em; color: var(--text); text-decoration: none; padding: 18px 18px 14px; display: block; }
+    .sidebar-logo em { font-style: normal; color: var(--gold); }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 6px 12px; }
+    .sidebar-group-label { font-size: 10.5px; font-weight: var(--fw-semibold); color: var(--text-faint); text-transform: uppercase; letter-spacing: .05em; padding: 14px 8px 6px; }
+    .sidebar-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 10px; border-radius: 7px; margin-bottom: 1px;
+      color: var(--text-muted); font-size: var(--fs-sm); font-weight: var(--fw-medium);
+      text-decoration: none; border-left: 2px solid transparent;
+      transition: background .12s, color .12s;
+    }
+    .sidebar-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: .85; }
+    .sidebar-item:hover { background: var(--bg3); color: var(--text); }
+    .sidebar-item.active { background: var(--gold-dim); color: var(--gold); border-left-color: var(--gold); font-weight: var(--fw-semibold); }
+    .sidebar-item.active svg { opacity: 1; }
+    .sidebar-foot { padding: 12px 18px; border-top: 1px solid var(--border); display: flex; align-items: center; gap: 9px; }
+    .sidebar-user-dot { width: 26px; height: 26px; border-radius: 50%; background: var(--bg4); color: var(--gold); display: flex; align-items: center; justify-content: center; font-weight: var(--fw-bold); font-size: 10.5px; flex-shrink: 0; }
+    .sidebar-user-email { font-size: 11px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .app-main { flex: 1; min-width: 0; }
+    .app-topbar {
+      position: sticky; top: 0; z-index: 50; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 24px; background: var(--nav-bg); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+    .breadcrumb { font-size: var(--fs-sm); color: var(--text-faint); }
+    .breadcrumb b { color: var(--text); font-weight: var(--fw-semibold); }
+
+    @media (max-width: 860px) {
+      .app-shell { flex-direction: column; }
+      .app-sidebar { width: 100%; height: auto; position: static; flex-direction: row; align-items: center; overflow-x: auto; }
+      .sidebar-logo { padding: 10px 14px; flex-shrink: 0; }
+      .sidebar-nav { display: flex; padding: 6px 8px; overflow-x: auto; flex: none; }
+      .sidebar-group-label { display: none; }
+      .sidebar-item { flex-shrink: 0; border-left: none; border-bottom: 2px solid transparent; }
+      .sidebar-item.active { border-left-color: transparent; border-bottom-color: var(--gold); }
+      .sidebar-foot { display: none; }
+    }
+
     /* ── GÖRÜNÜM (renk seçici) ── */
     .gorunum-ctl-wrap { position: relative; }
     .gorunum-pop { position: absolute; top: calc(100% + 8px); right: 0; width: 260px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.35); padding: 16px; z-index: 300; display: none; }
@@ -339,6 +387,14 @@ function tabGrubuBul(aktifTab) {
 }
 var aktifGrup = tabGrubuBul(tab);
 
+var grupEtiketleri = {
+  genel: 'Genel Bakış',
+  calisanlar: 'Çalışanlar',
+  eczane: 'Eczane Ağı',
+  icerik: 'İçerik',
+  saha: 'Saha Raporları'
+};
+
 function jsonAttr(obj) {
   return JSON.stringify(obj)
     .replace(/&/g, '&amp;')
@@ -348,48 +404,69 @@ function jsonAttr(obj) {
 }
 %>
 
-<!-- NAV -->
-<nav class="dash-nav">
-  <a href="/" class="nav-logo">NFC<em>Kartify</em></a>
-  <span class="nav-center"><%= firma.ad %></span>
-  <div class="nav-right">
-    <% if (!rol || rol === 'tam_yetkili') { %>
-    <div class="gorunum-ctl-wrap">
-      <button type="button" class="btn btn-ghost" onclick="gorunumPopToggle()" title="Görünümü özelleştir">
-        <%- ikon('gorunum', 16, '') %> Görünüm
-      </button>
-      <div class="gorunum-pop" id="gorunumPop">
-        <div class="gorunum-pop-label">Vurgu Rengi</div>
-        <div class="sv-square" id="svSquare">
-          <div class="sv-hue-layer" id="svHueLayer"></div>
-          <div class="sv-white-layer"></div>
-          <div class="sv-black-layer"></div>
-          <div class="sv-handle" id="svHandle"></div>
+<!-- APP SHELL -->
+<div class="app-shell">
+  <aside class="app-sidebar">
+    <a href="/" class="sidebar-logo">NFC<em>Kartify</em></a>
+    <nav class="sidebar-nav">
+      <div class="sidebar-group-label">İşletme</div>
+      <a href="/?tab=genel" class="sidebar-item <%= aktifGrup === 'genel' ? 'active' : '' %>"><%- ikon('pano') %> Genel Bakış</a>
+      <% if (rol !== 'sadece_saha') { %>
+      <a href="/?tab=calisanlar" class="sidebar-item <%= aktifGrup === 'calisanlar' ? 'active' : '' %>"><%- ikon('kullanici') %> Çalışanlar</a>
+      <% } %>
+      <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
+      <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Ağı</a>
+      <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik</a>
+      <% } %>
+      <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Raporları</a>
+    </nav>
+    <div class="sidebar-foot">
+      <div class="sidebar-user-dot"><%= firma.ad.slice(0, 2).toUpperCase() %></div>
+      <div class="sidebar-user-email"><%= firma.yetkili_email %></div>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <div class="app-topbar">
+      <div class="breadcrumb"><%= firma.ad %> / <b><%= grupEtiketleri[aktifGrup] || 'Genel Bakış' %></b></div>
+      <div class="nav-right">
+        <% if (!rol || rol === 'tam_yetkili') { %>
+        <div class="gorunum-ctl-wrap">
+          <button type="button" class="btn btn-ghost" onclick="gorunumPopToggle()" title="Görünümü özelleştir">
+            <%- ikon('gorunum', 16, '') %> Görünüm
+          </button>
+          <div class="gorunum-pop" id="gorunumPop">
+            <div class="gorunum-pop-label">Vurgu Rengi</div>
+            <div class="sv-square" id="svSquare">
+              <div class="sv-hue-layer" id="svHueLayer"></div>
+              <div class="sv-white-layer"></div>
+              <div class="sv-black-layer"></div>
+              <div class="sv-handle" id="svHandle"></div>
+            </div>
+            <div class="hue-strip" id="hueStrip">
+              <div class="hue-handle" id="hueHandle"></div>
+            </div>
+            <div class="color-readout">
+              <div class="color-swatch" id="colorSwatch"></div>
+              <div class="color-hex" id="colorHex">#C8A84B</div>
+            </div>
+            <div class="gorunum-pop-divider"></div>
+            <div class="light-row"><span class="gorunum-pop-label" style="margin:0">Işık Derecesi</span><span class="light-val" id="lightVal">50</span></div>
+            <input type="range" class="gorunum-slider" id="lightSlider" min="0" max="100" value="50" oninput="isikDerecesiUygula(this.value)">
+            <div class="gorunum-slider-ends"><span>Koyu</span><span>Açık</span></div>
+            <div class="gorunum-save-status" id="gorunumKaydetDurum"></div>
+          </div>
         </div>
-        <div class="hue-strip" id="hueStrip">
-          <div class="hue-handle" id="hueHandle"></div>
-        </div>
-        <div class="color-readout">
-          <div class="color-swatch" id="colorSwatch"></div>
-          <div class="color-hex" id="colorHex">#C8A84B</div>
-        </div>
-        <div class="gorunum-pop-divider"></div>
-        <div class="light-row"><span class="gorunum-pop-label" style="margin:0">Işık Derecesi</span><span class="light-val" id="lightVal">50</span></div>
-        <input type="range" class="gorunum-slider" id="lightSlider" min="0" max="100" value="50" oninput="isikDerecesiUygula(this.value)">
-        <div class="gorunum-slider-ends"><span>Koyu</span><span>Açık</span></div>
-        <div class="gorunum-save-status" id="gorunumKaydetDurum"></div>
+        <% } %>
+        <button type="button" id="temaBtn" class="btn btn-ghost" onclick="temaDegistir()" title="Temayı değiştir">
+          <span id="temaIkonAy"><%- ikon('ay', 16, '') %></span>
+          <span id="temaIkonGunes" style="display:none"><%- ikon('gunes', 16, '') %></span>
+        </button>
+        <form method="POST" action="/firma/cikis" style="margin:0">
+          <button type="submit" class="btn btn-ghost">Çıkış</button>
+        </form>
       </div>
     </div>
-    <% } %>
-    <button type="button" id="temaBtn" class="btn btn-ghost" onclick="temaDegistir()" title="Temayı değiştir">
-      <span id="temaIkonAy"><%- ikon('ay', 16, '') %></span>
-      <span id="temaIkonGunes" style="display:none"><%- ikon('gunes', 16, '') %></span>
-    </button>
-    <form method="POST" action="/firma/cikis" style="margin:0">
-      <button type="submit" class="btn btn-ghost">Çıkış</button>
-    </form>
-  </div>
-</nav>
 
 <!-- FLASH -->
 <% if (success && success.length) { %>
@@ -431,19 +508,6 @@ function jsonAttr(obj) {
       <div class="stat-card-n"><%= toplamGoruntulenme %></div>
       <div class="stat-card-l">Toplam görüntülenme</div>
     </div>
-  </div>
-
-  <!-- TAB GROUPS -->
-  <div class="dash-tabs-main">
-    <a href="/?tab=genel" class="dash-tab-main <%= aktifGrup === 'genel' ? 'active' : '' %>">Genel Bakış</a>
-    <% if (rol !== 'sadece_saha') { %>
-    <a href="/?tab=calisanlar" class="dash-tab-main <%= aktifGrup === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
-    <% } %>
-    <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
-    <a href="/?tab=raf"    class="dash-tab-main <%= aktifGrup === 'eczane' ? 'active' : '' %>">Eczane Ağı</a>
-    <a href="/?tab=icerik" class="dash-tab-main <%= aktifGrup === 'icerik' ? 'active' : '' %>">İçerik</a>
-    <% } %>
-    <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="dash-tab-main <%= aktifGrup === 'saha' ? 'active' : '' %>">Saha Raporları</a>
   </div>
 
   <!-- SUB TABS -->
@@ -1309,6 +1373,8 @@ function jsonAttr(obj) {
   <% } %>
 
 </div><!-- /dash-main -->
+  </div><!-- /app-main -->
+</div><!-- /app-shell -->
 
 <!-- SLIDE-IN PANEL -->
 <div class="detay-overlay" id="detayOverlay" onclick="if (event.target === this) calisanDetayKapat()">
