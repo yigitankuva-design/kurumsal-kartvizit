@@ -677,7 +677,24 @@
         <button type="submit" class="btn btn-gold">Ekle</button>
       </form>
     </div>
-    <% const aktifEczaneler = eczaneler.filter(e => e.durum !== 'pasif'); const pasifEczaneler = eczaneler.filter(e => e.durum === 'pasif'); %>
+    <% const eczaneAramaMetni = (ara || '').toLowerCase().trim(); %>
+    <% const eczanelerFiltreli = eczaneAramaMetni
+         ? eczaneler.filter(e => (e.ad + ' ' + (e.adres || '')).toLowerCase().includes(eczaneAramaMetni))
+         : eczaneler; %>
+    <% const aktifEczanelerTum = eczanelerFiltreli.filter(e => e.durum !== 'pasif'); const pasifEczaneler = eczanelerFiltreli.filter(e => e.durum === 'pasif'); %>
+    <% const ECZANE_SAYFA_BOYUTU = 20; %>
+    <% const eczaneToplamSayfa = Math.max(1, Math.ceil(aktifEczanelerTum.length / ECZANE_SAYFA_BOYUTU)); %>
+    <% const eczaneMevcutSayfa = Math.min(Math.max(sayfa || 1, 1), eczaneToplamSayfa); %>
+    <% const aktifEczaneler = aktifEczanelerTum.slice((eczaneMevcutSayfa - 1) * ECZANE_SAYFA_BOYUTU, eczaneMevcutSayfa * ECZANE_SAYFA_BOYUTU); %>
+
+    <form method="GET" action="/" style="margin-bottom:16px;display:flex;gap:8px;max-width:380px;align-items:center">
+      <input type="hidden" name="tab" value="raf">
+      <input type="text" name="ara" placeholder="Eczane adı veya adres ara..." value="<%= ara || '' %>"
+             style="flex:1;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:var(--fs-sm);font-family:inherit">
+      <button type="submit" class="btn btn-border btn-sm">Ara</button>
+      <% if (ara) { %><a href="/?tab=raf" class="btn btn-ghost btn-sm">Temizle</a><% } %>
+    </form>
+
     <div class="table-wrap" style="padding:12px 20px;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
       <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
@@ -747,6 +764,17 @@
         </tbody>
       </table>
     </div>
+    <% if (eczaneToplamSayfa > 1) { %>
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:16px 0">
+      <% if (eczaneMevcutSayfa > 1) { %>
+        <a class="btn btn-border btn-sm" href="/?tab=raf&ara=<%= encodeURIComponent(ara || '') %>&sayfa=<%= eczaneMevcutSayfa - 1 %>">← Önceki</a>
+      <% } %>
+      <span style="font-size:var(--fs-xs);color:var(--text-muted)">Sayfa <%= eczaneMevcutSayfa %> / <%= eczaneToplamSayfa %></span>
+      <% if (eczaneMevcutSayfa < eczaneToplamSayfa) { %>
+        <a class="btn btn-border btn-sm" href="/?tab=raf&ara=<%= encodeURIComponent(ara || '') %>&sayfa=<%= eczaneMevcutSayfa + 1 %>">Sonraki →</a>
+      <% } %>
+    </div>
+    <% } %>
 
     <% if (pasifEczaneler.length) { %>
     <details class="table-wrap" style="padding:0;margin-top:16px">
