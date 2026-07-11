@@ -161,6 +161,15 @@
   </style>
 </head>
 <body>
+<%
+function jsonAttr(obj) {
+  return JSON.stringify(obj)
+    .replace(/&/g, '&amp;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+%>
 
 <!-- NAV -->
 <nav class="dash-nav">
@@ -637,7 +646,7 @@
           <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
           <td>
             <div class="td-actions">
-              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- jsonAttr(c) %>)'>Düzenle</button>
               <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="margin:0">
                 <input type="hidden" name="durum" value="<%= c.durum === 'aktif' ? 'pasif' : 'aktif' %>">
                 <button type="submit" class="btn btn-danger-sm btn-sm"><%= c.durum === 'aktif' ? 'Pasife Al' : 'Aktif Et' %></button>
@@ -683,7 +692,7 @@
           <td><span class="badge badge-<%= c.durum %>"><%= c.durum %></span></td>
           <td>
             <div class="td-actions">
-              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+              <button class="btn btn-border btn-sm" onclick='openKartSlideEdit(<%- jsonAttr(c) %>)'>Düzenle</button>
               <form method="POST" action="/bayi/panel/<%= firma.id %>/calisan/<%= c.id %>/durum?_method=PATCH" style="margin:0">
                 <input type="hidden" name="durum" value="aktif">
                 <button type="submit" class="btn btn-danger-sm btn-sm">Aktif Et</button>

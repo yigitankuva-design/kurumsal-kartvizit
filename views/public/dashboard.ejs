@@ -286,6 +286,14 @@ function tabGrubuBul(aktifTab) {
   return 'calisanlar';
 }
 var aktifGrup = tabGrubuBul(tab);
+
+function jsonAttr(obj) {
+  return JSON.stringify(obj)
+    .replace(/&/g, '&amp;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 %>
 
 <!-- NAV -->
@@ -610,9 +618,9 @@ var aktifGrup = tabGrubuBul(tab);
             <td>
               <div class="td-actions">
                 <% if (!c.foto_url) { %>
-                  <button class="btn btn-warning-sm btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'><%- ikon('kamera') %>Fotoğraf Ekle</button>
+                  <button class="btn btn-warning-sm btn-sm" onclick='openSlideEdit(<%- jsonAttr(c) %>)'><%- ikon('kamera') %>Fotoğraf Ekle</button>
                 <% } %>
-                <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+                <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- jsonAttr(c) %>)'>Düzenle</button>
                 <form method="POST" action="/firma/panel/<%= c.id %>/durum" style="margin:0">
                   <input type="hidden" name="_method" value="PATCH">
                   <input type="hidden" name="durum" value="<%= c.durum === 'aktif' ? 'pasif' : 'aktif' %>">
@@ -679,9 +687,9 @@ var aktifGrup = tabGrubuBul(tab);
             <td>
               <div class="td-actions">
                 <% if (!c.foto_url) { %>
-                  <button class="btn btn-warning-sm btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'><%- ikon('kamera') %>Fotoğraf Ekle</button>
+                  <button class="btn btn-warning-sm btn-sm" onclick='openSlideEdit(<%- jsonAttr(c) %>)'><%- ikon('kamera') %>Fotoğraf Ekle</button>
                 <% } %>
-                <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- JSON.stringify(c) %>)'>Düzenle</button>
+                <button class="btn btn-border btn-sm" onclick='openSlideEdit(<%- jsonAttr(c) %>)'>Düzenle</button>
                 <form method="POST" action="/firma/panel/<%= c.id %>/durum" style="margin:0">
                   <input type="hidden" name="_method" value="PATCH">
                   <input type="hidden" name="durum" value="aktif">
@@ -894,7 +902,7 @@ var aktifGrup = tabGrubuBul(tab);
             </td>
             <td>
               <div class="td-actions">
-                <button class="btn btn-border btn-sm" onclick='urunDuzenleAc(<%- JSON.stringify(u) %>)'>Düzenle</button>
+                <button class="btn btn-border btn-sm" onclick='urunDuzenleAc(<%- jsonAttr(u) %>)'>Düzenle</button>
                 <form method="POST" action="/kurumsal/urunler/<%= u.id %>" style="display:inline">
                   <input type="hidden" name="_method" value="DELETE">
                   <button type="submit" class="btn btn-danger-sm btn-sm" onclick="return confirm('<%= u.ad %> silinsin mi?')">Sil</button>
