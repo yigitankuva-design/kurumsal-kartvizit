@@ -38,10 +38,41 @@ Header'daki "+ Yeni Çalışan" butonu tüm sekmelerde sabit duruyor (Raf Kartla
 
 **Öneri:** Sadece Çalışanlar sekmesinde göster.
 
+### 4. Emoji yerine gerçek ikon seti
+Panelde 22 yerde 📦 🗑 ⏳ 🎁 gibi emoji fonksiyonel ikon olarak kullanılıyor — işletim sistemine/tarayıcıya göre farklı çizilir, "özenle tasarlanmış" değil "hızlıca eklenmiş" hissi verir.
+
+**Öneri:** Mevcut altın/koyu temaya uyan, tek çizgi kalınlığında tutarlı bir SVG ikon seti ile değiştir.
+
+### 5. Buton hiyerarşisi iki seviyede sıkışmış
+Her yerde ya dolu altın buton ya da kenarlıklı (ghost) buton var — üçüncü, "düşük öncelikli" bir seviye (sade metin linki) neredeyse yok. Sonuç: her ekran "buton kalabalığı" gibi görünüyor.
+
+**Öneri:** Az kullanılan aksiyonları (ör. "Kaldır", ikincil linkler) sade metin linkine çevir.
+
+### 6. Rozetler hep aynı kalıpta
+Aktif/pasif, onay bekliyor gibi tüm durumlar aynı hap-şekilli (pill) rozetle gösteriliyor.
+
+**Öneri:** Küçük renkli nokta (status dot) + düz metin — Linear/Notion tarzı, daha az "template" hissi verir.
+
+### 7. İşlem sırasında geri bildirim yok
+"Kaydet"e tıklanınca buton olduğu gibi kalıyor, özellikle Excel yükleme gibi birkaç saniye süren işlemlerde kullanıcı işlemin tetiklendiğinden emin olamıyor.
+
+**Öneri:** Tıklanınca kısa bir "Kaydediliyor..." durumu / spinner ekle.
+
+### 8. Bir "imza an" yok
+Altın/koyu renk paleti her yerde aynı yoğunlukta kullanılıyor, akılda kalan tek bir özenli detay yok.
+
+**Öneri:** Örn. KPI kartlarındaki büyük rakamlara ince bir altın parıltı (glow) efekti gibi TEK göz alıcı detay.
+
+### 9. Açık tema (light mode) yok
+Panel şu an sadece koyu temada (`--bg: #1c1c20` sabit) — açık tema seçeneği yok.
+
+**Öneri:** CSS değişkenleri zaten `:root` içinde merkezi tanımlı olduğu için açık tema eklemek görece düşük risk — `data-theme="light"` ile ikinci bir değişken seti + sağ üstte tema anahtarı (nav-right'a küçük bir toggle). Kullanıcının tercihi `localStorage`'da saklanır.
+
 ## Öncelik Sırası
-1. Renk/buton tutarlılığı — hızlı, düşük risk
-2. Bağlamsız buton düzeltmesi — hızlı, düşük risk
-3. Sekme gruplaması — en büyük etki, en çok emek (backend `tab` query parametresi ve routing mantığı da güncellenmeli)
+1. Renk/buton tutarlılığı + emoji→ikon + rozet sadeleştirme — hızlı, düşük risk
+2. Bağlamsız buton düzeltmesi + yükleniyor durumu — hızlı, düşük risk
+3. Açık tema — orta emek, mevcut CSS değişken sistemi sayesinde nispeten kolay
+4. Sekme gruplaması + "imza an" detayı — en büyük etki, en çok emek
 
 ## Not
 Mevcut teknoloji yığını (EJS + vanilla CSS, framework yok) korunacak, yeniden yazım yapılmayacak — sadece hedefli iyileştirmeler uygulanacak.
