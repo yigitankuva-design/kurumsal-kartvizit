@@ -39,6 +39,7 @@
       --warning-dim: rgba(245,158,11,0.1);
       --nav-bg: rgba(13,13,15,0.95);
       --btn-gold-text: #000;
+      --gold-glow: rgba(200,168,75,0.35);
     }
     :root[data-theme="light"] {
       --bg: #f7f5f0;
@@ -61,6 +62,7 @@
       --warning-dim: rgba(180,83,9,0.08);
       --nav-bg: rgba(255,255,255,0.85);
       --btn-gold-text: #fff;
+      --gold-glow: rgba(138,106,36,0.15);
     }
     html { scroll-behavior: smooth; }
     body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; transition: background 0.15s, color 0.15s; }
@@ -113,8 +115,14 @@
     /* ── STAT CARDS ── */
     .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
     .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-    .stat-card-n { font-size: 1.5rem; font-weight: var(--fw-bold); color: var(--gold); letter-spacing: -0.04em; }
+    .stat-card-n { font-size: 1.5rem; font-weight: var(--fw-bold); color: var(--gold); letter-spacing: -0.04em; text-shadow: 0 0 20px var(--gold-glow); }
     .stat-card-l { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
+
+    /* ── TAB GROUPS ── */
+    .dash-tabs-main { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+    .dash-tab-main { padding: 8px 4px; margin-bottom: -1px; border-bottom: 2px solid transparent; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-muted); text-decoration: none; transition: all 0.15s; white-space: nowrap; }
+    .dash-tab-main:hover { color: var(--text); }
+    .dash-tab-main.active { color: var(--gold); border-bottom-color: var(--gold); }
 
     /* ── TABS ── */
     .dash-tabs { display: flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 3px; width: fit-content; margin-bottom: 20px; }
@@ -255,6 +263,20 @@ function ikon(isim, boyut, sinif) {
   var d = yollar[isim] || '';
   return '<svg class="' + sinif + '" viewBox="0 0 24 24" width="' + boyut + '" height="' + boyut + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
 }
+
+var tabGruplari = {
+  calisanlar: ['calisanlar', 'istatistik', 'excel'],
+  eczane: ['raf', 'indirim'],
+  icerik: ['icerik', 'urunler'],
+  saha: ['saha', 'analytics', 'gecmis']
+};
+function tabGrubuBul(aktifTab) {
+  for (var grup in tabGruplari) {
+    if (tabGruplari[grup].indexOf(aktifTab) !== -1) return grup;
+  }
+  return 'calisanlar';
+}
+var aktifGrup = tabGrubuBul(tab);
 %>
 
 <!-- NAV -->
@@ -314,19 +336,34 @@ function ikon(isim, boyut, sinif) {
     </div>
   </div>
 
-  <!-- TABS -->
+  <!-- TAB GROUPS -->
+  <div class="dash-tabs-main">
+    <a href="/?tab=calisanlar" class="dash-tab-main <%= aktifGrup === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
+    <% if (firma.paket === 'kurumsal') { %>
+    <a href="/?tab=raf"    class="dash-tab-main <%= aktifGrup === 'eczane' ? 'active' : '' %>">Eczane Ağı</a>
+    <a href="/?tab=icerik" class="dash-tab-main <%= aktifGrup === 'icerik' ? 'active' : '' %>">İçerik</a>
+    <% } %>
+    <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="dash-tab-main <%= aktifGrup === 'saha' ? 'active' : '' %>">Saha Raporları</a>
+  </div>
+
+  <!-- SUB TABS -->
   <div class="dash-tabs">
+    <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
     <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
-    <a href="/?tab=analytics"  class="dash-tab <%= tab === 'analytics'  ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
-    <a href="/?tab=gecmis"     class="dash-tab <%= tab === 'gecmis'     ? 'active' : '' %>">İşlem Geçmişi</a>
-    <% if (firma.paket === 'kurumsal') { %>
+    <% } else if (aktifGrup === 'eczane') { %>
+    <a href="/?tab=raf"     class="dash-tab <%= tab === 'raf'     ? 'active' : '' %>">Raf Kartları</a>
+    <a href="/?tab=indirim" class="dash-tab <%= tab === 'indirim' ? 'active' : '' %>">İndirim</a>
+    <% } else if (aktifGrup === 'icerik') { %>
     <a href="/?tab=icerik"  class="dash-tab <%= tab === 'icerik'  ? 'active' : '' %>">İçerik</a>
     <a href="/?tab=urunler" class="dash-tab <%= tab === 'urunler' ? 'active' : '' %>">Ürünler</a>
-    <a href="/?tab=indirim" class="dash-tab <%= tab === 'indirim' ? 'active' : '' %>">İndirim</a>
-    <a href="/?tab=raf"     class="dash-tab <%= tab === 'raf'     ? 'active' : '' %>">Raf Kartları</a>
-    <a href="/?tab=saha"    class="dash-tab <%= tab === 'saha'    ? 'active' : '' %>">Saha İstatistikleri</a>
+    <% } else if (aktifGrup === 'saha') { %>
+    <% if (firma.paket === 'kurumsal') { %>
+    <a href="/?tab=saha" class="dash-tab <%= tab === 'saha' ? 'active' : '' %>">Saha İstatistikleri</a>
+    <% } %>
+    <a href="/?tab=analytics" class="dash-tab <%= tab === 'analytics' ? 'active' : '' %>">Link Analytics</a>
+    <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
   </div>
 
