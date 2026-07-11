@@ -244,6 +244,27 @@ app.get('/', async (req, res) => {
          GROUP BY gun ORDER BY gun`,
         [req.session.firmaId]
       );
+      const isiHaritasiResult = await pool.query(
+        `SELECT DATE(lt.created_at) AS gun, COUNT(*) AS sayi
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '90 days'
+         GROUP BY gun ORDER BY gun`,
+        [req.session.firmaId]
+      );
+      const dagilimResult = await pool.query(
+        `SELECT lt.tip, COUNT(*) AS sayi
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '90 days'
+         GROUP BY lt.tip ORDER BY sayi DESC`,
+        [req.session.firmaId]
+      );
+      const liderlikResult = await pool.query(
+        `SELECT c.ad, c.soyad, COUNT(*) AS sayi
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '30 days'
+         GROUP BY c.id, c.ad, c.soyad ORDER BY sayi DESC LIMIT 5`,
+        [req.session.firmaId]
+      );
 
       const buDonem = buDonemResult.rows[0];
       const oncekiDonem = oncekiDonemResult.rows[0];
@@ -267,12 +288,32 @@ app.get('/', async (req, res) => {
         sparkline.push(gunlukHarita[d.toISOString().slice(0, 10)] || 0);
       }
 
+      const isiHaritaHarita = {};
+      isiHaritasiResult.rows.forEach(r => {
+        isiHaritaHarita[r.gun.toISOString().slice(0, 10)] = Number(r.sayi);
+      });
+      const isiGunleri = [];
+      for (let i = 89; i >= 0; i--) {
+        const d = new Date(bugunUtc);
+        d.setUTCDate(d.getUTCDate() - i);
+        isiGunleri.push({ tarih: d.toISOString().slice(0, 10), sayi: isiHaritaHarita[d.toISOString().slice(0, 10)] || 0 });
+      }
+      const isiMax = Math.max(1, ...isiGunleri.map(g => g.sayi));
+      const isiHaritasi = isiGunleri.map(g => ({
+        tarih: g.tarih,
+        sayi: g.sayi,
+        seviye: g.sayi === 0 ? 0 : Math.min(4, Math.ceil((g.sayi / isiMax) * 4))
+      }));
+
       genelBakis = {
         tiklamaBuDonem: Number(buDonem.toplam),
         tiklamaDegisim: yuzdeDegisim(buDonem.toplam, oncekiDonem.toplam),
         goruntulemeBuDonem: Number(buDonem.goruntuleme),
         goruntulemeDegisim: yuzdeDegisim(buDonem.goruntuleme, oncekiDonem.goruntuleme),
-        sparkline
+        sparkline,
+        isiHaritasi,
+        tiklamaDagilimi: dagilimResult.rows.map(r => ({ tip: r.tip, sayi: Number(r.sayi) })),
+        liderlikTablosu: liderlikResult.rows.map(r => ({ ad: r.ad, soyad: r.soyad, sayi: Number(r.sayi) }))
       };
     }
 

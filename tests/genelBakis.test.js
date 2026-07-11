@@ -64,4 +64,19 @@ describe('Genel Bakış sekmesi — dönem karşılaştırması', () => {
     const res = await agent.get('/?tab=genel');
     expect(res.text).toContain('genelSparkline');
   });
+
+  test('90 günlük aktivite ısı haritası görünür', async () => {
+    const res = await agent.get('/?tab=genel');
+    expect(res.text).toContain('isi-haritasi-gun');
+  });
+
+  test('tıklama dağılımı donut grafiği görünür', async () => {
+    const res = await agent.get('/?tab=genel');
+    expect(res.text).toContain('chartTiklamaDagilimi');
+  });
+
+  test('liderlik tablosunda en aktif çalışan görünür', async () => {
+    const res = await agent.get('/?tab=genel');
+    expect(res.text).toContain('liderlik-tablosu');
+  });
 });
