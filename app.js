@@ -106,6 +106,19 @@ app.post('/giris', girisLimiter, async (req, res) => {
       }
     }
 
+    const kullaniciSonuc = await pool.query(
+      'SELECT * FROM firma_kullanicilari WHERE LOWER(email) = LOWER($1)',
+      [giris_bilgisi]
+    );
+    if (kullaniciSonuc.rows.length) {
+      const kullanici = kullaniciSonuc.rows[0];
+      if (await bcrypt.compare(sifre, kullanici.sifre_hash)) {
+        req.session.firmaId = kullanici.firma_id;
+        req.session.rol = kullanici.rol;
+        return res.redirect('/');
+      }
+    }
+
     const bayiSonuc = await pool.query(
       'SELECT * FROM bayiler WHERE (LOWER(email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)) AND aktif = true',
       [giris_bilgisi]
