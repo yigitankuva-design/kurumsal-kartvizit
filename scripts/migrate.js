@@ -171,6 +171,16 @@ async function migrate() {
       aciklama    TEXT,
       created_at  TIMESTAMP DEFAULT NOW()
     )`,
+    `CREATE TABLE IF NOT EXISTS firma_kullanicilari (
+      id          SERIAL PRIMARY KEY,
+      firma_id    INTEGER REFERENCES firmalar(id) ON DELETE CASCADE,
+      ad          TEXT NOT NULL,
+      email       TEXT NOT NULL,
+      sifre_hash  TEXT NOT NULL,
+      rol         TEXT NOT NULL CHECK (rol IN ('tam_yetkili', 'sadece_calisan', 'sadece_saha')),
+      created_at  TIMESTAMP DEFAULT NOW(),
+      UNIQUE (firma_id, email)
+    )`,
   ];
 
   for (const sql of migrations) {
