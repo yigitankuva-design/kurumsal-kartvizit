@@ -20,7 +20,7 @@ const kurumsalRoutes = require('./routes/kurumsal');
 const { router: odemeRoutes } = require('./routes/odeme');
 const publicRoutes = require('./routes/public');
 const dosyaRoutes = require('./routes/dosya');
-const { requireFirma, requireKurumsalPaket } = require('./middleware/authMiddleware');
+const { requireFirma, requireKurumsalPaket, requireRolIzni } = require('./middleware/authMiddleware');
 const { createLoginLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -70,13 +70,13 @@ app.use((req, res, next) => {
 });
 
 app.use('/firma', authRoutes);
-app.use('/firma/panel', requireFirma, panelRoutes);
+app.use('/firma/panel', requireFirma, requireRolIzni('tam_yetkili', 'sadece_calisan'), panelRoutes);
 app.use('/superadmin', superadminRoutes);
 app.use('/bayi', bayiRoutes);
 app.use('/bayi', odemeRoutes);
 app.use('/api/mobil', mobilApiRoutes);
 app.use('/dosya', dosyaRoutes);
-app.use('/kurumsal', requireFirma, requireKurumsalPaket, kurumsalRoutes);
+app.use('/kurumsal', requireFirma, requireKurumsalPaket, requireRolIzni('tam_yetkili', 'sadece_saha'), kurumsalRoutes);
 
 // Tek giriş noktası: firma, bayi veya süperadmin — hangisi eşleşirse ona giriş yapılır
 const girisLimiter = createLoginLimiter('/');
