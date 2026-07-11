@@ -9,6 +9,7 @@ const { excelParse } = require('../utils/excel');
 const { uploadMiddleware } = require('../middleware/upload');
 const { biyografiTemizle } = require('../utils/sanitize');
 const { calisanAltZinciriIdleri } = require('../utils/hiyerarsi');
+const { islemKaydet } = require('../utils/islemGecmisi');
 
 const fotoUpload = uploadMiddleware('calisanlar');
 
@@ -207,6 +208,7 @@ async function duzenleHandler(req, res) {
         'UPDATE calisanlar SET giris_email=$1, giris_sifre_hash=$2 WHERE id=$3 AND firma_id=$4',
         [girisEmailDeger, girisSifreHashDeger, req.params.id, req.session.firmaId]
       );
+      await islemKaydet(req.session.firmaId, 'calisan_sifre_degisti', 'calisan', Number(req.params.id), `${ad} ${soyad}`);
     } else {
       await pool.query(
         'UPDATE calisanlar SET giris_email=$1 WHERE id=$2 AND firma_id=$3',
@@ -247,7 +249,13 @@ router.patch('/:id/durum', async (req, res) => {
   const { durum } = req.body;
   if (!['aktif', 'pasif'].includes(durum)) return res.redirect('/');
   try {
-    await pool.query('UPDATE calisanlar SET durum=$1 WHERE id=$2 AND firma_id=$3', [durum, req.params.id, req.session.firmaId]);
+    const c = await pool.query(
+      'UPDATE calisanlar SET durum=$1 WHERE id=$2 AND firma_id=$3 RETURNING ad, soyad',
+      [durum, req.params.id, req.session.firmaId]
+    );
+    if (c.rows.length && durum === 'pasif') {
+      await islemKaydet(req.session.firmaId, 'calisan_pasife_alindi', 'calisan', Number(req.params.id), `${c.rows[0].ad} ${c.rows[0].soyad}`);
+    }
   } catch (err) {
     console.error(err);
   }

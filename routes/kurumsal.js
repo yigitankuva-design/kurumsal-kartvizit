@@ -6,6 +6,7 @@ const { pool } = require('../db');
 const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
 const { eczaneExcelParse } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
+const { islemKaydet } = require('../utils/islemGecmisi');
 
 const logoUpload = uploadMiddleware('firma-logolar');
 const katalogUpload = pdfUploadMiddleware('kataloglar');
@@ -112,7 +113,10 @@ router.post('/eczane/:id/duzenle', async (req, res) => {
 // Eczane sil
 router.post('/eczane/:id/sil', async (req, res) => {
   try {
-    await pool.query('DELETE FROM eczaneler WHERE id=$1 AND firma_id=$2', [req.params.id, req.session.firmaId]);
+    const silinen = await pool.query('DELETE FROM eczaneler WHERE id=$1 AND firma_id=$2 RETURNING ad', [req.params.id, req.session.firmaId]);
+    if (silinen.rows.length) {
+      await islemKaydet(req.session.firmaId, 'eczane_silindi', 'eczane', Number(req.params.id), silinen.rows[0].ad);
+    }
     req.flash('success', 'Eczane silindi.');
   } catch (err) {
     console.error(err);
@@ -324,6 +328,7 @@ router.post('/eczane/toplu-islem', async (req, res) => {
     } else if (islem === 'sil') {
       await pool.query('DELETE FROM eczaneler WHERE id = ANY($1) AND firma_id = $2', [idler, req.session.firmaId]);
     }
+    await islemKaydet(req.session.firmaId, `eczane_toplu_${islem.replace('-', '_')}`, 'eczane', null, `${idler.length} eczane`);
     res.json({ ok: true });
   } catch (err) {
     console.error(err);
@@ -401,6 +406,7 @@ router.post('/indirim-ayar', async (req, res) => {
       'UPDATE firmalar SET indirim_aktif=$1, indirim_yuzdesi=$2 WHERE id=$3',
       [indirim_aktif === 'true', yuzde, req.session.firmaId]
     );
+    await islemKaydet(req.session.firmaId, 'indirim_ayar_degisti', null, null, `aktif=${indirim_aktif === 'true'}, yüzde=${yuzde}`);
     req.flash('success', 'İndirim ayarları güncellendi.');
   } catch (err) {
     console.error(err);

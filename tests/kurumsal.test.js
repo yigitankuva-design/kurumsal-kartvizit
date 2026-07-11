@@ -542,4 +542,44 @@ describe('Kurumsal panel uçları', () => {
     const f = await pool.query('SELECT indirim_yuzdesi FROM firmalar WHERE id = $1', [kurumsalId]);
     expect(f.rows[0].indirim_yuzdesi).toBe(5); // değişmedi
   });
+
+  test('indirim ayarı değişince işlem geçmişine kaydedilir', async () => {
+    const agent = kurumsalAgent;
+    await agent.post('/kurumsal/indirim-ayar').send({ indirim_aktif: 'true', indirim_yuzdesi: '7' });
+    const r = await pool.query(
+      "SELECT * FROM islem_gecmisi WHERE firma_id = $1 AND islem = 'indirim_ayar_degisti' ORDER BY id DESC LIMIT 1",
+      [kurumsalId]
+    );
+    expect(r.rows.length).toBe(1);
+  });
+
+  test('eczane silinince işlem geçmişine kaydedilir', async () => {
+    const agent = kurumsalAgent;
+    const eczane = (await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Silinecek Eczane', $2) RETURNING id",
+      [kurumsalId, `silkod${Date.now() % 1000000}`]
+    )).rows[0].id;
+    await agent.post(`/kurumsal/eczane/${eczane}/sil`);
+    const r = await pool.query(
+      "SELECT * FROM islem_gecmisi WHERE firma_id = $1 AND islem = 'eczane_silindi' AND hedef_id = $2",
+      [kurumsalId, eczane]
+    );
+    expect(r.rows.length).toBe(1);
+    expect(r.rows[0].aciklama).toBe('Silinecek Eczane');
+  });
+
+  test('eczane toplu pasife alma işlem geçmişine kaydedilir', async () => {
+    const agent = kurumsalAgent;
+    const eczane = (await pool.query(
+      "INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Toplu Test Eczanesi', $2) RETURNING id",
+      [kurumsalId, `topkod${Date.now() % 1000000}`]
+    )).rows[0].id;
+    await agent.post('/kurumsal/eczane/toplu-islem').send({ idler: [eczane], islem: 'pasife-al' });
+    const r = await pool.query(
+      "SELECT * FROM islem_gecmisi WHERE firma_id = $1 AND islem = 'eczane_toplu_pasife_al' ORDER BY id DESC LIMIT 1",
+      [kurumsalId]
+    );
+    expect(r.rows.length).toBe(1);
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczane]);
+  });
 });

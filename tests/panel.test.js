@@ -232,4 +232,34 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
     await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
     await pool.query('DELETE FROM eczaneler WHERE id = $1', [eczane]);
   });
+
+  test('çalışan pasife alınınca işlem geçmişine kaydedilir', async () => {
+    const calisan = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug, durum) VALUES ($1, 'Pasif', 'Test', $2, 'aktif') RETURNING id",
+      [firmaId, `pasif-test-calisan-${Date.now()}`]
+    )).rows[0].id;
+    await agent.patch(`/firma/panel/${calisan}/durum`).send({ durum: 'pasif' });
+    const r = await pool.query(
+      "SELECT * FROM islem_gecmisi WHERE firma_id = $1 AND islem = 'calisan_pasife_alindi' AND hedef_id = $2",
+      [firmaId, calisan]
+    );
+    expect(r.rows.length).toBe(1);
+    await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
+  });
+
+  test('çalışan giriş şifresi değiştirilince işlem geçmişine kaydedilir', async () => {
+    const calisan = (await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Sifre', 'Test', $2) RETURNING id",
+      [firmaId, `sifre-test-calisan-${Date.now()}`]
+    )).rows[0].id;
+    await agent.put(`/firma/panel/${calisan}/duzenle`).send({
+      ad: 'Sifre', soyad: 'Test', giris_email: `sifretest${Date.now()}@example.com`, giris_sifre: 'yenisifre123',
+    });
+    const r = await pool.query(
+      "SELECT * FROM islem_gecmisi WHERE firma_id = $1 AND islem = 'calisan_sifre_degisti' AND hedef_id = $2",
+      [firmaId, calisan]
+    );
+    expect(r.rows.length).toBe(1);
+    await pool.query('DELETE FROM calisanlar WHERE id = $1', [calisan]);
+  });
 });
