@@ -83,6 +83,21 @@ router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) =>
   }
 });
 
+const HEX_RENK_REGEX = /^#[0-9a-fA-F]{6}$/;
+
+router.post('/tema', async (req, res) => {
+  const { renk, isikSeviyesi } = req.body;
+  const seviye = Number(isikSeviyesi);
+  if (!HEX_RENK_REGEX.test(renk || '') || !Number.isFinite(seviye) || seviye < 0 || seviye > 100) {
+    return res.status(400).json({ error: 'Geçersiz renk veya ışık seviyesi.' });
+  }
+  await pool.query(
+    'UPDATE firmalar SET tema_renk = $1, tema_isik_seviyesi = $2 WHERE id = $3',
+    [renk, seviye, req.session.firmaId]
+  );
+  res.json({ ok: true });
+});
+
 // Excel şablon indir
 router.get('/excel-sablon', async (req, res) => {
   const buffer = await aoaToXlsxBuffer([
