@@ -139,7 +139,7 @@
     /* ── STAT CARDS ── */
     .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
     .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
-    .stat-card-n { font-size: 1.5rem; font-weight: var(--fw-bold); color: var(--gold); letter-spacing: -0.04em; text-shadow: 0 0 20px var(--gold-glow); }
+    .stat-card-n { font-size: 1.5rem; font-weight: var(--fw-bold); color: var(--gold); letter-spacing: -0.04em; text-shadow: 0 0 20px var(--gold-glow); font-variant-numeric: tabular-nums; }
     .stat-card-l { font-size: var(--fs-xs); color: var(--text-faint); margin-top: 2px; }
 
     /* ── TAB GROUPS ── */
@@ -156,8 +156,8 @@
 
     /* ── TABLE ── */
     .table-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
-    table { width: 100%; border-collapse: collapse; }
-    thead th { padding: 10px 16px; text-align: left; font-size: var(--fs-xs); font-weight: var(--fw-medium); color: var(--text-faint); background: var(--bg2); border-bottom: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    thead th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: var(--fw-semibold); color: var(--text-faint); background: var(--bg2); border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
     tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
     tbody tr:last-child { border-bottom: none; }
     tbody tr:hover { background: var(--bg2); }
