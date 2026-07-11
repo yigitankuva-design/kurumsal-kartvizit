@@ -45,7 +45,7 @@ describe('Rol bazlı tab erişim kısıtlaması', () => {
     await agent.post('/giris').send({ giris_bilgisi: 'tabkisitlama-saha@example.com', sifre: 'alt1234' });
     const res = await agent.get('/?tab=calisanlar');
     expect(res.statusCode).toBe(200);
-    expect(res.text).not.toContain('td-actions');
+    expect(res.text).not.toContain('name="ara"');
   });
 
   test('firma sahibi Kullanıcılar sekmesinde eklenen kullanıcıları görür', async () => {

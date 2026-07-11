@@ -274,7 +274,7 @@ function ikon(isim, boyut, sinif) {
 
 var tabGruplari = {
   genel: ['genel'],
-  calisanlar: ['calisanlar', 'istatistik', 'excel'],
+  calisanlar: ['calisanlar', 'istatistik', 'excel', 'kullanicilar'],
   eczane: ['raf', 'indirim'],
   icerik: ['icerik', 'urunler'],
   saha: ['saha', 'analytics', 'gecmis']
@@ -348,8 +348,10 @@ var aktifGrup = tabGrubuBul(tab);
   <!-- TAB GROUPS -->
   <div class="dash-tabs-main">
     <a href="/?tab=genel" class="dash-tab-main <%= aktifGrup === 'genel' ? 'active' : '' %>">Genel Bakış</a>
+    <% if (rol !== 'sadece_saha') { %>
     <a href="/?tab=calisanlar" class="dash-tab-main <%= aktifGrup === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
-    <% if (firma.paket === 'kurumsal') { %>
+    <% } %>
+    <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
     <a href="/?tab=raf"    class="dash-tab-main <%= aktifGrup === 'eczane' ? 'active' : '' %>">Eczane Ağı</a>
     <a href="/?tab=icerik" class="dash-tab-main <%= aktifGrup === 'icerik' ? 'active' : '' %>">İçerik</a>
     <% } %>
@@ -363,6 +365,9 @@ var aktifGrup = tabGrubuBul(tab);
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
     <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
+    <% if (!rol || rol === 'tam_yetkili') { %>
+    <a href="/?tab=kullanicilar" class="dash-tab <%= tab === 'kullanicilar' ? 'active' : '' %>">Kullanıcılar</a>
+    <% } %>
     <% } else if (aktifGrup === 'eczane') { %>
     <a href="/?tab=raf"     class="dash-tab <%= tab === 'raf'     ? 'active' : '' %>">Raf Kartları</a>
     <a href="/?tab=indirim" class="dash-tab <%= tab === 'indirim' ? 'active' : '' %>">İndirim</a>
@@ -485,6 +490,64 @@ var aktifGrup = tabGrubuBul(tab);
       <a href="/kurumsal/rapor-pdf" class="btn btn-border" style="height:36px;margin-left:8px;">⬇ Haftalık Özet PDF</a>
     </div>
     <% } %>
+    <% } %>
+
+  <!-- TAB: KULLANICILAR -->
+  <% } else if (tab === 'kullanicilar') { %>
+    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
+      <h3 style="margin-bottom:12px">Yeni Kullanıcı Davet Et</h3>
+      <form method="POST" action="/firma/kullanicilar/ekle" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+        <div class="field" style="min-width:160px">
+          <label>Ad Soyad</label>
+          <input name="ad" required>
+        </div>
+        <div class="field" style="min-width:200px">
+          <label>E-posta</label>
+          <input type="email" name="email" required>
+        </div>
+        <div class="field" style="min-width:160px">
+          <label>Şifre</label>
+          <input type="text" name="sifre" required minlength="6">
+        </div>
+        <div class="field" style="min-width:160px">
+          <label>Rol</label>
+          <select name="rol" required>
+            <option value="tam_yetkili">Tam Yetkili</option>
+            <option value="sadece_calisan">Sadece Çalışan Yönetimi</option>
+            <option value="sadece_saha">Sadece Saha/Eczane</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-gold" style="height:36px">Ekle</button>
+      </form>
+    </div>
+    <% if (!kullanicilarListesi.length) { %>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-state-icon"><%- ikon('kullanici', 32, '') %></div>
+        <div class="empty-state-title">Henüz ek kullanıcı yok</div>
+        <div class="empty-state-sub">Yukarıdan davet ederek başlayın</div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Ad Soyad</th><th>E-posta</th><th>Rol</th><th>İşlem</th></tr></thead>
+        <tbody>
+          <% kullanicilarListesi.forEach(k => { %>
+          <tr>
+            <td class="td-name"><%= k.ad %></td>
+            <td><%= k.email %></td>
+            <td><%= k.rol === 'tam_yetkili' ? 'Tam Yetkili' : k.rol === 'sadece_calisan' ? 'Sadece Çalışan' : 'Sadece Saha' %></td>
+            <td>
+              <form method="POST" action="/firma/kullanicilar/<%= k.id %>/sil" style="display:inline" onsubmit="return confirm('<%= k.ad %> kaldırılsın mı?')">
+                <button type="submit" class="btn-link">Kaldır</button>
+              </form>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
     <% } %>
 
   <!-- TAB: ÇALIŞANLAR -->
