@@ -1,7 +1,7 @@
 require('dotenv').config();
 const request = require('supertest');
 const bcrypt = require('bcrypt');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const app = require('../app');
 const { pool } = require('../db');
 
@@ -197,15 +197,16 @@ describe('Kurumsal panel uçları', () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.headers['content-type']).toContain('spreadsheetml');
-    const wb = XLSX.read(res.body, { type: 'buffer' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.body);
+    const ws = wb.worksheets[0];
+    const rows = [];
+    ws.eachRow((row) => rows.push(row.values.slice(1)));
     expect(rows[0]).toEqual(['Temsilci', 'Eczane', 'Tarih', 'Not']);
     expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
 
   test('gelişmiş rapor Excel çıktısı 4 sayfa içerir ve doğru başlıklara sahiptir', async () => {
-    const ExcelJS = require('exceljs');
     const agent = kurumsalAgent;
     const res = await agent.get('/kurumsal/rapor-excel').buffer(true).parse((res, cb) => {
       res.setEncoding('binary');
@@ -353,14 +354,14 @@ describe('Kurumsal panel uçları', () => {
   });
 
   test('eczane Excel toplu yüklenir, kod üretilir ve onayli=false olur', async () => {
-    const ws = XLSX.utils.aoa_to_sheet([
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Eczaneler');
+    ws.addRows([
       ['ad', 'adres'],
       ['Toplu Eczane A', 'Adres A'],
       ['Toplu Eczane B', ''],
     ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Eczaneler');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await wb.xlsx.writeBuffer();
     const res = await kurumsalAgent.post('/kurumsal/eczane-toplu-yukle')
       .attach('excel', buffer, { filename: 'ecz.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     expect(res.statusCode).toBe(302);

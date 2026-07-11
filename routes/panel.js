@@ -3,9 +3,8 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 const { pool } = require('../db');
 const { benzersizCalisanSlugOlustur } = require('../utils/slug');
-const XLSX = require('xlsx');
 const multer = require('multer');
-const { excelParse } = require('../utils/excel');
+const { excelParse, aoaToXlsxBuffer } = require('../utils/excel');
 const { uploadMiddleware } = require('../middleware/upload');
 const { biyografiTemizle } = require('../utils/sanitize');
 const { calisanAltZinciriIdleri } = require('../utils/hiyerarsi');
@@ -85,14 +84,11 @@ router.post('/ekle', fotoUploadGuvenli('/firma/panel/ekle'), async (req, res) =>
 });
 
 // Excel şablon indir
-router.get('/excel-sablon', (req, res) => {
-  const ws = XLSX.utils.aoa_to_sheet([
+router.get('/excel-sablon', async (req, res) => {
+  const buffer = await aoaToXlsxBuffer([
     ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'instagram', 'twitter', 'biyografi'],
     ['Örnek', 'Kişi', 'Satış Müdürü', 'Satış', '+905001112233', 'ornek@firma.com', '', '', '', '']
-  ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  ], 'Çalışanlar');
   res.setHeader('Content-Disposition', 'attachment; filename="calisanlar-sablon.xlsx"');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
@@ -104,7 +100,7 @@ router.post('/toplu-yukle', upload.single('excel'), async (req, res) => {
     req.flash('error', 'Dosya seçilmedi.');
     return res.redirect('/?tab=excel');
   }
-  const { calisanlar, hatalar } = excelParse(req.file.buffer);
+  const { calisanlar, hatalar } = await excelParse(req.file.buffer);
   let eklenen = 0;
   for (const c of calisanlar) {
     try {

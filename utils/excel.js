@@ -1,9 +1,43 @@
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 
-function excelParse(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+function hucreDegeri(v) {
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') {
+    if (v.text !== undefined) return v.text;
+    if (v.richText) return v.richText.map((rt) => rt.text).join('');
+    if (v.result !== undefined) return v.result;
+    return String(v);
+  }
+  return v;
+}
+
+async function ilkSayfaSatirlariniOku(buffer) {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
+  const headers = [];
+  const rows = [];
+
+  sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+    if (rowNumber === 1) {
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        headers[colNumber] = String(hucreDegeri(cell.value) || '').trim();
+      });
+      return;
+    }
+    const obj = {};
+    headers.forEach((h, colNumber) => {
+      if (!h) return;
+      obj[h] = hucreDegeri(row.getCell(colNumber).value);
+    });
+    rows.push(obj);
+  });
+
+  return rows;
+}
+
+async function excelParse(buffer) {
+  const rows = await ilkSayfaSatirlariniOku(buffer);
 
   const calisanlar = [];
   const hatalar = [];
@@ -40,10 +74,8 @@ function excelParse(buffer) {
   return { calisanlar, hatalar };
 }
 
-function eczaneExcelParse(buffer) {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+async function eczaneExcelParse(buffer) {
+  const rows = await ilkSayfaSatirlariniOku(buffer);
 
   const eczaneler = [];
   const hatalar = [];
@@ -63,4 +95,11 @@ function eczaneExcelParse(buffer) {
   return { eczaneler, hatalar };
 }
 
-module.exports = { excelParse, eczaneExcelParse };
+async function aoaToXlsxBuffer(satirlar, sayfaAdi) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(sayfaAdi);
+  sheet.addRows(satirlar);
+  return workbook.xlsx.writeBuffer();
+}
+
+module.exports = { excelParse, eczaneExcelParse, aoaToXlsxBuffer };

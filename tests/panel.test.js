@@ -1,8 +1,16 @@
 require('dotenv').config();
 const request = require('supertest');
 const bcrypt = require('bcrypt');
+const ExcelJS = require('exceljs');
 const app = require('../app');
 const { pool } = require('../db');
+
+async function xlsxBufferOlustur(satirlar, sayfaAdi) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet(sayfaAdi || 'Çalışanlar');
+  sheet.addRows(satirlar);
+  return workbook.xlsx.writeBuffer();
+}
 
 async function firmaOlustur(email) {
   const hash = await bcrypt.hash('test1234', 8);
@@ -95,14 +103,10 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('Excel toplu yüklenen çalışan onayli=false ile eklenir', async () => {
-    const XLSX = require('xlsx');
-    const ws = XLSX.utils.aoa_to_sheet([
+    const buffer = await xlsxBufferOlustur([
       ['ad', 'soyad', 'unvan', 'departman', 'telefon', 'email', 'linkedin', 'biyografi'],
       ['Toplu', 'Onaysiz', '', '', '', '', '', ''],
     ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
     const res = await agent.post('/firma/panel/toplu-yukle')
       .attach('excel', buffer, { filename: 'test.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     expect(res.statusCode).toBe(302);
@@ -115,14 +119,10 @@ describe('routes/panel — temsilci giriş bilgisi', () => {
   });
 
   test('Excel toplu yüklemede instagram ve twitter kolonları da kaydedilir', async () => {
-    const XLSX = require('xlsx');
-    const ws = XLSX.utils.aoa_to_sheet([
+    const buffer = await xlsxBufferOlustur([
       ['ad', 'soyad', 'linkedin', 'instagram', 'twitter'],
       ['Sosyal', 'Medya', 'https://linkedin.com/in/sosyal', '@sosyalmedya', '@sosyalx'],
     ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Çalışanlar');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
     const res = await agent.post('/firma/panel/toplu-yukle')
       .attach('excel', buffer, { filename: 'test.xlsx', contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     expect(res.statusCode).toBe(302);

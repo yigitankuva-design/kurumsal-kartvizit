@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const XLSX = require('xlsx');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const multer = require('multer');
 const { pool } = require('../db');
 const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/eczaneKod');
-const { eczaneExcelParse } = require('../utils/excel');
+const { eczaneExcelParse, aoaToXlsxBuffer } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 const { islemKaydet } = require('../utils/islemGecmisi');
 
@@ -195,13 +194,10 @@ router.get('/ziyaretler-excel', async (req, res) => {
        ORDER BY z.created_at DESC`,
       [req.session.firmaId]
     );
-    const ws = XLSX.utils.aoa_to_sheet([
+    const buffer = await aoaToXlsxBuffer([
       ['Temsilci', 'Eczane', 'Tarih', 'Not'],
       ...result.rows.map(r => [`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at.toISOString(), r.temsilci_notu || '']),
-    ]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Ziyaretler');
-    const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+    ], 'Ziyaretler');
     res.setHeader('Content-Disposition', 'attachment; filename="ziyaretler.xlsx"');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buffer);
@@ -501,14 +497,11 @@ router.post('/eczane/:id/kart-isaretle', async (req, res) => {
   res.redirect('/?tab=raf');
 });
 
-router.get('/eczane-sablon', (req, res) => {
-  const ws = XLSX.utils.aoa_to_sheet([
+router.get('/eczane-sablon', async (req, res) => {
+  const buffer = await aoaToXlsxBuffer([
     ['ad', 'adres'],
     ['Örnek Eczane', 'Merkez Mah. No:1'],
-  ]);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Eczaneler');
-  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
+  ], 'Eczaneler');
   res.setHeader('Content-Disposition', 'attachment; filename="eczaneler-sablon.xlsx"');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
@@ -519,7 +512,7 @@ router.post('/eczane-toplu-yukle', excelUpload.single('excel'), async (req, res)
     req.flash('error', 'Dosya seçilmedi.');
     return res.redirect('/?tab=excel');
   }
-  const { eczaneler, hatalar } = eczaneExcelParse(req.file.buffer);
+  const { eczaneler, hatalar } = await eczaneExcelParse(req.file.buffer);
   let eklenen = 0;
   for (const e of eczaneler) {
     try {
