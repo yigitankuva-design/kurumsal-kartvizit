@@ -505,7 +505,7 @@ function ikon(isim, boyut, sinif) {
       <h3>Excel ile toplu yükleme</h3>
       <p>Önce şablonu indirin, doldurun, ardından yükleyin. 100 çalışanı saniyeler içinde ekleyin.</p>
       <a href="/firma/panel/excel-sablon" class="btn btn-border" style="margin-bottom:20px;height:36px;">⬇ Şablonu İndir (.xlsx)</a>
-      <form method="POST" action="/firma/panel/toplu-yukle" enctype="multipart/form-data">
+      <form method="POST" action="/firma/panel/toplu-yukle" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
         <div class="form-group">
           <label>Excel dosyası (.xlsx)</label>
           <input type="file" name="excel" accept=".xlsx,.xls" required>
@@ -518,7 +518,7 @@ function ikon(isim, boyut, sinif) {
       <h3>Eczane ile toplu yükleme</h3>
       <p>Eczane listesini Excel ile toplu ekleyin. İçe aktarılan eczaneler onaylanana kadar mobilde görünmez.</p>
       <a href="/kurumsal/eczane-sablon" class="btn btn-border" style="margin-bottom:20px;height:36px;">⬇ Eczane Şablonu İndir (.xlsx)</a>
-      <form method="POST" action="/kurumsal/eczane-toplu-yukle" enctype="multipart/form-data">
+      <form method="POST" action="/kurumsal/eczane-toplu-yukle" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
         <div class="form-group">
           <label>Excel dosyası (.xlsx)</label>
           <input type="file" name="excel" accept=".xlsx,.xls" required>
@@ -570,14 +570,14 @@ function ikon(isim, boyut, sinif) {
     <div class="table-wrap" style="padding:20px;max-width:560px">
       <h3 style="margin-bottom:12px">Logo</h3>
       <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #e5e7eb;margin-bottom:8px"><% } %>
-      <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" style="margin-bottom:24px">
+      <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" style="margin-bottom:24px" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
         <input type="file" name="logo" id="logoInput" accept="image/*" required>
         <button type="submit" class="btn btn-gold">Logoyu Yükle</button>
       </form>
 
       <h3 style="margin-bottom:12px">Ürün Kataloğu (PDF)</h3>
       <% if (firma.katalog_url) { %><p style="margin-bottom:8px"><a href="<%= firma.katalog_url %>" target="_blank">Mevcut kataloğu görüntüle</a></p><% } %>
-      <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" style="margin-bottom:24px">
+      <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" style="margin-bottom:24px" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
         <input type="file" name="katalog" accept="application/pdf" required>
         <button type="submit" class="btn btn-gold">Kataloğu Yükle</button>
       </form>
@@ -604,7 +604,7 @@ function ikon(isim, boyut, sinif) {
 
       <h3 style="margin-bottom:12px">Eğitim Dokümanı (PDF)</h3>
       <% if (firma.eczaci_pdf_url) { %><p style="margin-bottom:8px"><a href="<%= firma.eczaci_pdf_url %>" target="_blank">Mevcut dokümanı görüntüle</a></p><% } %>
-      <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data">
+      <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
         <input type="file" name="eczaci_pdf" accept="application/pdf" required>
         <button type="submit" class="btn btn-gold">Dokümanı Yükle</button>
       </form>
@@ -614,7 +614,7 @@ function ikon(isim, boyut, sinif) {
   <% } else if (tab === 'urunler' && firma.paket === 'kurumsal') { %>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:560px">
       <h3 style="margin-bottom:12px">Yeni Ürün Ekle</h3>
-      <form method="POST" action="/kurumsal/urunler" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px">
+      <form method="POST" action="/kurumsal/urunler" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px" onsubmit="return formYukleniyorGoster(this, 'Kaydediliyor...')">
         <input name="ad" placeholder="Ürün adı *" required>
         <textarea name="aciklama" placeholder="Kısa açıklama" rows="3"></textarea>
         <input type="file" name="foto" id="urunFotoInput" accept="image/*">
@@ -634,7 +634,7 @@ function ikon(isim, boyut, sinif) {
             <td><span class="badge badge-<%= u.aktif ? 'aktif' : 'pasif' %>"><%= u.aktif ? 'Aktif' : 'Pasif' %></span></td>
             <td>
               <% if (u.pdf_url) { %><a href="<%= u.pdf_url %>" target="_blank">Görüntüle</a><% } %>
-              <form method="POST" action="/kurumsal/urunler/<%= u.id %>/pdf" enctype="multipart/form-data" style="margin-top:4px">
+              <form method="POST" action="/kurumsal/urunler/<%= u.id %>/pdf" enctype="multipart/form-data" style="margin-top:4px" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
                 <input type="file" name="pdf" accept="application/pdf" style="max-width:140px">
                 <button type="submit" class="btn btn-sm">Yükle</button>
               </form>
@@ -668,7 +668,7 @@ function ikon(isim, boyut, sinif) {
       <div style="background:#fff;border-radius:12px;padding:24px;max-width:420px;width:100%;position:relative">
         <button type="button" onclick="document.getElementById('urunDuzenleModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer">✕</button>
         <h3 style="margin-bottom:16px;font-size:16px;font-weight:700">Ürün Düzenle</h3>
-        <form id="urunDuzenleForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px">
+        <form id="urunDuzenleForm" method="POST" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px" onsubmit="return formYukleniyorGoster(this, 'Kaydediliyor...')">
           <input type="hidden" name="_method" value="PUT">
           <input type="hidden" name="aktif" id="urunDuzenleAktifGizli" value="true">
           <input id="urunDuzenleAd" name="ad" placeholder="Ürün adı *" required>
@@ -1081,13 +1081,22 @@ function ikon(isim, boyut, sinif) {
 
     <div class="slide-footer">
       <button class="btn-cancel" onclick="closeSlide()">İptal</button>
-      <button class="btn-submit" onclick="submitSlide()">Kaydet</button>
+      <button id="slideKaydetBtn" class="btn-submit" onclick="submitSlide()">Kaydet</button>
     </div>
   </div>
 </div>
 
 <!-- Employee data for edit -->
 <script>
+  function formYukleniyorGoster(form, metin) {
+    const btn = form.querySelector('button[type="submit"]');
+    if (!btn || btn.disabled) return true;
+    btn.dataset.orijinalMetin = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = metin || 'Kaydediliyor...';
+    return true;
+  }
+
   function elOlustur(etiket, metin, stiller) {
     const el = document.createElement(etiket);
     if (metin !== undefined) el.textContent = metin;
@@ -1242,6 +1251,11 @@ function ikon(isim, boyut, sinif) {
   }
 
   function submitSlide() {
+    const btn = document.getElementById('slideKaydetBtn');
+    if (btn && !btn.disabled) {
+      btn.disabled = true;
+      btn.textContent = 'Kaydediliyor...';
+    }
     document.getElementById('slideForm').submit();
   }
 
