@@ -1,6 +1,7 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="dark">
 <head>
+  <script>(function(){try{var t=localStorage.getItem('nfck-tema');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NFCKartify — <%= firma.ad %></title>
@@ -9,6 +10,15 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
+      --fs-xs: 0.72rem;
+      --fs-sm: 0.8rem;
+      --fs-base: 0.875rem;
+      --fw-normal: 400;
+      --fw-medium: 500;
+      --fw-semibold: 600;
+      --fw-bold: 700;
+    }
+    :root[data-theme="dark"] {
       --bg: #1c1c20;
       --bg2: #222227;
       --bg3: #28282e;
@@ -27,23 +37,40 @@
       --success-dim: rgba(34,197,94,0.1);
       --warning: #f59e0b;
       --warning-dim: rgba(245,158,11,0.1);
-      --fs-xs: 0.72rem;
-      --fs-sm: 0.8rem;
-      --fs-base: 0.875rem;
-      --fw-normal: 400;
-      --fw-medium: 500;
-      --fw-semibold: 600;
-      --fw-bold: 700;
+      --nav-bg: rgba(13,13,15,0.95);
+      --btn-gold-text: #000;
+    }
+    :root[data-theme="light"] {
+      --bg: #f7f5f0;
+      --bg2: #ffffff;
+      --bg3: #eeece3;
+      --bg4: #e4e1d5;
+      --border: rgba(28,28,32,0.1);
+      --border-gold: rgba(138,106,36,0.35);
+      --gold: #8a6a24;
+      --gold-light: #a17c2c;
+      --gold-dim: rgba(138,106,36,0.1);
+      --text: #1c1c20;
+      --text-muted: #6b6a63;
+      --text-faint: #6f6e66;
+      --danger: #dc2626;
+      --danger-dim: rgba(220,38,38,0.08);
+      --success: #16a34a;
+      --success-dim: rgba(22,163,74,0.08);
+      --warning: #b45309;
+      --warning-dim: rgba(180,83,9,0.08);
+      --nav-bg: rgba(255,255,255,0.85);
+      --btn-gold-text: #fff;
     }
     html { scroll-behavior: smooth; }
-    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); font-size: var(--fs-base); line-height: 1.5; -webkit-font-smoothing: antialiased; overflow-x: hidden; transition: background 0.15s, color 0.15s; }
 
     /* ── NAV ── */
     .dash-nav {
       position: sticky; top: 0; z-index: 50;
       height: 52px; display: flex; align-items: center; justify-content: space-between;
       padding: 0 24px;
-      background: rgba(13,13,15,0.95); backdrop-filter: blur(12px);
+      background: var(--nav-bg); backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
     }
     .nav-logo { font-size: var(--fs-base); font-weight: var(--fw-bold); color: var(--text); text-decoration: none; letter-spacing: -0.02em; }
@@ -55,7 +82,7 @@
     .btn { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 6px; font-size: var(--fs-sm); font-weight: var(--fw-medium); cursor: pointer; border: none; font-family: inherit; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
     .btn-ghost { background: transparent; color: var(--text-muted); }
     .btn-ghost:hover { background: var(--bg3); color: var(--text); }
-    .btn-gold { background: var(--gold); color: #000; font-weight: var(--fw-semibold); box-shadow: 0 0 16px rgba(200,168,75,0.2); }
+    .btn-gold { background: var(--gold); color: var(--btn-gold-text); font-weight: var(--fw-semibold); box-shadow: 0 0 16px rgba(200,168,75,0.2); }
     .btn-gold:hover { background: var(--gold-light); }
     .btn-border { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
     .btn-border:hover { border-color: var(--border-gold); color: var(--text); }
@@ -191,7 +218,7 @@
     .field-sep { grid-column: 1 / -1; border: none; border-top: 1px solid var(--border); margin: 4px 0; }
     .field-section { grid-column: 1 / -1; font-size: var(--fs-xs); font-weight: var(--fw-semibold); color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 4px; }
 
-    .btn-submit { flex: 1; height: 40px; background: var(--gold); border: none; border-radius: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: #000; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+    .btn-submit { flex: 1; height: 40px; background: var(--gold); border: none; border-radius: 8px; font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--btn-gold-text); cursor: pointer; font-family: inherit; transition: background 0.15s; }
     .btn-submit:hover { background: var(--gold-light); }
     .btn-cancel { height: 40px; padding: 0 16px; background: transparent; border: 1px solid var(--border); border-radius: 8px; font-size: var(--fs-sm); color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
     .btn-cancel:hover { border-color: var(--border-gold); color: var(--text); }
@@ -221,7 +248,9 @@ function ikon(isim, boyut, sinif) {
     cop: '<path d="M5 7h14M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12"/>',
     kalem: '<path d="M4 20l1-4L16 5l3 3L8 19l-4 1z"/><path d="M14 7l3 3"/>',
     uyari: '<path d="M12 3.5L22 20H2L12 3.5z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.8" fill="currentColor" stroke="none"/>',
-    konum: '<path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/>'
+    konum: '<path d="M12 21s7-6.3 7-11.5A7 7 0 0 0 5 9.5C5 14.7 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.3"/>',
+    ay: '<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4 6.5 6.5 0 0 0 20 14.5z"/>',
+    gunes: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2 12h2M20 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/>'
   };
   var d = yollar[isim] || '';
   return '<svg class="' + sinif + '" viewBox="0 0 24 24" width="' + boyut + '" height="' + boyut + '" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
@@ -233,6 +262,10 @@ function ikon(isim, boyut, sinif) {
   <a href="/" class="nav-logo">NFC<em>Kartify</em></a>
   <span class="nav-center"><%= firma.ad %></span>
   <div class="nav-right">
+    <button type="button" id="temaBtn" class="btn btn-ghost" onclick="temaDegistir()" title="Temayı değiştir">
+      <span id="temaIkonAy"><%- ikon('ay', 16, '') %></span>
+      <span id="temaIkonGunes" style="display:none"><%- ikon('gunes', 16, '') %></span>
+    </button>
     <form method="POST" action="/firma/cikis" style="margin:0">
       <button type="submit" class="btn btn-ghost">Çıkış</button>
     </form>
@@ -1088,6 +1121,23 @@ function ikon(isim, boyut, sinif) {
 
 <!-- Employee data for edit -->
 <script>
+  function temaUygula(tema) {
+    document.documentElement.setAttribute('data-theme', tema);
+    const ay = document.getElementById('temaIkonAy');
+    const gunes = document.getElementById('temaIkonGunes');
+    if (ay) ay.style.display = tema === 'dark' ? '' : 'none';
+    if (gunes) gunes.style.display = tema === 'light' ? '' : 'none';
+  }
+
+  function temaDegistir() {
+    const mevcut = document.documentElement.getAttribute('data-theme') || 'dark';
+    const yeni = mevcut === 'light' ? 'dark' : 'light';
+    try { localStorage.setItem('nfck-tema', yeni); } catch (e) {}
+    temaUygula(yeni);
+  }
+
+  temaUygula(document.documentElement.getAttribute('data-theme') || 'dark');
+
   function formYukleniyorGoster(form, metin) {
     const btn = form.querySelector('button[type="submit"]');
     if (!btn || btn.disabled) return true;
