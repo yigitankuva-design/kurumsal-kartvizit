@@ -64,6 +64,8 @@
     .btn-warning-sm { background: var(--warning-dim); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
     .btn-warning-sm:hover { background: rgba(245,158,11,0.18); }
     .btn-sm { height: 28px; padding: 0 10px; font-size: var(--fs-xs); }
+    .btn-link { background: none; border: none; padding: 0 4px; height: auto; color: var(--text-faint); text-decoration: none; }
+    .btn-link:hover { color: var(--text-muted); text-decoration: underline; text-underline-offset: 2px; }
 
     /* ── FLASH ── */
     .flash-bar {
@@ -107,9 +109,11 @@
     .td-url a:hover { color: var(--gold); }
     .td-actions { display: flex; gap: 6px; align-items: center; }
 
-    .badge { display: inline-flex; align-items: center; height: 20px; padding: 0 8px; border-radius: 100px; font-size: 0.65rem; font-weight: var(--fw-semibold); letter-spacing: 0.03em; text-transform: uppercase; }
-    .badge-aktif { background: var(--success-dim); color: var(--success); }
-    .badge-pasif { background: var(--bg3); color: var(--text-faint); }
+    .badge { display: inline-flex; align-items: center; gap: 6px; height: 20px; font-size: var(--fs-xs); font-weight: var(--fw-medium); }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+    .badge-aktif { color: var(--success); }
+    .badge-pasif { color: var(--text-faint); }
+    .badge-beklemede { color: var(--warning); }
 
     .empty-state { text-align: center; padding: 48px 24px; }
     .empty-state-icon { margin-bottom: 12px; }
@@ -209,6 +213,7 @@ function ikon(isim, boyut, sinif) {
     kamera: '<path d="M4 7h3l1.5-2h5L15 7h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/>',
     kullanici: '<circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.9 3.1-7 7-7s7 3.1 7 7"/>',
     kilit: '<rect x="5" y="10" width="14" height="10" rx="1.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+    duraklat: '<rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/>',
     grafik: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
     pano: '<rect x="6" y="4" width="12" height="16" rx="1.5"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 11h6M9 15h6"/>',
     kutu: '<path d="M3 8l9-5 9 5-9 5-9-5z"/><path d="M3 8v9l9 5 9-5V8"/><path d="M12 13v9"/>',
@@ -342,7 +347,7 @@ function ikon(isim, boyut, sinif) {
               <span class="badge badge-<%= c.durum %>"><%= c.durum %></span>
               <% if (!c.onayli) { %>
                 <div style="margin-top:6px">
-                  <span style="color:var(--warning);font-size:12px">⏳ Onay Bekliyor</span>
+                  <span class="badge badge-beklemede">Onay Bekliyor</span>
                   <form method="POST" action="/firma/panel/calisan/<%= c.id %>/onayla" style="display:inline">
                     <button type="submit" class="btn btn-gold btn-sm">Onayla</button>
                   </form>
@@ -454,7 +459,7 @@ function ikon(isim, boyut, sinif) {
                 <span style="color:var(--success);font-weight:600">✓ Yazıldı<% if (c.kart_kilitli) { %> <%- ikon('kilit', 13, 'ikon-inline') %><% } %></span>
                 <form method="POST" action="/kurumsal/calisan/<%= c.id %>/kart-isaretle" style="display:inline">
                   <input type="hidden" name="yazildi" value="false">
-                  <button type="submit" class="btn btn-border btn-sm">Kaldır</button>
+                  <button type="submit" class="btn-link">Kaldır</button>
                 </form>
               <% } else { %>
                 <span style="color:var(--text-faint)">○ Yazılmadı</span>
@@ -759,7 +764,7 @@ function ikon(isim, boyut, sinif) {
 
     <div class="table-wrap" style="padding:12px 20px;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
-      <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
+      <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')"><%- ikon('duraklat') %>Toplu Pasife Al</button>
       <button type="button" id="eczaneTopluSilBtn" disabled class="btn btn-danger-sm" onclick="eczaneTopluIslem('sil')"><%- ikon('cop') %>Toplu Sil</button>
     </div>
     <div class="table-wrap">
@@ -773,7 +778,7 @@ function ikon(isim, boyut, sinif) {
               <%= e.ad %>
               <% if (!e.onayli) { %>
                 <div style="margin-top:4px">
-                  <span style="color:var(--warning);font-size:12px">⏳ Onay Bekliyor</span>
+                  <span class="badge badge-beklemede">Onay Bekliyor</span>
                   <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button>
                 </div>
               <% } %>
@@ -786,7 +791,7 @@ function ikon(isim, boyut, sinif) {
                 Müşteri:
                 <% if (e.musteri_karta_yazildi) { %>
                   <span style="color:var(--success);font-weight:600">✓<% if (e.musteri_kart_kilitli) { %><%- ikon('kilit', 13, 'ikon-inline') %><% } %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn btn-border btn-sm">Kaldır</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
                 <% } else { %>
                   <span style="color:var(--text-faint)">○</span>
                   <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
@@ -796,7 +801,7 @@ function ikon(isim, boyut, sinif) {
                 Eczacı:
                 <% if (e.eczaci_karta_yazildi) { %>
                   <span style="color:var(--success);font-weight:600">✓<% if (e.eczaci_kart_kilitli) { %><%- ikon('kilit', 13, 'ikon-inline') %><% } %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn btn-border btn-sm">Kaldır</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
                 <% } else { %>
                   <span style="color:var(--text-faint)">○</span>
                   <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
