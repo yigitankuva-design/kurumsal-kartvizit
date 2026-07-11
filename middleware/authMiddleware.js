@@ -34,4 +34,14 @@ async function requireKurumsalPaket(req, res, next) {
   }
 }
 
-module.exports = { requireFirma, requireSuperadmin, requireBayi, requireKurumsalPaket };
+function requireRolIzni(...izinliRoller) {
+  return (req, res, next) => {
+    const rol = req.session.rol;
+    if (!rol) return next(); // rol atanmamışsa (firma sahibi girişi) tam yetki
+    if (izinliRoller.includes(rol)) return next();
+    req.flash('error', 'Bu bölüme erişim yetkiniz yok.');
+    res.redirect('/');
+  };
+}
+
+module.exports = { requireFirma, requireSuperadmin, requireBayi, requireKurumsalPaket, requireRolIzni };
