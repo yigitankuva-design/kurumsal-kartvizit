@@ -181,6 +181,8 @@ async function migrate() {
       created_at  TIMESTAMP DEFAULT NOW(),
       UNIQUE (firma_id, email)
     )`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS tema_renk TEXT DEFAULT '#c8a84b'`,
+    `ALTER TABLE firmalar ADD COLUMN IF NOT EXISTS tema_isik_seviyesi INTEGER DEFAULT 50`,
   ];
 
   for (const sql of migrations) {
