@@ -291,6 +291,7 @@ router.get('/bayi/:bayiSlug/:firmaSlug/:calisanSlug', async (req, res) => {
       return res.status(404).render('public/404', { title: 'Profil Aktif Değil', mesaj: 'Bu profil artık aktif değil.', layout: false });
     }
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    await pool.query('INSERT INTO link_tiklama (calisan_id, tip) VALUES ($1, $2)', [calisan.id, 'profil_goruntuleme']);
     const vcfUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}/vcf`;
     const profilUrl = `/bayi/${req.params.bayiSlug}/${req.params.firmaSlug}/${calisan.slug}`;
     const qrHedef = `${req.protocol}://${req.get('host')}${profilUrl}`;
@@ -400,6 +401,7 @@ router.get('/:firmaSlug/:calisanSlug', async (req, res) => {
       return res.status(404).render('public/404', { title: 'Profil Aktif Değil', mesaj: 'Bu profil artık aktif değil.', layout: false });
     }
     await pool.query('UPDATE calisanlar SET goruntuleme_sayisi = goruntuleme_sayisi + 1 WHERE id = $1', [calisan.id]);
+    await pool.query('INSERT INTO link_tiklama (calisan_id, tip) VALUES ($1, $2)', [calisan.id, 'profil_goruntuleme']);
     const vcfUrl = `/${req.params.firmaSlug}/${calisan.slug}/vcf`;
     const profilUrl = `/${req.params.firmaSlug}/${calisan.slug}`;
     const qrHedef = `${req.protocol}://${req.get('host')}${profilUrl}`;

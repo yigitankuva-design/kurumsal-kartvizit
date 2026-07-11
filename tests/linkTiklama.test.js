@@ -58,6 +58,19 @@ describe('Çalışan profili link tıklama — kullanıcı adı normalleştirme'
     expect(res.headers.location).toBe('https://ornek.com');
   });
 
+  test('profil görüntülenince link_tiklama tablosuna profil_goruntuleme kaydı düşer', async () => {
+    const oncekiSayi = await pool.query(
+      "SELECT COUNT(*) FROM link_tiklama WHERE calisan_id = $1 AND tip = 'profil_goruntuleme'",
+      [calisanId]
+    );
+    await request(app).get('/link-test-firma/link-test');
+    const sonrakiSayi = await pool.query(
+      "SELECT COUNT(*) FROM link_tiklama WHERE calisan_id = $1 AND tip = 'profil_goruntuleme'",
+      [calisanId]
+    );
+    expect(Number(sonrakiSayi.rows[0].count)).toBe(Number(oncekiSayi.rows[0].count) + 1);
+  });
+
   test('profil sayfasında QR kod doğru domaine işaret eder, nfckart.com içermez', async () => {
     const res = await request(app).get('/link-test-firma/link-test');
     expect(res.text).toContain('api.qrserver.com');

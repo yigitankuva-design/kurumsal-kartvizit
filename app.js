@@ -223,6 +223,59 @@ app.get('/', async (req, res) => {
       islemGecmisi = gResult.rows;
     }
 
+    let genelBakis = null;
+    if (tab === 'genel' && calisanlar.length) {
+      const buDonemResult = await pool.query(
+        `SELECT COUNT(*) AS toplam, COUNT(*) FILTER (WHERE lt.tip = 'profil_goruntuleme') AS goruntuleme
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '7 days'`,
+        [req.session.firmaId]
+      );
+      const oncekiDonemResult = await pool.query(
+        `SELECT COUNT(*) AS toplam, COUNT(*) FILTER (WHERE lt.tip = 'profil_goruntuleme') AS goruntuleme
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '14 days' AND lt.created_at < NOW() - INTERVAL '7 days'`,
+        [req.session.firmaId]
+      );
+      const gunlukResult = await pool.query(
+        `SELECT DATE(lt.created_at) AS gun, COUNT(*) AS sayi
+         FROM link_tiklama lt JOIN calisanlar c ON c.id = lt.calisan_id
+         WHERE c.firma_id = $1 AND lt.created_at >= NOW() - INTERVAL '14 days'
+         GROUP BY gun ORDER BY gun`,
+        [req.session.firmaId]
+      );
+
+      const buDonem = buDonemResult.rows[0];
+      const oncekiDonem = oncekiDonemResult.rows[0];
+
+      const yuzdeDegisim = (yeni, eski) => {
+        yeni = Number(yeni); eski = Number(eski);
+        if (eski === 0) return yeni > 0 ? null : 0;
+        return Math.round(((yeni - eski) / eski) * 100);
+      };
+
+      const gunlukHarita = {};
+      gunlukResult.rows.forEach(r => {
+        gunlukHarita[r.gun.toISOString().slice(0, 10)] = Number(r.sayi);
+      });
+      const bugunUtc = new Date();
+      bugunUtc.setUTCHours(0, 0, 0, 0);
+      const sparkline = [];
+      for (let i = 13; i >= 0; i--) {
+        const d = new Date(bugunUtc);
+        d.setUTCDate(d.getUTCDate() - i);
+        sparkline.push(gunlukHarita[d.toISOString().slice(0, 10)] || 0);
+      }
+
+      genelBakis = {
+        tiklamaBuDonem: Number(buDonem.toplam),
+        tiklamaDegisim: yuzdeDegisim(buDonem.toplam, oncekiDonem.toplam),
+        goruntulemeBuDonem: Number(buDonem.goruntuleme),
+        goruntulemeDegisim: yuzdeDegisim(buDonem.goruntuleme, oncekiDonem.goruntuleme),
+        sparkline
+      };
+    }
+
     let linkAnalytics = [];
     if (tab === 'analytics' && calisanlar.length) {
       const aResult = await pool.query(
@@ -348,7 +401,7 @@ app.get('/', async (req, res) => {
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
       toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
-      indirimIstatistik, ara, sayfa, islemGecmisi
+      indirimIstatistik, ara, sayfa, islemGecmisi, genelBakis
     });
   } catch (err) {
     console.error(err);

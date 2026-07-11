@@ -265,6 +265,7 @@ function ikon(isim, boyut, sinif) {
 }
 
 var tabGruplari = {
+  genel: ['genel'],
   calisanlar: ['calisanlar', 'istatistik', 'excel'],
   eczane: ['raf', 'indirim'],
   icerik: ['icerik', 'urunler'],
@@ -338,6 +339,7 @@ var aktifGrup = tabGrubuBul(tab);
 
   <!-- TAB GROUPS -->
   <div class="dash-tabs-main">
+    <a href="/?tab=genel" class="dash-tab-main <%= aktifGrup === 'genel' ? 'active' : '' %>">Genel Bakış</a>
     <a href="/?tab=calisanlar" class="dash-tab-main <%= aktifGrup === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
     <% if (firma.paket === 'kurumsal') { %>
     <a href="/?tab=raf"    class="dash-tab-main <%= aktifGrup === 'eczane' ? 'active' : '' %>">Eczane Ağı</a>
@@ -347,6 +349,7 @@ var aktifGrup = tabGrubuBul(tab);
   </div>
 
   <!-- SUB TABS -->
+  <% if (aktifGrup !== 'genel') { %>
   <div class="dash-tabs">
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
@@ -366,9 +369,71 @@ var aktifGrup = tabGrubuBul(tab);
     <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
   </div>
+  <% } %>
+
+  <!-- TAB: GENEL BAKIŞ -->
+  <% if (tab === 'genel') { %>
+    <% if (!genelBakis) { %>
+    <div class="table-wrap">
+      <div class="empty-state">
+        <div class="empty-state-icon"><%- ikon('grafik', 32, '') %></div>
+        <div class="empty-state-title">Henüz veri yok</div>
+        <div class="empty-state-sub">Profil linkleri paylaşıldıkça burada trendler görünür</div>
+      </div>
+    </div>
+    <% } else { %>
+    <div class="stat-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-card-n"><%= genelBakis.tiklamaBuDonem %></div>
+        <div class="stat-card-l">Son 7 gün — toplam tıklama</div>
+        <div style="margin-top:6px">
+          <% if (genelBakis.tiklamaDegisim === null) { %>
+            <span style="color:var(--text-faint);font-size:var(--fs-xs)">yeni veri</span>
+          <% } else if (genelBakis.tiklamaDegisim > 0) { %>
+            <span style="color:var(--success);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↑ %<%= genelBakis.tiklamaDegisim %> önceki haftaya göre</span>
+          <% } else if (genelBakis.tiklamaDegisim < 0) { %>
+            <span style="color:var(--danger);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↓ %<%= Math.abs(genelBakis.tiklamaDegisim) %> önceki haftaya göre</span>
+          <% } else { %>
+            <span style="color:var(--text-faint);font-size:var(--fs-xs)">önceki haftayla aynı</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-n"><%= genelBakis.goruntulemeBuDonem %></div>
+        <div class="stat-card-l">Son 7 gün — profil görüntüleme</div>
+        <div style="margin-top:6px">
+          <% if (genelBakis.goruntulemeDegisim === null) { %>
+            <span style="color:var(--text-faint);font-size:var(--fs-xs)">yeni veri</span>
+          <% } else if (genelBakis.goruntulemeDegisim > 0) { %>
+            <span style="color:var(--success);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↑ %<%= genelBakis.goruntulemeDegisim %> önceki haftaya göre</span>
+          <% } else if (genelBakis.goruntulemeDegisim < 0) { %>
+            <span style="color:var(--danger);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↓ %<%= Math.abs(genelBakis.goruntulemeDegisim) %> önceki haftaya göre</span>
+          <% } else { %>
+            <span style="color:var(--text-faint);font-size:var(--fs-xs)">önceki haftayla aynı</span>
+          <% } %>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap" style="padding:20px">
+      <h3 style="margin-bottom:12px">Son 14 Gün — Tıklama Trendi</h3>
+      <canvas id="chartGenelSparkline" height="60"></canvas>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      const genelSparkline = <%- JSON.stringify(genelBakis.sparkline) %>;
+      new Chart(document.getElementById('chartGenelSparkline'), {
+        type: 'line',
+        data: {
+          labels: genelSparkline.map((_, i) => i - 13),
+          datasets: [{ data: genelSparkline, borderColor: '#c8a84b', backgroundColor: 'rgba(200,168,75,0.1)', fill: true, tension: 0.3, pointRadius: 0 }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+      });
+    </script>
+    <% } %>
 
   <!-- TAB: ÇALIŞANLAR -->
-  <% if (tab === 'calisanlar') { %>
+  <% } else if (tab === 'calisanlar') { %>
     <% const aramaMetni = (ara || '').toLowerCase().trim(); %>
     <% const calisanlarFiltreli = aramaMetni
          ? calisanlar.filter(c => (c.ad + ' ' + c.soyad + ' ' + (c.email || '')).toLowerCase().includes(aramaMetni))
