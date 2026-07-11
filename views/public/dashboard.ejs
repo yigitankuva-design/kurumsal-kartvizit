@@ -399,13 +399,13 @@
                 <span style="color:var(--success);font-weight:600">✓ Yazıldı<%= c.kart_kilitli ? ' 🔒' : '' %></span>
                 <form method="POST" action="/kurumsal/calisan/<%= c.id %>/kart-isaretle" style="display:inline">
                   <input type="hidden" name="yazildi" value="false">
-                  <button type="submit">Kaldır</button>
+                  <button type="submit" class="btn btn-border btn-sm">Kaldır</button>
                 </form>
               <% } else { %>
                 <span style="color:var(--text-faint)">○ Yazılmadı</span>
                 <form method="POST" action="/kurumsal/calisan/<%= c.id %>/kart-isaretle" style="display:inline">
                   <input type="hidden" name="yazildi" value="true">
-                  <button type="submit">Yazıldı işaretle</button>
+                  <button type="submit" class="btn btn-border btn-sm">Yazıldı işaretle</button>
                 </form>
               <% } %>
             </td>
@@ -475,14 +475,14 @@
       <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" style="width:72px;height:72px;border-radius:50%;object-fit:contain;background:#fff;border:1px solid #e5e7eb;margin-bottom:8px"><% } %>
       <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" style="margin-bottom:24px">
         <input type="file" name="logo" id="logoInput" accept="image/*" required>
-        <button type="submit">Logoyu Yükle</button>
+        <button type="submit" class="btn btn-gold">Logoyu Yükle</button>
       </form>
 
       <h3 style="margin-bottom:12px">Ürün Kataloğu (PDF)</h3>
       <% if (firma.katalog_url) { %><p style="margin-bottom:8px"><a href="<%= firma.katalog_url %>" target="_blank">Mevcut kataloğu görüntüle</a></p><% } %>
       <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" style="margin-bottom:24px">
         <input type="file" name="katalog" accept="application/pdf" required>
-        <button type="submit">Kataloğu Yükle</button>
+        <button type="submit" class="btn btn-gold">Kataloğu Yükle</button>
       </form>
 
       <h3 style="margin-bottom:12px">Linkler</h3>
@@ -494,7 +494,7 @@
         <input name="youtube"   placeholder="YouTube"     value="<%= firma.youtube   || '' %>">
         <input name="tiktok"    placeholder="TikTok"      value="<%= firma.tiktok    || '' %>">
         <input name="whatsapp"  placeholder="WhatsApp numarası" value="<%= firma.whatsapp || '' %>">
-        <button type="submit">Kaydet</button>
+        <button type="submit" class="btn btn-gold">Kaydet</button>
       </form>
 
       <h3 style="margin-bottom:12px">Eczacı Sayfası</h3>
@@ -502,14 +502,14 @@
         <input name="eczaci_baslik" placeholder="Kampanya başlığı" value="<%= firma.eczaci_baslik || '' %>">
         <textarea name="eczaci_metin" placeholder="Kampanya / eğitim metni" rows="4"><%= firma.eczaci_metin || '' %></textarea>
         <input name="eczaci_video_url" placeholder="YouTube video linki" value="<%= firma.eczaci_video_url || '' %>">
-        <button type="submit">Kaydet</button>
+        <button type="submit" class="btn btn-gold">Kaydet</button>
       </form>
 
       <h3 style="margin-bottom:12px">Eğitim Dokümanı (PDF)</h3>
       <% if (firma.eczaci_pdf_url) { %><p style="margin-bottom:8px"><a href="<%= firma.eczaci_pdf_url %>" target="_blank">Mevcut dokümanı görüntüle</a></p><% } %>
       <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data">
         <input type="file" name="eczaci_pdf" accept="application/pdf" required>
-        <button type="submit">Dokümanı Yükle</button>
+        <button type="submit" class="btn btn-gold">Dokümanı Yükle</button>
       </form>
     </div>
 
@@ -521,7 +521,7 @@
         <input name="ad" placeholder="Ürün adı *" required>
         <textarea name="aciklama" placeholder="Kısa açıklama" rows="3"></textarea>
         <input type="file" name="foto" id="urunFotoInput" accept="image/*">
-        <button type="submit">Ekle</button>
+        <button type="submit" class="btn btn-gold">Ekle</button>
       </form>
     </div>
 
@@ -581,7 +581,7 @@
             Raf kartı sayfasında görünsün
           </label>
           <input type="file" name="foto" id="urunDuzenleFotoInput" accept="image/*">
-          <button type="submit">Kaydet</button>
+          <button type="submit" class="btn btn-gold">Kaydet</button>
         </form>
       </div>
     </div>
@@ -599,7 +599,7 @@
           İndirim yüzdesi
           <input type="number" name="indirim_yuzdesi" min="1" max="100" value="<%= firma.indirim_yuzdesi %>" style="width:100%;margin-top:4px">
         </label>
-        <button type="submit">Kaydet</button>
+        <button type="submit" class="btn btn-gold">Kaydet</button>
       </form>
     </div>
 
@@ -644,13 +644,13 @@
       <form method="POST" action="/kurumsal/eczane-ekle" style="display:flex;gap:8px;flex-wrap:wrap">
         <input name="ad" placeholder="Eczane adı *" required>
         <input name="adres" placeholder="Adres">
-        <button type="submit">Ekle</button>
+        <button type="submit" class="btn btn-gold">Ekle</button>
       </form>
     </div>
     <% const aktifEczaneler = eczaneler.filter(e => e.durum !== 'pasif'); const pasifEczaneler = eczaneler.filter(e => e.durum === 'pasif'); %>
     <div class="table-wrap" style="padding:12px 20px;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <button type="button" id="eczaneTopluOnaylaBtn" disabled onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
-      <button type="button" id="eczaneTopluPasifBtn" disabled onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
+      <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
+      <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')">⏸ Toplu Pasife Al</button>
       <button type="button" id="eczaneTopluSilBtn" disabled class="btn btn-danger-sm" onclick="eczaneTopluIslem('sil')">🗑 Toplu Sil</button>
     </div>
     <div class="table-wrap">
@@ -665,7 +665,7 @@
               <% if (!e.onayli) { %>
                 <div style="margin-top:4px">
                   <span style="color:var(--warning);font-size:12px">⏳ Onay Bekliyor</span>
-                  <button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button>
+                  <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button>
                 </div>
               <% } %>
             </td>
@@ -677,20 +677,20 @@
                 Müşteri:
                 <% if (e.musteri_karta_yazildi) { %>
                   <span style="color:var(--success);font-weight:600">✓<%= e.musteri_kart_kilitli ? '🔒' : '' %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit">Kaldır</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn btn-border btn-sm">Kaldır</button></form>
                 <% } else { %>
                   <span style="color:var(--text-faint)">○</span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit">İşaretle</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
                 <% } %>
               </div>
               <div>
                 Eczacı:
                 <% if (e.eczaci_karta_yazildi) { %>
                   <span style="color:var(--success);font-weight:600">✓<%= e.eczaci_kart_kilitli ? '🔒' : '' %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit">Kaldır</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn btn-border btn-sm">Kaldır</button></form>
                 <% } else { %>
                   <span style="color:var(--text-faint)">○</span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit">İşaretle</button></form>
+                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
                 <% } %>
               </div>
             </td>
@@ -699,16 +699,16 @@
                 <a href="/eczaci/<%= e.eczaci_kod %>" target="_blank">/eczaci/<%= e.eczaci_kod %></a> (<%= e.eczaci_okutma_sayisi %>)
               <% } else { %>
                 <form method="POST" action="/kurumsal/eczane/<%= e.id %>/eczaci-kod-uret" style="display:inline">
-                  <button type="submit">Kod Üret</button>
+                  <button type="submit" class="btn btn-border btn-sm">Kod Üret</button>
                 </form>
               <% } %>
             </td>
             <td>
-              <button type="button" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
-              <button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'pasife-al')" style="margin-right:6px">Pasife Al</button>
+              <button type="button" class="btn btn-border btn-sm" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
+              <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'pasife-al')" style="margin-right:6px">Pasife Al</button>
               <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
                     onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
-                <button type="submit">Sil</button>
+                <button type="submit" class="btn btn-danger-sm btn-sm">Sil</button>
               </form>
             </td>
           </tr>
@@ -728,7 +728,7 @@
           <tr>
             <td><%= e.ad %></td>
             <td><%= e.adres || '-' %></td>
-            <td><button type="button" onclick="eczaneTekIslem(<%= e.id %>, 'aktif-yap')">Aktif Yap</button></td>
+            <td><button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'aktif-yap')">Aktif Yap</button></td>
           </tr>
           <% }) %>
         </tbody>
