@@ -227,7 +227,9 @@
       <div class="dash-title">Hoş geldiniz</div>
       <div class="dash-subtitle"><%= firma.yetkili_email %></div>
     </div>
+    <% if (tab === 'calisanlar') { %>
     <button class="btn btn-gold" onclick="openSlide()">+ Yeni Çalışan</button>
+    <% } %>
   </div>
 
   <!-- STATS -->
