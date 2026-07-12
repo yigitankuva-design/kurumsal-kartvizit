@@ -1210,65 +1210,48 @@ function jsonAttr(obj) {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th><input type="checkbox" id="eczaneTumSec" onchange="eczaneTumSecToggle(this)"></th><th>Eczane</th><th>Adres</th><th>Kart Linki</th><th>Okutma</th><th>Kart Durumu</th><th>Eczacı Kartı</th><th></th></tr></thead>
+        <thead><tr><th style="width:34px"><input type="checkbox" id="eczaneTumSec" onchange="eczaneTumSecToggle(this)"></th><th>Eczane</th><th style="width:110px;text-align:right">Okutma</th><th style="width:90px"></th></tr></thead>
         <tbody>
           <% aktifEczaneler.forEach(e => { %>
           <tr>
             <td><input type="checkbox" class="eczane-sec" value="<%= e.id %>"></td>
             <td>
-              <%= e.ad %>
-              <% if (!e.onayli) { %>
-                <div style="margin-top:4px">
-                  <span class="badge badge-beklemede">Onay Bekliyor</span>
-                  <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button>
-                </div>
-              <% } %>
+              <span style="font-weight:600"><%= e.ad %></span>
+              <% if (!e.onayli) { %><span class="badge badge-beklemede" style="margin-left:6px">Onay Bekliyor</span><% } %>
             </td>
-            <td><%= e.adres || '-' %></td>
-            <td><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a></td>
-            <td><%= e.okutma_sayisi %></td>
-            <td>
-              <div style="margin-bottom:4px">
-                Müşteri:
-                <% if (e.musteri_karta_yazildi) { %>
-                  <span style="color:var(--success);font-weight:600">✓<% if (e.musteri_kart_kilitli) { %><%- ikon('kilit', 13, 'ikon-inline') %><% } %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
-                <% } else { %>
-                  <span style="color:var(--text-faint)">○</span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
-                <% } %>
-              </div>
-              <div>
-                Eczacı:
-                <% if (e.eczaci_karta_yazildi) { %>
-                  <span style="color:var(--success);font-weight:600">✓<% if (e.eczaci_kart_kilitli) { %><%- ikon('kilit', 13, 'ikon-inline') %><% } %></span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
-                <% } else { %>
-                  <span style="color:var(--text-faint)">○</span>
-                  <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form>
-                <% } %>
-              </div>
-            </td>
-            <td>
-              <% if (e.eczaci_kod) { %>
-                <a href="/eczaci/<%= e.eczaci_kod %>" target="_blank">/eczaci/<%= e.eczaci_kod %></a> (<%= e.eczaci_okutma_sayisi %>)
-              <% } else { %>
-                <form method="POST" action="/kurumsal/eczane/<%= e.id %>/eczaci-kod-uret" style="display:inline">
-                  <button type="submit" class="btn btn-border btn-sm">Kod Üret</button>
-                </form>
-              <% } %>
-            </td>
-            <td>
-              <button type="button" class="btn btn-border btn-sm" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')" style="margin-right:6px">Detay</button>
-              <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'pasife-al')" style="margin-right:6px">Pasife Al</button>
-              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline"
-                    onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')">
-                <button type="submit" class="btn btn-danger-sm btn-sm">Sil</button>
-              </form>
-            </td>
+            <td style="text-align:right"><span style="font-weight:700"><%= e.okutma_sayisi %></span></td>
+            <td><button type="button" class="btn btn-border btn-sm" onclick="eczaneYonetimAc(<%= e.id %>)">Detay ›</button></td>
           </tr>
+          <template id="ecTpl-<%= e.id %>" data-ad="<%= e.ad.replace(/"/g, '&quot;') %>">
+            <div class="detay-field"><div class="fl">Adres</div><div class="fv"><%= e.adres || '-' %></div></div>
+            <% if (!e.onayli) { %>
+            <div class="detay-field"><div class="fl">Onay</div><div class="fv"><span class="badge badge-beklemede">Onay Bekliyor</span> <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'onayla')">Onayla</button></div></div>
+            <% } %>
+            <div class="detay-field"><div class="fl">Raf Kartı</div><div class="fv"><a href="/raf/<%= e.kod %>" target="_blank">/raf/<%= e.kod %></a> · <%= e.okutma_sayisi %> okutma</div></div>
+            <div class="detay-field"><div class="fl">Eczacı Kartı</div><div class="fv">
+              <% if (e.eczaci_kod) { %><a href="/eczaci/<%= e.eczaci_kod %>" target="_blank">/eczaci/<%= e.eczaci_kod %></a> · <%= e.eczaci_okutma_sayisi %> okutma<% } else { %>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/eczaci-kod-uret" style="display:inline"><button type="submit" class="btn btn-border btn-sm">Kod Üret</button></form><% } %>
+            </div></div>
+            <div class="detay-field"><div class="fl">Müşteri Kartı Durumu</div><div class="fv">
+              <% if (e.musteri_karta_yazildi) { %><span style="color:var(--success);font-weight:600">✓ Yazıldı<% if (e.musteri_kart_kilitli) { %> 🔒<% } %></span>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
+              <% } else { %><span style="color:var(--text-faint)">○ Yazılmadı</span>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="musteri"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form><% } %>
+            </div></div>
+            <div class="detay-field"><div class="fl">Eczacı Kartı Durumu</div><div class="fv">
+              <% if (e.eczaci_karta_yazildi) { %><span style="color:var(--success);font-weight:600">✓ Yazıldı<% if (e.eczaci_kart_kilitli) { %> 🔒<% } %></span>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="false"><button type="submit" class="btn-link">Kaldır</button></form>
+              <% } else { %><span style="color:var(--text-faint)">○ Yazılmadı</span>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/kart-isaretle" style="display:inline"><input type="hidden" name="tip" value="eczaci"><input type="hidden" name="yazildi" value="true"><button type="submit" class="btn btn-border btn-sm">İşaretle</button></form><% } %>
+            </div></div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+              <button type="button" class="btn btn-border btn-sm" onclick="eczaneDetayGoster(<%= e.id %>, '<%= e.ad.replace(/'/g, "\\'") %>')">📊 Okutma Analizi</button>
+              <button type="button" class="btn btn-border btn-sm" onclick="eczaneTekIslem(<%= e.id %>, 'pasife-al')">Pasife Al</button>
+              <form method="POST" action="/kurumsal/eczane/<%= e.id %>/sil" style="display:inline" onsubmit="return confirm('<%= e.ad %> silinsin mi? Okutma geçmişi de silinir.')"><button type="submit" class="btn btn-danger-sm btn-sm">Sil</button></form>
+            </div>
+          </template>
           <% }) %>
-          <% if (!aktifEczaneler.length) { %><tr><td colspan="8">Aktif eczane yok.</td></tr><% } %>
+          <% if (!aktifEczaneler.length) { %><tr><td colspan="4">Aktif eczane yok.</td></tr><% } %>
         </tbody>
       </table>
     </div>
@@ -1491,6 +1474,16 @@ function jsonAttr(obj) {
     <div class="detay-foot">
       <button class="btn btn-border" style="width:100%" onclick="calisanDetayDuzenle()">Düzenle</button>
     </div>
+  </div>
+</div>
+
+<div class="detay-overlay" id="ecYonetimOverlay" onclick="if (event.target === this) ecYonetimKapat()">
+  <div class="detay-panel">
+    <div class="detay-head">
+      <div><div class="detay-name" id="ecYonetimAd">—</div><div class="detay-sub">Eczane yönetimi</div></div>
+      <button class="slide-close" onclick="ecYonetimKapat()">✕</button>
+    </div>
+    <div class="detay-body" id="ecYonetimBody"></div>
   </div>
 </div>
 
@@ -1849,6 +1842,19 @@ function jsonAttr(obj) {
       sessionStorage.removeItem('eczaneScrollY');
     }
   });
+
+  function eczaneYonetimAc(eczaneId) {
+    const tpl = document.getElementById('ecTpl-' + eczaneId);
+    if (!tpl) return;
+    const body = document.getElementById('ecYonetimBody');
+    body.innerHTML = '';
+    body.appendChild(tpl.content.cloneNode(true));
+    document.getElementById('ecYonetimAd').textContent = tpl.dataset.ad || 'Eczane';
+    document.getElementById('ecYonetimOverlay').classList.add('open');
+  }
+  function ecYonetimKapat() {
+    document.getElementById('ecYonetimOverlay').classList.remove('open');
+  }
 
   async function eczaneDetayGoster(eczaneId, eczaneAdi) {
     document.getElementById('eczaneDetayBaslik').textContent = eczaneAdi + ' — Detay';
