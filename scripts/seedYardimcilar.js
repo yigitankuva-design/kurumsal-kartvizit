@@ -29,4 +29,13 @@ function agirlikliIndeks(agirliklar) {
   return agirliklar.length - 1;
 }
 
-module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks };
+function trendliTarih(gunSayisi = 150) {
+  const carpik = Math.sqrt(Math.random());
+  const gunOnce = Math.floor((1 - carpik) * gunSayisi);
+  const d = new Date();
+  d.setDate(d.getDate() - gunOnce);
+  d.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
+  return d;
+}
+
+module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih };

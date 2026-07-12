@@ -12,3 +12,23 @@ describe('agirlikliIndeks', () => {
     expect(sifir).toBeGreaterThan(750);
   });
 });
+
+const { trendliTarih } = require('../scripts/seedYardimcilar');
+
+describe('trendliTarih', () => {
+  test('son gunSayisi gün içinde bir tarih döndürür', () => {
+    const simdi = Date.now();
+    for (let i = 0; i < 200; i++) {
+      const t = trendliTarih(150).getTime();
+      expect(t).toBeLessThanOrEqual(simdi);
+      expect(t).toBeGreaterThanOrEqual(simdi - 151 * 86400000);
+    }
+  });
+  test('ortalama sona (bugüne) yakın — artan trend', () => {
+    const simdi = Date.now();
+    let toplamGun = 0;
+    const N = 2000;
+    for (let i = 0; i < N; i++) toplamGun += (simdi - trendliTarih(150).getTime()) / 86400000;
+    expect(toplamGun / N).toBeLessThan(70);
+  });
+});
