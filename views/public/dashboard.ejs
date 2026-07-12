@@ -305,15 +305,16 @@
     .detay-field .fv { font-size: var(--fs-sm); color: var(--text); }
     .detay-foot { padding: 16px 22px; border-top: 1px solid var(--border); flex-shrink: 0; }
 
-    .slide-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    .slide-body { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 20px 24px; }
     .slide-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
 
     /* ── FORM ── */
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .form-col { display: flex; flex-direction: column; gap: 12px; }
-    .field { display: flex; flex-direction: column; gap: 5px; }
+    .form-row { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; margin-bottom: 12px; }
+    .form-col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+    .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
     .field label { font-size: var(--fs-xs); color: var(--text-muted); }
     .field input, .field textarea, .field select {
+      width: 100%; max-width: 100%; min-width: 0; box-sizing: border-box;
       background: var(--bg3); border: 1px solid var(--border); color: var(--text);
       border-radius: 7px; padding: 8px 12px; font-size: var(--fs-sm); font-family: inherit;
       transition: border-color 0.15s, box-shadow 0.15s; outline: none;
