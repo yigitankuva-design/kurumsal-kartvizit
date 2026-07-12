@@ -133,6 +133,12 @@ async function main() {
     eczaneler.forEach((e, i) => { e.id = eczaneIdler[i]; });
     console.log(`${eczaneler.length} eczane olusturuldu.`);
 
+    const urunSatirlari = H.URUNLER.map((ad, i) => [firmaId, ad, `${ad} — Orzax ürün ailesi.`, i, true]);
+    const urunIdler = await topluEkle(
+      client, `urunler (firma_id, ad, aciklama, sira, aktif)`, urunSatirlari, 5, true
+    );
+    console.log(`${urunIdler.length} urun olusturuldu.`);
+
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
     console.log(`Bagli bayi id: ${bayiId}`);
