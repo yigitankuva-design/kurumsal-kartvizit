@@ -48,3 +48,42 @@ describe('benzersizKodlar', () => {
     expect(yeni.some(k => mevcut.has(k))).toBe(false);
   });
 });
+
+const { hiyerarsiKur } = require('../scripts/seedYardimcilar');
+
+describe('hiyerarsiKur', () => {
+  const k = hiyerarsiKur();
+  test('toplam 59 kişi', () => { expect(k).toHaveLength(59); });
+  test('1 genel müdür, amiri yok', () => {
+    const gm = k.filter(p => p.unvan === 'Genel Müdür');
+    expect(gm).toHaveLength(1);
+    expect(gm[0].amiri).toBeNull();
+  });
+  test('3 fonksiyon müdürü, amiri genel müdür', () => {
+    const gmIndex = k.findIndex(p => p.unvan === 'Genel Müdür');
+    const mudurler = k.filter(p => ['Satış Müdürü','Ürün Müdürü','Ticaret Müdürü'].includes(p.unvan));
+    expect(mudurler).toHaveLength(3);
+    expect(mudurler.every(m => m.amiri === gmIndex)).toBe(true);
+  });
+  test('5 bölge müdürü (2+2+1 dağıtımı) ekip yöneticisi', () => {
+    const bm = k.filter(p => p.unvan === 'Bölge Müdürü');
+    expect(bm).toHaveLength(5);
+    expect(bm.every(p => p.ekip_yoneticisi === true)).toBe(true);
+    const sayim = {};
+    bm.forEach(p => { sayim[p.amiri] = (sayim[p.amiri] || 0) + 1; });
+    expect(Object.values(sayim).sort()).toEqual([1, 2, 2]);
+  });
+  test('50 mümessil, ekip yöneticisi değil, amiri bir bölge müdürü', () => {
+    const mumessiller = k.filter(p => p.unvan === 'Tıbbi Mümessil');
+    expect(mumessiller).toHaveLength(50);
+    const bmIndexleri = k.map((p, i) => p.unvan === 'Bölge Müdürü' ? i : -1).filter(i => i >= 0);
+    expect(mumessiller.every(m => m.ekip_yoneticisi === false && bmIndexleri.includes(m.amiri))).toBe(true);
+  });
+  test('her bölge müdürünün tam 10 mümessili', () => {
+    const bmIndexleri = k.map((p, i) => p.unvan === 'Bölge Müdürü' ? i : -1).filter(i => i >= 0);
+    bmIndexleri.forEach(bi => {
+      const alt = k.filter(p => p.unvan === 'Tıbbi Mümessil' && p.amiri === bi);
+      expect(alt).toHaveLength(10);
+    });
+  });
+});

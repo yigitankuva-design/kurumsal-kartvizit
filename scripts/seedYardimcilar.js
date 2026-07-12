@@ -47,4 +47,31 @@ function benzersizKodlar(adet, mevcut = new Set()) {
   return [...set];
 }
 
-module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih, benzersizKodlar };
+function hiyerarsiKur() {
+  const k = [];
+  const kullanilan = new Set();
+  const isim = () => {
+    let a, s, key;
+    do { a = rastgele(ADLAR); s = rastgele(SOYADLAR); key = a + s; } while (kullanilan.has(key));
+    kullanilan.add(key);
+    return { ad: a, soyad: s };
+  };
+  const ekle = (unvan, ekipYon, amiri, bolge) => {
+    const n = isim();
+    k.push({ ad: n.ad, soyad: n.soyad, unvan, ekip_yoneticisi: ekipYon, amiri, bolge });
+    return k.length - 1;
+  };
+  const gm = ekle('Genel Müdür', true, null, null);
+  const satis = ekle('Satış Müdürü', true, gm, null);
+  const urun = ekle('Ürün Müdürü', true, gm, null);
+  const ticaret = ekle('Ticaret Müdürü', true, gm, null);
+  const bolgeMudurAmiri = [satis, satis, urun, urun, ticaret];
+  const bolgeMudurleri = [];
+  for (let b = 0; b < 5; b++) bolgeMudurleri.push(ekle('Bölge Müdürü', true, bolgeMudurAmiri[b], b));
+  for (let b = 0; b < 5; b++) {
+    for (let m = 0; m < 10; m++) ekle('Tıbbi Mümessil', false, bolgeMudurleri[b], b);
+  }
+  return k;
+}
+
+module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih, benzersizKodlar, hiyerarsiKur };
