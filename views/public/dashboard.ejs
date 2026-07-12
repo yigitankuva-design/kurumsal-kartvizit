@@ -516,6 +516,7 @@ function jsonAttr(obj) {
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
     <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
+    <a href="/?tab=organizasyon" class="dash-tab <%= tab === 'organizasyon' ? 'active' : '' %>">Organizasyon</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
     <% if (!rol || rol === 'tam_yetkili') { %>
     <a href="/?tab=kullanicilar" class="dash-tab <%= tab === 'kullanicilar' ? 'active' : '' %>">Kullanıcılar</a>
@@ -534,6 +535,38 @@ function jsonAttr(obj) {
     <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
   </div>
+  <% } %>
+
+  <!-- TAB: ORGANİZASYON -->
+  <% if (tab === 'organizasyon') { %>
+    <% if (!hiyerarsiAgaci || !hiyerarsiAgaci.length) { %>
+    <div class="table-wrap"><div class="empty-state">
+      <div class="empty-state-title">Hiyerarşi tanımlı değil</div>
+      <div class="empty-state-sub">Çalışanlara "amiri" atadıkça organizasyon şeması burada oluşur.</div>
+    </div></div>
+    <% } else { %>
+    <div class="table-wrap" style="padding:20px">
+      <h3 style="margin-bottom:16px">Organizasyon Şeması <span style="font-size:var(--fs-xs);color:var(--text-faint)">(son 90 gün ekip ziyaretleri)</span></h3>
+      <%
+        const kacis = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+        function dugumHtml(d, seviye) {
+          const yonetici = d.cocuklar && d.cocuklar.length;
+          const rozet = yonetici
+            ? `<span style="background:var(--gold);color:#1a1a1a;border-radius:10px;padding:1px 8px;font-size:11px;font-weight:600">👥 ${d.ekipZiyaret}</span>`
+            : `<span style="color:var(--text-muted);font-size:12px">🧍 ${d.kendiZiyaret}</span>`;
+          const bas = `<div style="display:flex;align-items:center;gap:8px;padding:6px 0 6px ${seviye*22}px;border-bottom:1px solid var(--border)">
+              <strong style="font-size:var(--fs-sm)">${kacis(d.ad)} ${kacis(d.soyad)}</strong>
+              <span style="color:var(--text-muted);font-size:12px">${kacis(d.unvan)}</span>
+              <span style="margin-left:auto">${rozet}</span>
+            </div>`;
+          if (!yonetici) return bas;
+          const cocukHtml = d.cocuklar.map(c => dugumHtml(c, seviye + 1)).join('');
+          return `<details open style="margin:0"><summary style="list-style:none;cursor:pointer">${bas}</summary>${cocukHtml}</details>`;
+        }
+      %>
+      <%- hiyerarsiAgaci.map(k => dugumHtml(k, 0)).join('') %>
+    </div>
+    <% } %>
   <% } %>
 
   <!-- TAB: GENEL BAKIŞ -->
