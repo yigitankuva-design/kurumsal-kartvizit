@@ -139,6 +139,81 @@ async function main() {
     );
     console.log(`${urunIdler.length} urun olusturuldu.`);
 
+    const crypto = require('crypto');
+    const ipHash = () => crypto.createHash('sha256').update(String(Math.random())).digest('hex').slice(0, 32);
+
+    // Eczane popülerlik ağırlığı (1..5)
+    const eczanePop = eczaneler.map(() => 1 + Math.floor(Math.random() * 5));
+
+    // raf_okutmalar (~8000) — ip_hash'li
+    const rafOkutma = [];
+    eczaneler.forEach((e, i) => {
+      const adet = eczanePop[i] * (1 + Math.floor(Math.random() * 3)); // ~ort 8
+      for (let n = 0; n < adet; n++) rafOkutma.push([e.id, H.trendliTarih(), ipHash()]);
+    });
+    await topluEkle(client, `raf_okutmalar (eczane_id, created_at, ip_hash)`, rafOkutma, 3);
+
+    // raf_tiklamalar (~5000)
+    const rafTikla = [];
+    eczaneler.forEach((e, i) => {
+      const adet = Math.floor(eczanePop[i] * (0.5 + Math.random() * 1.5));
+      for (let n = 0; n < adet; n++) rafTikla.push([e.id, H.rastgele(H.RAF_TIP), H.trendliTarih()]);
+    });
+    await topluEkle(client, `raf_tiklamalar (eczane_id, tip, created_at)`, rafTikla, 3);
+
+    // eczaci_okutmalar (~4000) — sadece eczaci karti yazili eczanelere
+    const eczaciOkutma = [];
+    eczaneler.forEach((e, i) => {
+      const adet = 2 + Math.floor(Math.random() * eczanePop[i]);
+      for (let n = 0; n < adet; n++) eczaciOkutma.push([e.id, H.trendliTarih()]);
+    });
+    await topluEkle(client, `eczaci_okutmalar (eczane_id, created_at)`, eczaciOkutma, 2);
+
+    // eczaci_tiklamalar (~2500) — tip 'pdf'
+    const eczaciTikla = [];
+    eczaneler.forEach((e, i) => {
+      const adet = 1 + Math.floor(Math.random() * eczanePop[i]);
+      for (let n = 0; n < adet; n++) eczaciTikla.push([e.id, 'pdf', H.trendliTarih()]);
+    });
+    await topluEkle(client, `eczaci_tiklamalar (eczane_id, tip, created_at)`, eczaciTikla, 3);
+
+    // urun_tiklamalar (~6000) — ilk 3 urun agirlikli
+    const urunAgirlik = urunIdler.map((_, i) => (i < 3 ? 10 : 1));
+    const urunTikla = [];
+    eczaneler.forEach((e, i) => {
+      const adet = Math.floor(eczanePop[i] * (0.8 + Math.random() * 1.5));
+      for (let n = 0; n < adet; n++) {
+        const ui = H.agirlikliIndeks(urunAgirlik);
+        urunTikla.push([urunIdler[ui], e.id, H.trendliTarih()]);
+      }
+    });
+    await topluEkle(client, `urun_tiklamalar (urun_id, eczane_id, created_at)`, urunTikla, 3);
+
+    // ziyaretler — mümessil bazlı; performans farkı
+    const NOTLAR = ['Stok kontrolü yapıldı.', 'Yeni ürün tanıtıldı.', 'Eczacı ilgili, tekrar ziyaret planlandı.', 'Kampanya bilgisi verildi.', 'Raf düzenlemesi önerildi.', 'Sipariş alındı.', null, null];
+    // mümessil index -> eczane id listesi
+    const mumessilEczane = {};
+    eczaneler.forEach(e => { (mumessilEczane[e.mumessilIndex] ??= []).push(e); });
+    const mumessilIndexleri = kisiler.map((p, i) => (p.unvan === 'Tıbbi Mümessil' ? i : -1)).filter(i => i >= 0);
+    const ziyaretler = [];
+    mumessilIndexleri.forEach((mi, sira) => {
+      const kendiEczaneleri = mumessilEczane[mi] || [];
+      const geride = sira % 7 === 0;   // ~%15 geride
+      const yildiz = sira % 10 === 0;  // ~%10 yildiz
+      kendiEczaneleri.forEach(e => {
+        const ziyaretSayisi = yildiz ? 4 + Math.floor(Math.random() * 4) : geride ? Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 3);
+        for (let n = 0; n < ziyaretSayisi; n++) {
+          let tarih;
+          if (geride) { const g = 60 + Math.floor(Math.random() * 60); tarih = new Date(Date.now() - g * 86400000); }
+          else tarih = H.trendliTarih();
+          ziyaretler.push([kisiIdler[mi], e.id, H.rastgele(NOTLAR), e.lat, e.lng, tarih]);
+        }
+      });
+    });
+    await topluEkle(client, `ziyaretler (calisan_id, eczane_id, temsilci_notu, lat, lng, created_at)`, ziyaretler, 6);
+
+    console.log(`Aktivite: ${rafOkutma.length} raf okutma, ${rafTikla.length} raf tik, ${eczaciOkutma.length} eczaci okutma, ${eczaciTikla.length} eczaci tik, ${urunTikla.length} urun tik, ${ziyaretler.length} ziyaret.`);
+
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
     console.log(`Bagli bayi id: ${bayiId}`);
