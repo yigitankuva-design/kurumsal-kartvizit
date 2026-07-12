@@ -8,7 +8,7 @@ const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/e
 const { eczaneExcelParse, aoaToXlsxBuffer } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 const { islemKaydet } = require('../utils/islemGecmisi');
-const { basrilkSatiriUygula, kolonGenislikleriAyarla } = require('../utils/excelStil');
+const { basrilkSatiriUygula, kolonGenislikleriAyarla, veriCubugu, renkSkalasi, ikonSeti } = require('../utils/excelStil');
 const { mumessilPerformansi } = require('../utils/sahaAnaliz');
 
 // pdfkit'in yerleşik fontları (Helvetica) Türkçe'ye özgü karakterleri (ı, ş, ğ vb.)
@@ -266,14 +266,79 @@ router.get('/rapor-excel', async (req, res) => {
     );
     const kpi = kpiSonuc.rows[0];
     const oran = (a, b) => (Number(b) ? Math.round((Number(a) / Number(b)) * 100) : 0);
-    const wsOzet = wb.addWorksheet('Özet');
-    basrilkSatiriUygula(wsOzet, ['Metrik', 'Değer']);
-    wsOzet.addRow(['Rapor tarihi', new Date()]).getCell(2).numFmt = 'dd.mm.yyyy';
-    wsOzet.addRow(['Toplam ziyaret', Number(kpi.toplam_ziyaret)]);
-    wsOzet.addRow(['Toplam eczane', Number(kpi.toplam_eczane)]);
-    wsOzet.addRow(['Kart kapsaması', oran(kpi.kartli_eczane, kpi.toplam_eczane) / 100]).getCell(2).numFmt = '0%';
-    wsOzet.addRow(['İndirim dönüşümü', oran(kpi.indirim_kullanilan, kpi.indirim_uretilen) / 100]).getCell(2).numFmt = '0%';
-    kolonGenislikleriAyarla(wsOzet);
+    const firmaAdSonuc = await pool.query('SELECT ad FROM firmalar WHERE id = $1', [firmaId]);
+    const firmaAdi = (firmaAdSonuc.rows[0] && firmaAdSonuc.rows[0].ad) || 'Firma';
+
+    // ── KOKPİT (Özet) — tasarlanmış görsel dashboard ──
+    const wsOzet = wb.addWorksheet('Özet', { views: [{ showGridLines: false }] });
+    wsOzet.getColumn(1).width = 3;
+    wsOzet.getColumn(2).width = 26;
+    wsOzet.getColumn(3).width = 16;
+    wsOzet.getColumn(4).width = 30; // görsel çubuk kolonu
+    wsOzet.getColumn(5).width = 3;
+
+    // Başlık bandı
+    wsOzet.mergeCells('B1:D1');
+    const bas = wsOzet.getCell('B1');
+    bas.value = 'SAHA PERFORMANS KOKPİTİ';
+    bas.font = { bold: true, size: 16, color: { argb: 'FFFFFFFF' } };
+    bas.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A1A1A' } };
+    bas.alignment = { vertical: 'middle', indent: 1 };
+    wsOzet.getRow(1).height = 30;
+    wsOzet.mergeCells('B2:D2');
+    const alt = wsOzet.getCell('B2');
+    alt.value = firmaAdi + '  ·  ' + new Date().toLocaleDateString('tr-TR');
+    alt.font = { color: { argb: 'FF888888' }, size: 10 };
+    alt.alignment = { indent: 1 };
+
+    // KPI blokları (renkli büyük sayılar)
+    const kartYaz = (satir, etiket, deger, argb) => {
+      const eC = wsOzet.getCell('B' + satir);
+      eC.value = etiket;
+      eC.font = { color: { argb: 'FF666666' }, size: 10, bold: true };
+      eC.alignment = { indent: 1 };
+      const dC = wsOzet.getCell('C' + satir);
+      dC.value = deger;
+      dC.font = { bold: true, size: 15, color: { argb } };
+      dC.alignment = { horizontal: 'left' };
+      wsOzet.getRow(satir).height = 24;
+      return dC;
+    };
+    kartYaz(4, 'TOPLAM ZİYARET', Number(kpi.toplam_ziyaret), 'FF2563EB');
+    kartYaz(5, 'TOPLAM ECZANE', Number(kpi.toplam_eczane), 'FF1A1A1A');
+    kartYaz(6, 'KART KAPSAMASI', oran(kpi.kartli_eczane, kpi.toplam_eczane) / 100, 'FF16A34A').numFmt = '0%';
+    kartYaz(7, 'İNDİRİM ÜRETİLEN', Number(kpi.indirim_uretilen), 'FF9333EA');
+    kartYaz(8, 'İNDİRİM DÖNÜŞÜMÜ', oran(kpi.indirim_kullanilan, kpi.indirim_uretilen) / 100, 'FFEA580C').numFmt = '0%';
+
+    // En aktif 5 eczane — hücre-içi bar grafik
+    const eczaneSirali = eczaneOzetSonuc.rows
+      .map(r => ({ ad: r.ad, toplam: Number(r.raf_okutma) + Number(r.eczaci_okutma) }))
+      .sort((a, b) => b.toplam - a.toplam).slice(0, 5);
+    wsOzet.getCell('B10').value = 'EN AKTİF 5 ECZANE (okutma)';
+    wsOzet.getCell('B10').font = { bold: true, size: 11 };
+    let sr = 11;
+    eczaneSirali.forEach(e => {
+      wsOzet.getCell('B' + sr).value = e.ad;
+      wsOzet.getCell('B' + sr).font = { size: 10 };
+      wsOzet.getCell('C' + sr).value = e.toplam;
+      wsOzet.getCell('D' + sr).value = e.toplam; // bar kolonu
+      sr++;
+    });
+    if (eczaneSirali.length) veriCubugu(wsOzet, 'D11:D' + (sr - 1), 'FF63A2E8');
+
+    // En aktif 5 temsilci — hücre-içi bar grafik
+    const bas2 = sr + 1;
+    wsOzet.getCell('B' + bas2).value = 'EN AKTİF 5 TEMSİLCİ (ziyaret)';
+    wsOzet.getCell('B' + bas2).font = { bold: true, size: 11 };
+    let tr = bas2 + 1;
+    temsilciOzetSonuc.rows.slice(0, 5).forEach(r => {
+      wsOzet.getCell('B' + tr).value = `${r.ad} ${r.soyad}`;
+      wsOzet.getCell('B' + tr).font = { size: 10 };
+      wsOzet.getCell('C' + tr).value = Number(r.ziyaret_sayisi);
+      wsOzet.getCell('D' + tr).value = Number(r.ziyaret_sayisi);
+      tr++;
+    });
+    if (temsilciOzetSonuc.rows.length) veriCubugu(wsOzet, 'D' + (bas2 + 1) + ':D' + (tr - 1), 'FF7BC97F');
 
     // Mümessil Performansı sayfası — geride satırlar kırmızı
     const perfSonuc = await pool.query(
@@ -297,6 +362,10 @@ router.get('/rapor-excel', async (req, res) => {
       if (r.sonZiyaret) satir.getCell(4).numFmt = 'dd.mm.yyyy';
       if (r.durum === 'geride') satir.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } }; });
     });
+    if (perf.length) {
+      veriCubugu(wsPerf, `C2:C${perf.length + 1}`, 'FF4E9AE0'); // Son 90g bar
+      renkSkalasi(wsPerf, `B2:B${perf.length + 1}`); // Son 30g ısı haritası
+    }
     kolonGenislikleriAyarla(wsPerf);
 
     const wsZiyaret = wb.addWorksheet('Ziyaretler');
@@ -309,8 +378,20 @@ router.get('/rapor-excel', async (req, res) => {
     const wsEczane = wb.addWorksheet('Eczane Özeti');
     basrilkSatiriUygula(wsEczane, ['Eczane', 'Raf Okutma', 'Eczacı Okutma', 'Ziyaret Sayısı', 'Son Ziyaret']);
     eczaneOzetSonuc.rows.forEach(r => {
-      wsEczane.addRow([r.ad, Number(r.raf_okutma), Number(r.eczaci_okutma), Number(r.ziyaret_sayisi), r.son_ziyaret || '']);
+      const s = wsEczane.addRow([r.ad, Number(r.raf_okutma), Number(r.eczaci_okutma), Number(r.ziyaret_sayisi), r.son_ziyaret || '']);
+      if (r.son_ziyaret) s.getCell(5).numFmt = 'dd.mm.yyyy';
     });
+    const ecN = eczaneOzetSonuc.rows.length;
+    if (ecN) {
+      veriCubugu(wsEczane, `B2:B${ecN + 1}`, 'FF63A2E8'); // Raf okutma bar
+      veriCubugu(wsEczane, `C2:C${ecN + 1}`, 'FF7BC97F'); // Eczacı okutma bar
+      renkSkalasi(wsEczane, `D2:D${ecN + 1}`); // Ziyaret ısı haritası
+      const t = wsEczane.addRow(['TOPLAM',
+        eczaneOzetSonuc.rows.reduce((a, r) => a + Number(r.raf_okutma), 0),
+        eczaneOzetSonuc.rows.reduce((a, r) => a + Number(r.eczaci_okutma), 0),
+        eczaneOzetSonuc.rows.reduce((a, r) => a + Number(r.ziyaret_sayisi), 0), '']);
+      t.eachCell(c => { c.font = { bold: true }; c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0EAD8' } }; });
+    }
     kolonGenislikleriAyarla(wsEczane);
 
     const wsTemsilci = wb.addWorksheet('Temsilci Özeti');
@@ -318,6 +399,11 @@ router.get('/rapor-excel', async (req, res) => {
     temsilciOzetSonuc.rows.forEach(r => {
       wsTemsilci.addRow([`${r.ad} ${r.soyad}`, Number(r.ziyaret_sayisi), Number(r.benzersiz_eczane)]);
     });
+    const tmN = temsilciOzetSonuc.rows.length;
+    if (tmN) {
+      veriCubugu(wsTemsilci, `B2:B${tmN + 1}`, 'FF63A2E8'); // Ziyaret bar
+      veriCubugu(wsTemsilci, `C2:C${tmN + 1}`, 'FF7BC97F'); // Benzersiz eczane bar
+    }
     kolonGenislikleriAyarla(wsTemsilci);
 
     const wsIndirim = wb.addWorksheet('İndirim Kullanımı');

@@ -23,4 +23,42 @@ function kolonGenislikleriAyarla(ws) {
   });
 }
 
-module.exports = { basrilkSatiriUygula, kolonGenislikleriAyarla };
+// Hücre-içi yatay bar grafik (Excel data bar) — bir kolonu görsel çubuklara çevirir.
+function veriCubugu(ws, aralik, argb) {
+  ws.addConditionalFormatting({
+    ref: aralik,
+    rules: [{
+      type: 'dataBar',
+      cfvo: [{ type: 'min' }, { type: 'max' }],
+      color: { argb: argb || 'FF4E9AE0' },
+      gradient: true,
+      border: false,
+    }],
+  });
+}
+
+// Isı haritası — düşük kırmızı, orta sarı, yüksek yeşil.
+function renkSkalasi(ws, aralik) {
+  ws.addConditionalFormatting({
+    ref: aralik,
+    rules: [{
+      type: 'colorScale',
+      cfvo: [{ type: 'min' }, { type: 'percentile', value: 50 }, { type: 'max' }],
+      color: [{ argb: 'FFF8696B' }, { argb: 'FFFFEB84' }, { argb: 'FF63BE7B' }],
+    }],
+  });
+}
+
+// 3 renkli trafik-ışığı ikon seti (yön/durum göstergesi).
+function ikonSeti(ws, aralik) {
+  ws.addConditionalFormatting({
+    ref: aralik,
+    rules: [{
+      type: 'iconSet',
+      iconSet: '3TrafficLights1',
+      cfvo: [{ type: 'percent', value: 0 }, { type: 'percent', value: 33 }, { type: 'percent', value: 67 }],
+    }],
+  });
+}
+
+module.exports = { basrilkSatiriUygula, kolonGenislikleriAyarla, veriCubugu, renkSkalasi, ikonSeti };
