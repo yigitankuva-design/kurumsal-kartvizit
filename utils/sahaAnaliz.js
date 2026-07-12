@@ -3,7 +3,12 @@ function hiyerarsiAgaciKur(kisiler, ziyaretSayilari = {}) {
   kisiler.forEach(k => {
     dugumler.set(k.id, {
       id: k.id, ad: k.ad, soyad: k.soyad, unvan: k.unvan,
+      departman: k.departman, foto_url: k.foto_url, slug: k.slug,
       ekip_yoneticisi: k.ekip_yoneticisi,
+      telefon: k.telefon, email: k.email,
+      linkedin: k.linkedin, instagram: k.instagram, twitter: k.twitter,
+      youtube: k.youtube, website: k.website, whatsapp: k.whatsapp,
+      tiktok: k.tiktok, google_yorum_link: k.google_yorum_link,
       kendiZiyaret: Number(ziyaretSayilari[k.id] || 0),
       ekipZiyaret: 0,
       cocuklar: [],

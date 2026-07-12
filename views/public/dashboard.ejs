@@ -539,105 +539,203 @@ function jsonAttr(obj) {
     <% } else { %>
     <div class="table-wrap" style="padding:14px 16px;margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <strong style="font-size:var(--fs-md)">Organizasyon Şeması</strong>
-      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Satıra tıkla → alt ekibi aç/kapa · her bölge kendi renginde · son 1 yıl ekip ziyaretleri</span>
+      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Karta tıkla → profil detayı açılır · alttaki −/+ ile ekibi aç/kapa · her departman kendi renginde</span>
       <span style="margin-left:auto;display:flex;gap:8px">
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuAc()">Tümünü Aç</button>
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
       </span>
     </div>
     <style>
-      .org-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px}
-      .org-row.dolu{cursor:pointer}
-      .org-row:hover{background:var(--bg3)}
-      .org-tog{width:15px;flex:0 0 15px;text-align:center;color:var(--text-faint);font-size:11px}
-      .org-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%}
-      .org-ad{font-weight:600;font-size:14px}
-      .org-un{color:var(--text-faint);font-weight:400;font-size:12.5px}
-      .org-badge{margin-left:auto;font-size:12px;color:var(--text-faint);white-space:nowrap}
-      .org-lvl{margin-left:16px;padding-left:10px;border-left:2px solid var(--border)}
-      .org-box{display:flex;align-items:stretch;max-height:76vh}
-      .org-box-agac{flex:1 1 auto;min-width:0;overflow-y:auto;padding:8px 10px}
-      .org-ekip-inline{display:none;flex:0 0 300px;max-width:40%;border-left:1px solid var(--border);padding:14px;overflow-y:auto}
-      .org-ekip-inline.open{display:block}
-      .org-ekip-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
-      .org-ekip-row:last-child{border-bottom:none}
+      .oc-scroll{overflow:auto;background:var(--surface);padding:28px 20px 34px;max-height:78vh}
+      .oc-chart{display:inline-block;min-width:100%}
+      .oc-chart ul{list-style:none;margin:0;padding:0;display:flex;justify-content:center}
+      .oc-chart li{position:relative;padding:30px 10px 0;text-align:center}
+      .oc-chart li::before,.oc-chart li::after{content:'';position:absolute;top:0;right:50%;width:50%;height:30px;border-top:2px solid var(--border)}
+      .oc-chart li::after{right:auto;left:50%;border-left:2px solid var(--border)}
+      .oc-chart li:only-child{padding-top:30px}
+      .oc-chart li:only-child::before,.oc-chart li:only-child::after{display:none}
+      .oc-chart li:first-child::before,.oc-chart li:last-child::after{border:0 none}
+      .oc-chart li:last-child::before{border-right:2px solid var(--border);border-radius:0 7px 0 0}
+      .oc-chart li:first-child::after{border-radius:7px 0 0 0}
+      .oc-chart ul ul::before{content:'';position:absolute;top:0;left:50%;width:0;height:30px;border-left:2px solid var(--border)}
+      .oc-chart>ul>li{padding-top:0}
+      .oc-chart>ul>li::before,.oc-chart>ul>li::after{display:none}
+      .oc-node{position:relative;display:inline-flex;flex-direction:column;align-items:center;gap:6px;width:172px;
+        border-radius:15px;padding:14px 12px 13px;color:#fff;cursor:pointer;
+        background:linear-gradient(158deg,var(--c1),var(--c2));border:1px solid rgba(255,255,255,.28);
+        box-shadow:0 12px 22px -14px var(--sh),inset 0 1px 0 rgba(255,255,255,.35);
+        transition:transform .12s ease,box-shadow .12s ease}
+      .oc-node:hover{transform:translateY(-2px);box-shadow:0 18px 30px -14px var(--sh),inset 0 1px 0 rgba(255,255,255,.45)}
+      .oc-av{width:52px;height:52px;border-radius:50%;object-fit:cover;display:grid;place-items:center;
+        font-weight:750;font-size:16px;color:#fff;background:rgba(255,255,255,.22);
+        border:2px solid rgba(255,255,255,.6);box-shadow:0 3px 8px rgba(0,0,0,.18)}
+      .oc-nm{font-size:13.5px;font-weight:750;line-height:1.2;text-shadow:0 1px 1px rgba(0,0,0,.12)}
+      .oc-ti{font-size:11px;color:rgba(255,255,255,.92);line-height:1.25}
+      .oc-dp{font-size:9.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;padding:2px 9px;border-radius:999px;
+        background:rgba(255,255,255,.22);border:1px solid rgba(255,255,255,.34)}
+      .oc-badge{position:absolute;top:-10px;right:10px;font-size:8.5px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;
+        padding:3px 8px;border-radius:999px;background:#fff;color:#333;box-shadow:0 3px 8px -2px rgba(0,0,0,.3)}
+      .oc-node.kok{width:212px}
+      .oc-node.kok .oc-av{width:60px;height:60px;font-size:19px}
+      .oc-node.kok .oc-nm{font-size:15px}
+      .oc-fold{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:50%;
+        background:#fff;color:#555;border:1px solid var(--border);font-size:13px;line-height:1;cursor:pointer;
+        display:grid;place-items:center;box-shadow:0 3px 8px -2px rgba(0,0,0,.25);z-index:2}
+      .oc-drawer-bg{position:fixed;inset:0;background:rgba(15,23,42,.42);opacity:0;visibility:hidden;transition:.2s;z-index:60}
+      .oc-drawer-bg.open{opacity:1;visibility:visible}
+      .oc-drawer{position:fixed;top:0;right:0;height:100%;width:362px;max-width:92vw;background:var(--surface);
+        box-shadow:-14px 0 40px -18px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .22s ease;z-index:61;
+        overflow-y:auto;display:flex;flex-direction:column}
+      .oc-drawer.open{transform:none}
+      .oc-dhead{padding:22px 20px 18px;color:#fff;background:linear-gradient(158deg,var(--dc1,#334155),var(--dc2,#1e293b));position:relative}
+      .oc-dclose{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+        background:rgba(255,255,255,.22);color:#fff;font-size:15px}
+      .oc-dav{width:74px;height:74px;border-radius:50%;object-fit:cover;display:grid;place-items:center;font-weight:750;font-size:24px;
+        color:#fff;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.6);margin-bottom:10px}
+      .oc-dnm{font-size:18px;font-weight:750}
+      .oc-dti{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px}
+      .oc-dchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+      .oc-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:999px;
+        background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.34);color:#fff}
+      .oc-dbody{padding:16px 20px 26px;display:flex;flex-direction:column;gap:14px}
+      .oc-sec-t{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:2px}
+      .oc-kv{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
+      .oc-kv:last-child{border-bottom:none}
+      .oc-kv .k{color:var(--text-faint);min-width:74px;font-size:12px}
+      .oc-kv a{color:var(--gold);text-decoration:none;word-break:break-all}
+      .oc-stat{display:flex;gap:10px}
+      .oc-stat .box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:11px 12px;text-align:center}
+      .oc-stat .n{font-size:19px;font-weight:750}
+      .oc-stat .l{font-size:10.5px;color:var(--text-faint);margin-top:2px}
+      .oc-links{display:flex;flex-wrap:wrap;gap:8px}
+      .oc-links a{font-size:12px;font-weight:600;padding:7px 12px;border-radius:9px;border:1px solid var(--border);
+        background:var(--bg3);color:var(--text);text-decoration:none}
+      .oc-profil{margin-top:6px;display:block;text-align:center;padding:11px;border-radius:11px;font-weight:700;font-size:13.5px;
+        background:var(--gold);color:#fff;text-decoration:none}
     </style>
-    <div class="table-wrap org-box" style="background:var(--surface)">
-      <div id="orgAgac" class="org-box-agac"></div>
-      <div id="orgEkipInline" class="org-ekip-inline">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <strong id="orgEkipBaslik" style="font-size:14px">Ekip</strong>
-          <button type="button" class="btn btn-ghost btn-sm" onclick="orgEkipKapat()">✕</button>
-        </div>
-        <div id="orgEkipIcerik"></div>
-      </div>
+    <div class="table-wrap oc-scroll">
+      <div class="oc-chart" id="ocChart"></div>
     </div>
+    <div class="oc-drawer-bg" id="ocDrawerBg" onclick="ocKapat()"></div>
+    <aside class="oc-drawer" id="ocDrawer" aria-hidden="true">
+      <div class="oc-dhead" id="ocDHead">
+        <button type="button" class="oc-dclose" onclick="ocKapat()">✕</button>
+        <div id="ocDAv"></div>
+        <div class="oc-dnm" id="ocDNm"></div>
+        <div class="oc-dti" id="ocDTi"></div>
+        <div class="oc-dchips" id="ocDChips"></div>
+      </div>
+      <div class="oc-dbody" id="ocDBody"></div>
+    </aside>
     <script>
       (function () {
         const orgVeri = <%- JSON.stringify(hiyerarsiAgaci) %>;
-        const host = document.getElementById('orgAgac');
-        const renkler = ['#3b82f6', '#16a34a', '#8b5cf6', '#d97706', '#0d9488', '#db2777', '#ea580c', '#6366f1'];
-        const KOK = '#c8a84b';
-        const acik = {};
-        (function ilk(list, d) { list.forEach(function (n) { if (d < 2) acik[n.id] = true; ilk(n.cocuklar || [], d + 1); }); })(orgVeri, 0);
+        const FIRMA_SLUG = <%- JSON.stringify(typeof firma !== 'undefined' && firma ? (firma.slug || '') : '') %>;
+        const host = document.getElementById('ocChart');
+        const PAIRS = [['#3b82f6','#1d4ed8'],['#14b8a6','#0d7d72'],['#8b5cf6','#6d28d9'],['#e0a020','#b4680a'],['#db2777','#a21657'],['#ea580c','#c2410c'],['#0ea5e9','#0369a1'],['#65a30d','#3f6212']];
+        const KOK = ['#d4b25a','#a9822f'];
+        const depMap = {}; let depIdx = 0;
+        function pairFor(dep){ const key = dep || '—'; if (!(key in depMap)) { depMap[key] = PAIRS[depIdx % PAIRS.length]; depIdx++; } return depMap[key]; }
+        const collapsed = {};
 
-        function mk(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+        function el(tag, cls){ const e = document.createElement(tag); if (cls) e.className = cls; return e; }
+        function initials(n){ return (((n.ad||' ')[0]||'') + ((n.soyad||' ')[0]||'')).toLocaleUpperCase('tr'); }
+        function avatar(n, cls){ if (n.foto_url){ const im = el('img', cls); im.src = n.foto_url; im.alt = ''; return im; } const d = el('div', cls); d.textContent = initials(n); return d; }
 
-        function ciz() {
-          host.textContent = '';
-          function dugum(n, parent, renk) {
-            const yaprak = !(n.cocuklar && n.cocuklar.length);
-            // ekipYaprak: alt eleman çıkmayan tüm çocukları mümessil (yaprak) — bunlar sağa açılır, aşağı değil
-            const ekipYaprak = !yaprak && n.cocuklar.every(function (c) { return !(c.cocuklar && c.cocuklar.length); });
-            const row = mk('div', 'org-row' + (yaprak ? '' : ' dolu'));
-            row.appendChild(mk('span', 'org-tog', yaprak ? '' : (ekipYaprak ? '›' : (acik[n.id] ? '▾' : '▸'))));
-            const dot = mk('span', 'org-dot'); dot.style.background = renk; row.appendChild(dot);
-            const orta = mk('span');
-            orta.appendChild(mk('span', 'org-ad', (n.ad || '') + ' ' + (n.soyad || '')));
-            if (n.unvan) orta.appendChild(mk('span', 'org-un', ' · ' + n.unvan));
-            row.appendChild(orta);
-            row.appendChild(mk('span', 'org-badge', yaprak ? ('🧍 ' + n.kendiZiyaret + ' ziyaret') : ('👥 ' + n.ekipZiyaret)));
-            if (ekipYaprak) {
-              row.onclick = function () { orgEkipGoster(n, renk); };
-            } else if (!yaprak) {
-              row.onclick = function () { acik[n.id] = !acik[n.id]; ciz(); };
-            }
-            parent.appendChild(row);
-            if (!yaprak && !ekipYaprak && acik[n.id]) {
-              const box = mk('div', 'org-lvl'); box.style.borderLeftColor = renk;
-              n.cocuklar.forEach(function (c, i) {
-                const cr = (renk === KOK) ? renkler[i % renkler.length] : renk;
-                dugum(c, box, cr);
-              });
-              parent.appendChild(box);
-            }
+        function card(n, isKok){
+          const pair = isKok ? KOK : pairFor(n.departman);
+          const nd = el('div', 'oc-node' + (isKok ? ' kok' : ''));
+          nd.style.setProperty('--c1', pair[0]); nd.style.setProperty('--c2', pair[1]); nd.style.setProperty('--sh', pair[1] + '99');
+          if (n.ekip_yoneticisi || isKok){ const b = el('div', 'oc-badge'); b.textContent = isKok ? 'Genel' : 'Yönetici'; nd.appendChild(b); }
+          nd.appendChild(avatar(n, 'oc-av'));
+          const nm = el('div', 'oc-nm'); nm.textContent = ((n.ad || '') + ' ' + (n.soyad || '')).trim(); nd.appendChild(nm);
+          if (n.unvan){ const t = el('div', 'oc-ti'); t.textContent = n.unvan; nd.appendChild(t); }
+          if (n.departman){ const dp = el('div', 'oc-dp'); dp.textContent = n.departman; nd.appendChild(dp); }
+          nd.onclick = function(){ ocGoster(n, pair); };
+          if (n.cocuklar && n.cocuklar.length){
+            const f = el('button', 'oc-fold'); f.type = 'button'; f.textContent = collapsed[n.id] ? '+' : '−';
+            f.onclick = function(ev){ ev.stopPropagation(); collapsed[n.id] = !collapsed[n.id]; ciz(); };
+            nd.appendChild(f);
           }
-          orgVeri.forEach(function (k) { dugum(k, host, KOK); });
+          return nd;
+        }
+
+        function liFor(n, isKok){
+          const li = el('li');
+          li.appendChild(card(n, isKok));
+          if (n.cocuklar && n.cocuklar.length && !collapsed[n.id]){
+            const ul = el('ul');
+            n.cocuklar.forEach(function(c){ ul.appendChild(liFor(c, false)); });
+            li.appendChild(ul);
+          }
+          return li;
+        }
+
+        function ciz(){
+          host.textContent = '';
+          const ul = el('ul');
+          orgVeri.forEach(function(k){ ul.appendChild(liFor(k, true)); });
+          host.appendChild(ul);
         }
         ciz();
 
-        window.orgTumunuAc = function () { (function a(list) { list.forEach(function (n) { acik[n.id] = true; a(n.cocuklar || []); }); })(orgVeri); ciz(); };
-        window.orgTumunuKapat = function () { for (const k in acik) delete acik[k]; orgVeri.forEach(function (n) { acik[n.id] = true; }); ciz(); };
+        window.orgTumunuAc = function(){ for (const k in collapsed) delete collapsed[k]; ciz(); };
+        window.orgTumunuKapat = function(){ (function rec(list, d){ list.forEach(function(n){ if (d >= 1 && n.cocuklar && n.cocuklar.length) collapsed[n.id] = true; rec(n.cocuklar || [], d + 1); }); })(orgVeri, 0); ciz(); };
 
-        window.orgEkipGoster = function (n, renk) {
-          document.getElementById('orgEkipBaslik').textContent = (n.ad || '') + ' ' + (n.soyad || '') + ' — Ekibi';
-          const icerik = document.getElementById('orgEkipIcerik');
-          icerik.textContent = '';
-          n.cocuklar.slice().sort(function (a, b) { return (b.kendiZiyaret || 0) - (a.kendiZiyaret || 0); }).forEach(function (c) {
-            const row = mk('div', 'org-ekip-row');
-            const sol = mk('span');
-            const dot = mk('span', 'org-dot'); dot.style.background = renk; dot.style.marginRight = '8px'; dot.style.display = 'inline-block';
-            sol.appendChild(dot);
-            const isim = mk('span', 'org-ad', (c.ad || '') + ' ' + (c.soyad || ''));
-            sol.appendChild(isim);
-            if (c.unvan) sol.appendChild(mk('span', 'org-un', ' · ' + c.unvan));
-            row.appendChild(sol);
-            row.appendChild(mk('span', 'org-badge', '🧍 ' + (c.kendiZiyaret || 0) + ' ziyaret'));
-            icerik.appendChild(row);
-          });
-          document.getElementById('orgEkipInline').classList.add('open');
+        // ── Detay çekmecesi ──
+        const bg = document.getElementById('ocDrawerBg'), dr = document.getElementById('ocDrawer');
+        window.ocKapat = function(){ bg.classList.remove('open'); dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); };
+        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') ocKapat(); });
+
+        function kv(k, val, href, blank){
+          const row = el('div', 'oc-kv'); const kk = el('span', 'k'); kk.textContent = k; row.appendChild(kk);
+          if (href){ const a = document.createElement('a'); a.href = href; a.textContent = val; if (blank) a.target = '_blank'; row.appendChild(a); }
+          else { const s = document.createElement('span'); s.textContent = val; row.appendChild(s); }
+          return row;
+        }
+        function sosyalUrl(t, v){
+          v = String(v).trim(); const bare = v.replace(/^@/, '').replace(/^https?:\/\//, '');
+          if (v.startsWith('http') && t !== 'whatsapp') return v;
+          switch (t){
+            case 'instagram': return 'https://instagram.com/' + bare.replace(/^instagram\.com\//, '');
+            case 'twitter':   return 'https://x.com/' + bare.replace(/^(x|twitter)\.com\//, '');
+            case 'tiktok':    return 'https://tiktok.com/@' + bare.replace(/^tiktok\.com\/@?/, '');
+            case 'youtube':   return 'https://youtube.com/' + bare;
+            case 'whatsapp':  return 'https://wa.me/' + v.replace(/\D/g, '');
+            default:          return 'https://' + bare;
+          }
+        }
+
+        window.ocGoster = function(n, pair){
+          const head = document.getElementById('ocDHead');
+          head.style.setProperty('--dc1', pair[0]); head.style.setProperty('--dc2', pair[1]);
+          const avHost = document.getElementById('ocDAv'); avHost.textContent = ''; avHost.appendChild(avatar(n, 'oc-dav'));
+          document.getElementById('ocDNm').textContent = ((n.ad || '') + ' ' + (n.soyad || '')).trim();
+          document.getElementById('ocDTi').textContent = n.unvan || '';
+          const chips = document.getElementById('ocDChips'); chips.textContent = '';
+          if (n.departman){ const c = el('span', 'oc-chip'); c.textContent = n.departman; chips.appendChild(c); }
+          const rc = el('span', 'oc-chip'); rc.textContent = n.ekip_yoneticisi ? 'Ekip Yöneticisi' : 'Çalışan'; chips.appendChild(rc);
+
+          const body = document.getElementById('ocDBody'); body.textContent = '';
+          const stat = el('div', 'oc-stat');
+          const b1 = el('div', 'box'); b1.innerHTML = '<div class="n">' + (n.kendiZiyaret || 0) + '</div><div class="l">Kendi ziyareti</div>'; stat.appendChild(b1);
+          if (n.cocuklar && n.cocuklar.length){ const b2 = el('div', 'box'); b2.innerHTML = '<div class="n">' + (n.ekipZiyaret || 0) + '</div><div class="l">Ekip ziyareti</div>'; stat.appendChild(b2); }
+          body.appendChild(stat);
+
+          const ilet = [];
+          if (n.telefon) ilet.push(kv('Telefon', n.telefon, 'tel:' + n.telefon));
+          if (n.email)   ilet.push(kv('E-posta', n.email, 'mailto:' + n.email));
+          if (ilet.length){ const t = el('div', 'oc-sec-t'); t.textContent = 'İletişim'; body.appendChild(t); ilet.forEach(function(r){ body.appendChild(r); }); }
+
+          const linkler = [['linkedin','LinkedIn'],['instagram','Instagram'],['twitter','X'],['youtube','YouTube'],['website','Web'],['whatsapp','WhatsApp'],['tiktok','TikTok'],['google_yorum_link','Google']];
+          const lc = el('div', 'oc-links'); let varmi = false;
+          linkler.forEach(function(p){ const v = n[p[0]]; if (v){ varmi = true; const a = document.createElement('a'); a.textContent = p[1]; a.href = sosyalUrl(p[0], v); a.target = '_blank'; lc.appendChild(a); } });
+          if (varmi){ const t = el('div', 'oc-sec-t'); t.textContent = 'Bağlantılar'; body.appendChild(t); body.appendChild(lc); }
+
+          if (FIRMA_SLUG && n.slug){ const a = document.createElement('a'); a.className = 'oc-profil'; a.href = '/' + FIRMA_SLUG + '/' + n.slug; a.target = '_blank'; a.textContent = 'Dijital Kartını Aç →'; body.appendChild(a); }
+
+          bg.classList.add('open'); dr.classList.add('open'); dr.setAttribute('aria-hidden', 'false');
         };
-        window.orgEkipKapat = function () { document.getElementById('orgEkipInline').classList.remove('open'); };
       })();
     </script>
     <% } %>
