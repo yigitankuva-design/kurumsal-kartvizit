@@ -1586,6 +1586,7 @@ function jsonAttr(obj) {
     const yeni = mevcut === 'light' ? 'dark' : 'light';
     try { localStorage.setItem('nfck-tema', yeni); } catch (e) {}
     temaUygula(yeni);
+    if (window.isikGorselUygulaYenile) window.isikGorselUygulaYenile();
   }
 
   temaUygula(document.documentElement.getAttribute('data-theme') || 'dark');
@@ -1732,6 +1733,7 @@ function jsonAttr(obj) {
     document.getElementById('lightVal').textContent = ISIK_TABAN;
     vurguRengiUygula(false);
     isikGorselUygula(ISIK_TABAN);
+    window.isikGorselUygulaYenile = function () { isikGorselUygula(document.getElementById('lightSlider').value); };
   })();
 
   function formYukleniyorGoster(form, metin) {
