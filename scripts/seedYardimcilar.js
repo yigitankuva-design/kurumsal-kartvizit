@@ -74,4 +74,35 @@ function hiyerarsiKur() {
   return k;
 }
 
-module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih, benzersizKodlar, hiyerarsiKur };
+function eczaneleriUret(kisiler, adet = 1000) {
+  const kodlar = benzersizKodlar(adet);
+  const eczaciKodlar = benzersizKodlar(adet, new Set(kodlar));
+  const bolgeMumessilleri = [[], [], [], [], []];
+  kisiler.forEach((p, i) => { if (p.unvan === 'Tıbbi Mümessil') bolgeMumessilleri[p.bolge].push(i); });
+  const eczaneler = [];
+  const bolgeBasi = adet / 5;
+  let idx = 0;
+  for (let b = 0; b < 5; b++) {
+    const sehirler = BOLGELER[b].sehirler;
+    const mumessiller = bolgeMumessilleri[b];
+    for (let j = 0; j < bolgeBasi; j++) {
+      const sehir = rastgele(sehirler);
+      const mahalle = rastgele(MAHALLELER);
+      const soyad = rastgele(SOYADLAR);
+      eczaneler.push({
+        bolge: b,
+        ad: `${mahalle} ${soyad} Eczanesi`,
+        adres: `${mahalle} Mah., ${sehir.ad}`,
+        kod: kodlar[idx],
+        eczaci_kod: eczaciKodlar[idx],
+        lat: sehir.lat + (Math.random() - 0.5) * 0.1,
+        lng: sehir.lng + (Math.random() - 0.5) * 0.1,
+        mumessilIndex: mumessiller[j % mumessiller.length],
+      });
+      idx++;
+    }
+  }
+  return eczaneler;
+}
+
+module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih, benzersizKodlar, hiyerarsiKur, eczaneleriUret };

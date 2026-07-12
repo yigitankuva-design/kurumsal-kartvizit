@@ -87,3 +87,31 @@ describe('hiyerarsiKur', () => {
     });
   });
 });
+
+const { eczaneleriUret } = require('../scripts/seedYardimcilar');
+
+describe('eczaneleriUret', () => {
+  const kisiler = hiyerarsiKur();
+  const eczaneler = eczaneleriUret(kisiler, 1000);
+  test('1000 eczane, her bölgede 200', () => {
+    expect(eczaneler).toHaveLength(1000);
+    for (let b = 0; b < 5; b++) expect(eczaneler.filter(e => e.bolge === b)).toHaveLength(200);
+  });
+  test('her eczane kendi bölgesindeki bir mümessile atanmış', () => {
+    eczaneler.forEach(e => {
+      const mumessil = kisiler[e.mumessilIndex];
+      expect(mumessil.unvan).toBe('Tıbbi Mümessil');
+      expect(mumessil.bolge).toBe(e.bolge);
+    });
+  });
+  test('benzersiz kod ve eczaci_kod', () => {
+    expect(new Set(eczaneler.map(e => e.kod)).size).toBe(1000);
+    expect(new Set(eczaneler.map(e => e.eczaci_kod)).size).toBe(1000);
+  });
+  test('lat/lng dolu ve makul aralıkta (Türkiye)', () => {
+    eczaneler.forEach(e => {
+      expect(e.lat).toBeGreaterThan(35); expect(e.lat).toBeLessThan(43);
+      expect(e.lng).toBeGreaterThan(25); expect(e.lng).toBeLessThan(45);
+    });
+  });
+});
