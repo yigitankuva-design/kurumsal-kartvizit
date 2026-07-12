@@ -38,4 +38,13 @@ function trendliTarih(gunSayisi = 150) {
   return d;
 }
 
-module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih };
+function benzersizKodlar(adet, mevcut = new Set()) {
+  const set = new Set();
+  while (set.size < adet) {
+    const k = eczaneKodUret(8);
+    if (!mevcut.has(k) && !set.has(k)) set.add(k);
+  }
+  return [...set];
+}
+
+module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks, trendliTarih, benzersizKodlar };

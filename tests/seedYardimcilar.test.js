@@ -32,3 +32,19 @@ describe('trendliTarih', () => {
     expect(toplamGun / N).toBeLessThan(70);
   });
 });
+
+const { benzersizKodlar } = require('../scripts/seedYardimcilar');
+
+describe('benzersizKodlar', () => {
+  test('istenen adette, hepsi benzersiz ve 8 karakter', () => {
+    const kodlar = benzersizKodlar(500);
+    expect(kodlar).toHaveLength(500);
+    expect(new Set(kodlar).size).toBe(500);
+    expect(kodlar.every(k => k.length === 8)).toBe(true);
+  });
+  test('mevcut set ile çakışmaz', () => {
+    const mevcut = new Set(benzersizKodlar(100));
+    const yeni = benzersizKodlar(100, mevcut);
+    expect(yeni.some(k => mevcut.has(k))).toBe(false);
+  });
+});
