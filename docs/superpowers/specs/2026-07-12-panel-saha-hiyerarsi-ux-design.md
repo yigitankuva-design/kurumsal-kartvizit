@@ -5,7 +5,13 @@
 
 **Mimari:** DB sorguları `app.js` GET `/` handler'ında kalır. Saf dönüşümler (ağaç kurma, performans bayrakları) yeni `utils/sahaAnaliz.js`'e taşınır ve jest ile birim test edilir. Görsel değişiklikler `views/public/dashboard.ejs` içinde; ek kütüphane yok (mevcut Chart.js + vanilla JS + `<details>`).
 
-**Tech Stack:** Node/Express, EJS, PostgreSQL, jest+supertest (mevcut).
+**Tech Stack:** Node/Express, EJS, PostgreSQL, jest+supertest, exceljs (hepsi mevcut).
+
+**Tasarım lensleri (dört uzman gözü — tüm kararlar bunlara göre):**
+1. **Saha analisti / muhasebeci:** ham sayı değil **anlamlı metrik**: oran (%), kişi-başı ortalama, dönem karşılaştırması (bu ay vs geçen ay), dönüşüm (indirim üretilen→kullanılan). Her raporda "bu sayı iyi mi kötü mü" tek bakışta belli olmalı.
+2. **Landing/UX uzmanı:** ters piramit — en kritik bilgi en üstte (KPI şeridi), sonra sorular, sonra detay. Tek ekranda karar verilebilmeli; scroll cezası yok.
+3. **Grafiker:** mevcut altın/koyu panel dili korunur; durum renkleri tutarlı (yeşil=iyi, amber=dikkat, kırmızı=geride); kart/tipografi ölçeği mevcut `stat-card`/`table-wrap` sistemiyle uyumlu — yeni bir görsel dil icat edilmez, mevcut sistem disiplinle uygulanır.
+4. **Excel uzmanı:** dışa aktarılan her dosya profesyonel çalışma kitabı (aşağıda §4.1); içe aktarma şablonları açıklamalı ve hataya dayanıklı.
 
 **Mevcut durum (teşhis):**
 - `amiri_id`/`ekip_yoneticisi` yalnızca çalışan ekle/düzenle formunda ayarlanabiliyor — hiyerarşiyi **gösteren** bir görünüm yok (`dashboard.ejs:1452,1461`).
@@ -79,8 +85,9 @@ Saha raporları artık **soru odaklı**: kullanıcı bir soru "chip"ine tıklar,
 - Sekme linki: `dash-tabs` içindeki `aktifGrup==='calisanlar'` bloğuna `<a href="/?tab=organizasyon">Organizasyon</a>`.
 - İçerik (`tab==='organizasyon'`): `hiyerarsiAgaci` özyinelemeli render — iç içe girintili liste. Yöneticiler (`ekip_yoneticisi` veya çocuğu olanlar) `<details open>` ile aç/kapa; her satır: **ad soyad · ünvan · 👥 ekip ziyaret: N** (mümessil için 🧍 kendi ziyaret: N). Girinti seviyeye göre. EJS partial/yardımcı fonksiyonla özyineleme.
 
-**B) Saha Raporları — Akıllı Sorular (Saha grubu, `tab==='saha'`)**
-- En üstte **soru chip bar'ı**: her `akilliSorular` maddesi bir buton (emoji + kısa başlık). Varsayılan ilk soru (⭐ En çok ziyaret) açık gelir.
+**B) Saha Raporları — KPI şeridi + Akıllı Sorular (Saha grubu, `tab==='saha'`)**
+- **En üstte KPI şeridi** (analist lensi — 4 `stat-card`): ① Bu ay toplam ziyaret + geçen aya göre ↑/↓ %, ② Aktif mümessil oranı (bu ay ziyaret yapan / toplam, %), ③ Kart kapsaması (kartı yazılı eczane / toplam, %), ④ İndirim dönüşümü (kullanılan / üretilen, %). Renk: iyi=yeşil, düşüş/dikkat=amber-kırmızı (grafiker lensi: mevcut `--success`/`--danger` değişkenleri).
+- KPI şeridinin altında **soru chip bar'ı**: her `akilliSorular` maddesi bir buton (emoji + kısa başlık). Varsayılan ilk soru (⭐ En çok ziyaret) açık gelir.
 - Her sorunun rapor kartı sayfaya **gömülü ama gizli** render edilir (`<div class="soru-rapor" data-soru="1">…`). Chip'e tıklayınca JS ilgili kartı gösterir, diğerlerini gizler, aktif chip'i işaretler → **anlık, ağ isteği yok**.
 - Küçük raporlar (1-5, 7, 8) tablo/özet kartı. Büyük rapor (6, kartı eksik eczaneler) tablo + **arama kutusu** (gömülü ilk 100 içinde `input`'ta anlık filtre).
 - Mevcut **grafikler** (günlük ziyaret, temsilci başına, eczane okutma, tıklama dağılımı) ayrı bir "📊 Grafikler" chip'i altında toplanır (aynı göster/gizle mantığı; Chart.js ilk gösterimde init).
@@ -92,11 +99,32 @@ Saha raporları artık **soru odaklı**: kullanıcı bir soru "chip"ine tıklar,
 
 ---
 
+## 4.1 Excel — profesyonel dışa/içe aktarma (Excel uzmanı lensi)
+
+Mevcut iki export ucu (`/kurumsal/rapor-excel`, `/kurumsal/ziyaretler-excel`) exceljs kullanıyor ama düz veri dökümü. Yükseltme (yeni uç yok, mevcatlar iyileştirilir):
+
+**Ortak stil (yeni `utils/excelStil.js`, saf yardımcılar):**
+- `basrilkSatiriUygula(sheet)`: koyu zemin (#1A1A1A) + altın yazı (#C8A84B) başlık satırı, kalın, dondurulmuş üst satır (`views: [{state:'frozen', ySplit:1}]`), AutoFilter açık.
+- `kolonGenislikleriAyarla(sheet)`: içerik uzunluğuna göre otomatik genişlik (min 10, max 40).
+- Sayı kolonları `numFmt: '#,##0'`, yüzde kolonları `'0.0%'`, tarih kolonları `'dd.mm.yyyy'` — string olarak değil **doğru tipte** yazılır (Excel'de toplanabilir/filtrelenebilir).
+
+**`/kurumsal/rapor-excel` (Gelişmiş Rapor) yapısı:**
+1. **"Özet" sayfası** (ilk sayfa): firma adı + rapor tarihi + KPI'lar (toplam ziyaret, aktif mümessil oranı, kart kapsaması, indirim dönüşümü) — yöneticinin ilk baktığı sayfa.
+2. **"Mümessil Performansı"**: performans tablosu (ad, 30g/90g ziyaret, son ziyaret, durum) — geride satırları kırmızı dolgu (koşullu görsel).
+3. Mevcut sayfalar (ziyaretler, eczane özeti, temsilci özeti, indirim) ortak stille.
+
+**İçe aktarma şablonları** (`calisanlar-sablon.xlsx`, eczane şablonu): başlık satırı stilli + 2. satırda gri örnek satır + gerekli kolon başlıklarında açıklama notu (exceljs `note`). Parse tarafı mevcut; şablon okunabilirliği artırılır.
+
+**Test:** `tests/excelStil.test.js` — stil yardımcılarının sheet üzerinde beklenen özellikleri (frozen row, autofilter, numFmt) ayarladığı exceljs Workbook ile doğrulanır.
+
+---
+
 ## 5. Test
 
 - **Birim (jest):** `tests/sahaAnaliz.test.js` —
   - `hiyerarsiAgaciKur`: 3 kademeli örnek ağaç → doğru iç içe yapı; `ekipZiyaret` alt ağaç toplamı doğru; amiri_id null kökler; kopuk amiri_id güvenli.
   - `mumessilPerformansi`: 60+ gün / hiç ziyaret → `geride`; üst %20 → `yildiz`; sıralama geride-önce.
+- **Birim (jest):** `tests/excelStil.test.js` — frozen row, autofilter, numFmt doğrulaması (§4.1).
 - **Tarayıcı smoke:** Orzax paneline giriş → Organizasyon sekmesinde ağaç (GM→müdür→bölge→mümessil) görünüyor, aç/kapa çalışıyor; Saha'da **akıllı soru chip'lerine tıklayınca ilgili rapor anında** açılıyor (⭐ en çok ziyaret, ⚠️ 60+ gün geride üstte, 🏆 en aktif eczaneler, 💊 en çok ürün, 🪪 kartı eksik + arama, 🗺️ bölge performansı, 🎁 indirim özeti, 📊 grafikler); kartı-eksik aramada filtre çalışıyor.
 
 ---
