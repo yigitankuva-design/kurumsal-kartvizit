@@ -221,7 +221,7 @@ app.get('/', async (req, res) => {
     }
     const firma = firmaResult.rows[0];
     const calisanlarResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY LOWER(ad), LOWER(soyad)',
+      "SELECT * FROM calisanlar WHERE firma_id = $1 AND durum != 'silindi' ORDER BY LOWER(ad), LOWER(soyad)",
       [req.session.firmaId]
     );
     const calisanlar = calisanlarResult.rows;
@@ -380,14 +380,14 @@ app.get('/', async (req, res) => {
       const eczanelerResult = await pool.query(
         `SELECT e.*, (SELECT COUNT(*) FROM raf_okutmalar r WHERE r.eczane_id = e.id) as okutma_sayisi,
            (SELECT COUNT(*) FROM eczaci_okutmalar eo WHERE eo.eczane_id = e.id) as eczaci_okutma_sayisi
-         FROM eczaneler e WHERE e.firma_id = $1 ORDER BY e.created_at DESC`,
+         FROM eczaneler e WHERE e.firma_id = $1 AND e.durum != 'silindi' ORDER BY e.created_at DESC`,
         [req.session.firmaId]
       );
       eczaneler = eczanelerResult.rows;
     }
 
     const urunlerSonuc = firma.paket === 'kurumsal'
-      ? await pool.query('SELECT * FROM urunler WHERE firma_id = $1 ORDER BY sira', [firma.id])
+      ? await pool.query('SELECT * FROM urunler WHERE firma_id = $1 AND silindi_mi = false ORDER BY sira', [firma.id])
       : { rows: [] };
 
     let indirimIstatistik = { toplamUretilen: 0, toplamKullanilan: 0, eczaneBazli: [] };
@@ -567,8 +567,8 @@ app.get('/', async (req, res) => {
            (SELECT COUNT(DISTINCT z.calisan_id) FROM ziyaretler z JOIN calisanlar c ON c.id=z.calisan_id
               WHERE c.firma_id=$1 AND z.created_at >= date_trunc('month', NOW())) AS aktif_mumessil,
            (SELECT COUNT(*) FROM calisanlar WHERE firma_id=$1 AND durum='aktif' AND ekip_yoneticisi=false) AS toplam_mumessil,
-           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1) AS toplam_eczane,
-           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1 AND musteri_karta_yazildi=true) AS kartli_eczane`,
+           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1 AND durum != 'silindi') AS toplam_eczane,
+           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1 AND durum != 'silindi' AND musteri_karta_yazildi=true) AS kartli_eczane`,
         [req.session.firmaId]
       );
       const kp = kpiResult.rows[0];

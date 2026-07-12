@@ -7,6 +7,7 @@ const { benzersizCalisanSlugOlustur } = require('../utils/slug');
 const { uploadMiddleware } = require('../middleware/upload');
 const { createLoginLimiter, firmaEkleLimiter } = require('../middleware/rateLimiter');
 const { biyografiTemizle } = require('../utils/sanitize');
+const { islemKaydet } = require('../utils/islemGecmisi');
 const {
   profilOlustur,
   GecersizProfilHatasi,
@@ -225,7 +226,13 @@ router.post('/panel/:firmaId/calisan/:id/sil', requireBayi, async (req, res) => 
     );
     if (!firmaResult.rows.length) return res.redirect('/');
 
-    await pool.query('DELETE FROM calisanlar WHERE id = $1 AND firma_id = $2', [req.params.id, req.params.firmaId]);
+    const silinen = await pool.query(
+      "UPDATE calisanlar SET durum='silindi' WHERE id = $1 AND firma_id = $2 AND durum != 'silindi' RETURNING ad, soyad",
+      [req.params.id, req.params.firmaId]
+    );
+    if (silinen.rows.length) {
+      await islemKaydet(req.params.firmaId, 'calisan_silindi', 'calisan', Number(req.params.id), `${silinen.rows[0].ad} ${silinen.rows[0].soyad}`);
+    }
     req.flash('success', 'Çalışan silindi.');
   } catch (err) {
     console.error(err);

@@ -111,7 +111,7 @@ describe('Kurumsal panel uçları', () => {
     const eczane = (await pool.query('SELECT id FROM eczaneler WHERE firma_id = $1', [kurumsalId])).rows[0];
     await agent.post(`/kurumsal/eczane/${eczane.id}/sil`);
     const e = await pool.query('SELECT * FROM eczaneler WHERE id = $1', [eczane.id]);
-    expect(e.rows.length).toBe(0);
+    expect(e.rows[0].durum).toBe('silindi');
   });
 
   test('kurumsal firma dashboardında Raf Kartları sekmesi ve eczane listesi görünür', async () => {
@@ -401,14 +401,15 @@ describe('Kurumsal panel uçları', () => {
     await pool.query('DELETE FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
   });
 
-  test('toplu-islem: sil seçilen eczaneleri kalıcı siler', async () => {
+  test('toplu-islem: sil seçilen eczaneleri soft-delete yapar', async () => {
     const e1 = await pool.query(`INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1,'Silinecek Ecz','silinecekecz1') RETURNING id`, [kurumsalId]);
     const res = await kurumsalAgent.post('/kurumsal/eczane/toplu-islem').send({
       idler: [e1.rows[0].id], islem: 'sil',
     });
     expect(res.statusCode).toBe(200);
-    const r = await pool.query('SELECT id FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
-    expect(r.rows.length).toBe(0);
+    const r = await pool.query('SELECT durum FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
+    expect(r.rows[0].durum).toBe('silindi');
+    await pool.query('DELETE FROM eczaneler WHERE id = $1', [e1.rows[0].id]);
   });
 
   test('toplu-islem: başka firmanın eczanesine dokunmaz', async () => {
@@ -514,8 +515,8 @@ describe('Kurumsal panel uçları', () => {
 
     const sil = await agent.delete(`/kurumsal/urunler/${urunId}`);
     expect(sil.statusCode).toBe(302);
-    const silKontrol = await pool.query('SELECT * FROM urunler WHERE id = $1', [urunId]);
-    expect(silKontrol.rows.length).toBe(0);
+    const silKontrol = await pool.query('SELECT silindi_mi FROM urunler WHERE id = $1', [urunId]);
+    expect(silKontrol.rows[0].silindi_mi).toBe(true);
   });
 
   test('başka firmanın ürünü düzenlenemez/silinemez', async () => {

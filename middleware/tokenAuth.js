@@ -1,4 +1,5 @@
 const { bayiTokenDogrula, calisanTokenDogrula, firmaTokenDogrula } = require('../utils/jwt');
+const { pool } = require('../db');
 
 function requireBayiToken(req, res, next) {
   const header = req.headers.authorization || '';
@@ -15,7 +16,7 @@ function requireBayiToken(req, res, next) {
   }
 }
 
-function requireCalisanToken(req, res, next) {
+async function requireCalisanToken(req, res, next) {
   const header = req.headers.authorization || '';
   const [tip, token] = header.split(' ');
   if (tip !== 'Bearer' || !token) {
@@ -23,6 +24,10 @@ function requireCalisanToken(req, res, next) {
   }
   try {
     const payload = calisanTokenDogrula(token);
+    const kontrol = await pool.query("SELECT id FROM calisanlar WHERE id = $1 AND durum != 'silindi'", [payload.calisanId]);
+    if (!kontrol.rows.length) {
+      return res.status(401).json({ ok: false, error: 'Oturum geçersiz veya süresi dolmuş.' });
+    }
     req.calisanId = payload.calisanId;
     next();
   } catch (err) {

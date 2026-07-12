@@ -70,7 +70,7 @@ router.post('/temsilci-giris', temsilciGirisLimiter, async (req, res) => {
     return res.status(400).json({ ok: false, error: 'Giriş e-postası ve şifre zorunlu.' });
   }
   try {
-    const result = await pool.query('SELECT * FROM calisanlar WHERE LOWER(giris_email) = LOWER($1)', [giris_email]);
+    const result = await pool.query("SELECT * FROM calisanlar WHERE LOWER(giris_email) = LOWER($1) AND durum != 'silindi'", [giris_email]);
     if (!result.rows.length || !result.rows[0].giris_sifre_hash) {
       return res.status(401).json({ ok: false, error: 'Giriş e-postası veya şifre hatalı.' });
     }
@@ -122,7 +122,7 @@ router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
       return res.status(404).json({ ok: false, error: 'Firma bulunamadı.' });
     }
     const calisanlarResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE firma_id = $1 AND onayli = true ORDER BY created_at DESC',
+      "SELECT * FROM calisanlar WHERE firma_id = $1 AND onayli = true AND durum != 'silindi' ORDER BY created_at DESC",
       [req.firmaId]
     );
     res.json({ ok: true, firma: firmaResult.rows[0], calisanlar: calisanlarResult.rows });
@@ -170,7 +170,7 @@ router.get('/musteriler/:firmaId/calisanlar', requireBayiToken, async (req, res)
       return res.status(404).json({ ok: false, error: 'Müşteri bulunamadı.' });
     }
     const calisanlarResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE firma_id = $1 AND onayli = true ORDER BY created_at DESC',
+      "SELECT * FROM calisanlar WHERE firma_id = $1 AND onayli = true AND durum != 'silindi' ORDER BY created_at DESC",
       [req.params.firmaId]
     );
     res.json({ ok: true, firma: firmaResult.rows[0], calisanlar: calisanlarResult.rows });

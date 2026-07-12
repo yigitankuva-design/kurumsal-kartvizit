@@ -18,7 +18,7 @@ async function eczaneGetir(kod) {
             f.website, f.instagram, f.linkedin, f.twitter, f.youtube, f.tiktok, f.whatsapp,
             f.indirim_aktif, f.indirim_yuzdesi
      FROM eczaneler e JOIN firmalar f ON f.id = e.firma_id
-     WHERE e.kod = $1`,
+     WHERE e.kod = $1 AND e.durum != 'silindi'`,
     [kod]
   );
   return result.rows[0] || null;
@@ -38,7 +38,7 @@ router.get('/raf/:kod', async (req, res) => {
       console.error('raf okutma kaydı başarısız:', kayitHatasi);
     }
     const urunlerSonuc = await pool.query(
-      'SELECT id, ad, aciklama, foto_url, pdf_url FROM urunler WHERE firma_id = (SELECT firma_id FROM eczaneler WHERE id = $1) AND aktif = true ORDER BY sira',
+      'SELECT id, ad, aciklama, foto_url, pdf_url FROM urunler WHERE firma_id = (SELECT firma_id FROM eczaneler WHERE id = $1) AND aktif = true AND silindi_mi = false ORDER BY sira',
       [veri.eczane_id]
     );
     const qrHedef = `${req.protocol}://${req.get('host')}/raf/${veri.kod}`;
@@ -86,7 +86,7 @@ router.get('/raf/:kod/urun/:urunId/tikla', async (req, res) => {
     if (!veri) return res.status(404).send('Bulunamadı.');
 
     const urunSonuc = await pool.query(
-      'SELECT pdf_url FROM urunler WHERE id = $1 AND firma_id = (SELECT firma_id FROM eczaneler WHERE id = $2) AND aktif = true',
+      'SELECT pdf_url FROM urunler WHERE id = $1 AND firma_id = (SELECT firma_id FROM eczaneler WHERE id = $2) AND aktif = true AND silindi_mi = false',
       [req.params.urunId, veri.eczane_id]
     );
     if (!urunSonuc.rows.length) return res.status(404).send('Bulunamadı.');
@@ -145,7 +145,7 @@ async function eczaciGetir(kod) {
             f.ad as firma_ad, f.logo_url, f.marka_rengi,
             f.eczaci_baslik, f.eczaci_metin, f.eczaci_pdf_url, f.eczaci_video_url
      FROM eczaneler e JOIN firmalar f ON f.id = e.firma_id
-     WHERE e.eczaci_kod = $1`,
+     WHERE e.eczaci_kod = $1 AND e.durum != 'silindi'`,
     [kod]
   );
   return result.rows[0] || null;
@@ -190,7 +190,7 @@ router.get('/eczaci/:kod', async (req, res) => {
 router.post('/eczaci/:kod/indirim-dogrula', createJsonLimiter('Çok fazla deneme yaptınız. Lütfen biraz sonra tekrar deneyin.'), async (req, res) => {
   const kod = (req.body.kod || '').trim();
   try {
-    const eczaneSonuc = await pool.query('SELECT id AS eczane_id FROM eczaneler WHERE eczaci_kod = $1', [req.params.kod]);
+    const eczaneSonuc = await pool.query("SELECT id AS eczane_id FROM eczaneler WHERE eczaci_kod = $1 AND durum != 'silindi'", [req.params.kod]);
     if (!eczaneSonuc.rows.length) return res.status(404).json({ ok: false, error: 'Eczane bulunamadı.' });
     const eczaneId = eczaneSonuc.rows[0].eczane_id;
 

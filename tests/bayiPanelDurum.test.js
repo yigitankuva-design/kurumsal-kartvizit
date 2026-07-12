@@ -45,4 +45,21 @@ describe('routes/bayi — çalışan durum değiştirme (?_method=PATCH)', () =>
     const c = await pool.query('SELECT durum FROM calisanlar WHERE id = $1', [calisanId]);
     expect(c.rows[0].durum).toBe('pasif');
   });
+
+  test('bayi panelinden çalışan silme soft-delete yapar (satır kalır, durum=silindi)', async () => {
+    const calisanRes = await pool.query(
+      "INSERT INTO calisanlar (firma_id, ad, soyad, slug) VALUES ($1, 'Silinecek', 'Calisan', 'bayidurum-test-silinecek') RETURNING id",
+      [firmaId]
+    );
+    const silinecekId = calisanRes.rows[0].id;
+
+    const agent = request.agent(app);
+    await agent.post('/bayi/giris').send({ giris_bilgisi: email, sifre });
+
+    const res = await agent.post(`/bayi/panel/${firmaId}/calisan/${silinecekId}/sil`);
+
+    expect(res.statusCode).toBe(302);
+    const c = await pool.query('SELECT durum FROM calisanlar WHERE id = $1', [silinecekId]);
+    expect(c.rows[0].durum).toBe('silindi');
+  });
 });

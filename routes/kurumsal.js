@@ -123,7 +123,7 @@ router.post('/eczane/:id/duzenle', async (req, res) => {
 // Eczane sil
 router.post('/eczane/:id/sil', async (req, res) => {
   try {
-    const silinen = await pool.query('DELETE FROM eczaneler WHERE id=$1 AND firma_id=$2 RETURNING ad', [req.params.id, req.session.firmaId]);
+    const silinen = await pool.query("UPDATE eczaneler SET durum='silindi' WHERE id=$1 AND firma_id=$2 AND durum != 'silindi' RETURNING ad", [req.params.id, req.session.firmaId]);
     if (silinen.rows.length) {
       await islemKaydet(req.session.firmaId, 'eczane_silindi', 'eczane', Number(req.params.id), silinen.rows[0].ad);
     }
@@ -695,7 +695,7 @@ router.post('/eczane/toplu-islem', async (req, res) => {
     } else if (islem === 'aktif-yap') {
       await pool.query("UPDATE eczaneler SET durum = 'aktif' WHERE id = ANY($1) AND firma_id = $2", [idler, req.session.firmaId]);
     } else if (islem === 'sil') {
-      await pool.query('DELETE FROM eczaneler WHERE id = ANY($1) AND firma_id = $2', [idler, req.session.firmaId]);
+      await pool.query("UPDATE eczaneler SET durum = 'silindi' WHERE id = ANY($1) AND firma_id = $2", [idler, req.session.firmaId]);
     }
     await islemKaydet(req.session.firmaId, `eczane_toplu_${islem.replace('-', '_')}`, 'eczane', null, `${idler.length} eczane`);
     res.json({ ok: true });
@@ -840,7 +840,13 @@ router.put('/urunler/:id', guvenliUpload(urunFotoUpload, 'foto', '/?tab=urunler'
 // Ürün sil
 router.delete('/urunler/:id', async (req, res) => {
   try {
-    await pool.query('DELETE FROM urunler WHERE id=$1 AND firma_id=$2', [req.params.id, req.session.firmaId]);
+    const silinen = await pool.query(
+      'UPDATE urunler SET silindi_mi=true WHERE id=$1 AND firma_id=$2 AND silindi_mi=false RETURNING ad',
+      [req.params.id, req.session.firmaId]
+    );
+    if (silinen.rows.length) {
+      await islemKaydet(req.session.firmaId, 'urun_silindi', 'urun', Number(req.params.id), silinen.rows[0].ad);
+    }
     req.flash('success', 'Ürün silindi.');
   } catch (err) {
     console.error(err);
