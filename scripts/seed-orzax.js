@@ -214,6 +214,29 @@ async function main() {
 
     console.log(`Aktivite: ${rafOkutma.length} raf okutma, ${rafTikla.length} raf tik, ${eczaciOkutma.length} eczaci okutma, ${eczaciTikla.length} eczaci tik, ${urunTikla.length} urun tik, ${ziyaretler.length} ziyaret.`);
 
+    // 600 eczanede %5 indirim kodu
+    const karisik = [...eczaneler].sort(() => Math.random() - 0.5).slice(0, 600);
+    const indirimKodlar = H.benzersizKodlar(600);
+    const indirimSatirlari = karisik.map((e, i) => {
+      const kullanildi = Math.random() < 0.4;
+      return [
+        firmaId, e.id, indirimKodlar[i], 5,
+        crypto.createHash('sha256').update('cerez' + Math.random()).digest('hex').slice(0, 24),
+        kullanildi, kullanildi ? H.trendliTarih() : null,
+      ];
+    });
+    await topluEkle(client, `indirim_kodlari (firma_id, eczane_id, kod, yuzde, cerez_id, kullanildi, kullanilma_tarihi)`, indirimSatirlari, 7);
+    console.log(`600 eczanede %5 indirim kodu olusturuldu.`);
+
+    // Katalog bildirimi: mümessillerin ~yarısı yeni katalogu görmüş
+    for (let i = 0; i < kisiler.length; i++) {
+      if (kisiler[i].unvan === 'Tıbbi Mümessil' && Math.random() < 0.5) {
+        await client.query('UPDATE calisanlar SET son_gorulen_katalog_tarihi=$1 WHERE id=$2',
+          [new Date(Date.now() - 1 * 86400000), kisiIdler[i]]); // katalog güncellemesinden (3 gün önce) sonra
+      }
+    }
+    console.log('Katalog gorulme durumlari ayarlandi.');
+
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
     console.log(`Bagli bayi id: ${bayiId}`);
