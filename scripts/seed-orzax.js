@@ -20,6 +20,26 @@ async function uyariBekle() {
   await new Promise(r => setTimeout(r, 3000));
 }
 
+// Chunk'lar halinde cok-satirli INSERT. satirlar: dizi-of-dizi (her satir sutun degerleri).
+async function topluEkle(client, tabloVeSutunlar, satirlar, sutunSayisi, donenId = false) {
+  const CHUNK = 500;
+  const idler = [];
+  for (let i = 0; i < satirlar.length; i += CHUNK) {
+    const dilim = satirlar.slice(i, i + CHUNK);
+    const values = [];
+    const params = [];
+    dilim.forEach((satir, j) => {
+      const yer = [];
+      satir.forEach((deger, k) => { params.push(deger); yer.push(`$${j * sutunSayisi + k + 1}`); });
+      values.push(`(${yer.join(',')})`);
+    });
+    const ek = donenId ? ' RETURNING id' : '';
+    const r = await client.query(`INSERT INTO ${tabloVeSutunlar} VALUES ${values.join(',')}${ek}`, params);
+    if (donenId) r.rows.forEach(row => idler.push(row.id));
+  }
+  return idler;
+}
+
 async function main() {
   await uyariBekle();
   const client = await pool.connect();
@@ -89,6 +109,29 @@ async function main() {
       }
     }
     console.log(`${kisiler.length} calisan (hiyerarsi) olusturuldu.`);
+
+    const eczaneler = H.eczaneleriUret(kisiler, 1000);
+    const eczaneSatirlari = eczaneler.map(e => {
+      const musteriYazildi = Math.random() < 0.8;
+      const musteriKilitli = musteriYazildi && Math.random() < 0.3;
+      const eczaciYazildi = Math.random() < 0.7;
+      const eczaciKilitli = eczaciYazildi && Math.random() < 0.25;
+      const durum = Math.random() < 0.05 ? 'pasif' : 'aktif';
+      return [
+        firmaId, e.ad, e.adres, e.kod, e.eczaci_kod,
+        musteriYazildi, musteriKilitli, musteriYazildi ? H.trendliTarih() : null,
+        eczaciYazildi, eczaciKilitli, eczaciYazildi ? H.trendliTarih() : null,
+        durum,
+      ];
+    });
+    const eczaneIdler = await topluEkle(
+      client,
+      `eczaneler (firma_id, ad, adres, kod, eczaci_kod, musteri_karta_yazildi, musteri_kart_kilitli, musteri_kart_yazma_tarihi, eczaci_karta_yazildi, eczaci_kart_kilitli, eczaci_kart_yazma_tarihi, durum)`,
+      eczaneSatirlari, 12, true
+    );
+    // gecici index -> gercek eczane id
+    eczaneler.forEach((e, i) => { e.id = eczaneIdler[i]; });
+    console.log(`${eczaneler.length} eczane olusturuldu.`);
 
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
