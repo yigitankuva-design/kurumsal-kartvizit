@@ -8,6 +8,8 @@ const { benzersizEczaneKoduUret, benzersizEczaciKoduUret } = require('../utils/e
 const { eczaneExcelParse, aoaToXlsxBuffer } = require('../utils/excel');
 const { uploadMiddleware, pdfUploadMiddleware } = require('../middleware/upload');
 const { islemKaydet } = require('../utils/islemGecmisi');
+const { basrilkSatiriUygula, kolonGenislikleriAyarla } = require('../utils/excelStil');
+const { mumessilPerformansi } = require('../utils/sahaAnaliz');
 
 // pdfkit'in yerleşik fontları (Helvetica) Türkçe'ye özgü karakterleri (ı, ş, ğ vb.)
 // desteklemediği için PDF çıktısında sadeleştirilmiş (ASCII) metin kullanılır.
@@ -194,10 +196,14 @@ router.get('/ziyaretler-excel', async (req, res) => {
        ORDER BY z.created_at DESC`,
       [req.session.firmaId]
     );
-    const buffer = await aoaToXlsxBuffer([
-      ['Temsilci', 'Eczane', 'Tarih', 'Not'],
-      ...result.rows.map(r => [`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at.toISOString(), r.temsilci_notu || '']),
-    ], 'Ziyaretler');
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet('Ziyaretler');
+    basrilkSatiriUygula(ws, ['Temsilci', 'Eczane', 'Tarih', 'Not']);
+    result.rows.forEach(r => {
+      ws.addRow([`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at, r.temsilci_notu || '']).getCell(3).numFmt = 'dd.mm.yyyy hh:mm';
+    });
+    kolonGenislikleriAyarla(ws);
+    const buffer = await wb.xlsx.writeBuffer();
     res.setHeader('Content-Disposition', 'attachment; filename="ziyaretler.xlsx"');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buffer);
@@ -247,37 +253,79 @@ router.get('/rapor-excel', async (req, res) => {
     );
 
     const wb = new ExcelJS.Workbook();
-    const basliklariUygula = (ws, basliklar) => {
-      ws.addRow(basliklar);
-      const baslikSatiri = ws.getRow(1);
-      baslikSatiri.font = { bold: true, color: { argb: 'FF000000' } };
-      baslikSatiri.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFC8A84B' } };
-      ws.columns.forEach(col => { col.width = 22; });
-    };
+
+    // Özet sayfası (ilk sayfa) — KPI'lar
+    const kpiSonuc = await pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM ziyaretler z JOIN calisanlar c ON c.id=z.calisan_id WHERE c.firma_id=$1) AS toplam_ziyaret,
+         (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1) AS toplam_eczane,
+         (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1 AND musteri_karta_yazildi=true) AS kartli_eczane,
+         (SELECT COUNT(*) FROM indirim_kodlari WHERE firma_id=$1) AS indirim_uretilen,
+         (SELECT COUNT(*) FROM indirim_kodlari WHERE firma_id=$1 AND kullanildi) AS indirim_kullanilan`,
+      [firmaId]
+    );
+    const kpi = kpiSonuc.rows[0];
+    const oran = (a, b) => (Number(b) ? Math.round((Number(a) / Number(b)) * 100) : 0);
+    const wsOzet = wb.addWorksheet('Özet');
+    basrilkSatiriUygula(wsOzet, ['Metrik', 'Değer']);
+    wsOzet.addRow(['Rapor tarihi', new Date()]).getCell(2).numFmt = 'dd.mm.yyyy';
+    wsOzet.addRow(['Toplam ziyaret', Number(kpi.toplam_ziyaret)]);
+    wsOzet.addRow(['Toplam eczane', Number(kpi.toplam_eczane)]);
+    wsOzet.addRow(['Kart kapsaması', oran(kpi.kartli_eczane, kpi.toplam_eczane) / 100]).getCell(2).numFmt = '0%';
+    wsOzet.addRow(['İndirim dönüşümü', oran(kpi.indirim_kullanilan, kpi.indirim_uretilen) / 100]).getCell(2).numFmt = '0%';
+    kolonGenislikleriAyarla(wsOzet);
+
+    // Mümessil Performansı sayfası — geride satırlar kırmızı
+    const perfSonuc = await pool.query(
+      `SELECT c.id, c.ad, c.soyad, c.unvan,
+              COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '30 days') AS ziyaret30,
+              COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '90 days') AS ziyaret90,
+              MAX(z.created_at) AS son_ziyaret
+       FROM calisanlar c LEFT JOIN ziyaretler z ON z.calisan_id = c.id
+       WHERE c.firma_id = $1 AND c.durum='aktif' AND c.ekip_yoneticisi=false
+       GROUP BY c.id, c.ad, c.soyad, c.unvan`,
+      [firmaId]
+    );
+    const perf = mumessilPerformansi(perfSonuc.rows.map(r => ({
+      id: r.id, ad: r.ad, soyad: r.soyad, unvan: r.unvan,
+      ziyaret30: Number(r.ziyaret30), ziyaret90: Number(r.ziyaret90), sonZiyaret: r.son_ziyaret,
+    })));
+    const wsPerf = wb.addWorksheet('Mümessil Performansı');
+    basrilkSatiriUygula(wsPerf, ['Mümessil', 'Son 30g', 'Son 90g', 'Son Ziyaret', 'Durum']);
+    perf.forEach(r => {
+      const satir = wsPerf.addRow([`${r.ad} ${r.soyad}`, r.ziyaret30, r.ziyaret90, r.sonZiyaret || '', r.durum === 'yildiz' ? 'Yıldız' : r.durum === 'geride' ? 'Geride' : 'Normal']);
+      if (r.sonZiyaret) satir.getCell(4).numFmt = 'dd.mm.yyyy';
+      if (r.durum === 'geride') satir.eachCell(c => { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8D7DA' } }; });
+    });
+    kolonGenislikleriAyarla(wsPerf);
 
     const wsZiyaret = wb.addWorksheet('Ziyaretler');
-    basliklariUygula(wsZiyaret, ['Temsilci', 'Eczane', 'Tarih', 'Not']);
+    basrilkSatiriUygula(wsZiyaret, ['Temsilci', 'Eczane', 'Tarih', 'Not']);
     ziyaretlerSonuc.rows.forEach(r => {
-      wsZiyaret.addRow([`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at, r.temsilci_notu || '']);
+      wsZiyaret.addRow([`${r.temsilci_ad} ${r.temsilci_soyad}`, r.eczane_ad, r.created_at, r.temsilci_notu || '']).getCell(3).numFmt = 'dd.mm.yyyy hh:mm';
     });
+    kolonGenislikleriAyarla(wsZiyaret);
 
     const wsEczane = wb.addWorksheet('Eczane Özeti');
-    basliklariUygula(wsEczane, ['Eczane', 'Raf Okutma', 'Eczacı Okutma', 'Ziyaret Sayısı', 'Son Ziyaret']);
+    basrilkSatiriUygula(wsEczane, ['Eczane', 'Raf Okutma', 'Eczacı Okutma', 'Ziyaret Sayısı', 'Son Ziyaret']);
     eczaneOzetSonuc.rows.forEach(r => {
       wsEczane.addRow([r.ad, Number(r.raf_okutma), Number(r.eczaci_okutma), Number(r.ziyaret_sayisi), r.son_ziyaret || '']);
     });
+    kolonGenislikleriAyarla(wsEczane);
 
     const wsTemsilci = wb.addWorksheet('Temsilci Özeti');
-    basliklariUygula(wsTemsilci, ['Temsilci', 'Ziyaret Sayısı', 'Benzersiz Eczane']);
+    basrilkSatiriUygula(wsTemsilci, ['Temsilci', 'Ziyaret Sayısı', 'Benzersiz Eczane']);
     temsilciOzetSonuc.rows.forEach(r => {
       wsTemsilci.addRow([`${r.ad} ${r.soyad}`, Number(r.ziyaret_sayisi), Number(r.benzersiz_eczane)]);
     });
+    kolonGenislikleriAyarla(wsTemsilci);
 
     const wsIndirim = wb.addWorksheet('İndirim Kullanımı');
-    basliklariUygula(wsIndirim, ['Eczane', 'Kod', 'Yüzde', 'Oluşturulma', 'Kullanıldı', 'Kullanılma Tarihi']);
+    basrilkSatiriUygula(wsIndirim, ['Eczane', 'Kod', 'Yüzde', 'Oluşturulma', 'Kullanıldı', 'Kullanılma Tarihi']);
     indirimSonuc.rows.forEach(r => {
       wsIndirim.addRow([r.eczane_ad, r.kod, r.yuzde, r.olusturulma_tarihi, r.kullanildi ? 'Evet' : 'Hayır', r.kullanilma_tarihi || '']);
     });
+    kolonGenislikleriAyarla(wsIndirim);
 
     const buffer = await wb.xlsx.writeBuffer();
     res.setHeader('Content-Disposition', 'attachment; filename="rapor.xlsx"');
