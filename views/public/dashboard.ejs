@@ -552,20 +552,18 @@ function jsonAttr(obj) {
       .org-un{color:var(--text-faint);font-weight:400;font-size:12.5px}
       .org-badge{margin-left:auto;font-size:12px;color:var(--text-faint);white-space:nowrap}
       .org-lvl{margin-left:16px;padding-left:10px;border-left:2px solid var(--border)}
-      .org-ekip-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:70;justify-content:flex-end}
-      .org-ekip-overlay.open{display:flex}
-      .org-ekip-panel{width:360px;max-width:92vw;height:100%;background:var(--surface);box-shadow:-6px 0 24px rgba(0,0,0,.18);padding:20px;overflow-y:auto}
+      .org-box{display:flex;align-items:stretch;max-height:76vh}
+      .org-box-agac{flex:1 1 auto;min-width:0;overflow-y:auto;padding:8px 10px}
+      .org-ekip-inline{display:none;flex:0 0 300px;max-width:40%;border-left:1px solid var(--border);padding:14px;overflow-y:auto}
+      .org-ekip-inline.open{display:block}
       .org-ekip-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
       .org-ekip-row:last-child{border-bottom:none}
     </style>
-    <div class="table-wrap" style="padding:8px 10px;max-height:76vh;overflow:auto;background:var(--surface)">
-      <div id="orgAgac"></div>
-    </div>
-
-    <div class="org-ekip-overlay" id="orgEkipOverlay" onclick="if (event.target === this) orgEkipKapat()">
-      <div class="org-ekip-panel">
+    <div class="table-wrap org-box" style="background:var(--surface)">
+      <div id="orgAgac" class="org-box-agac"></div>
+      <div id="orgEkipInline" class="org-ekip-inline">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <strong id="orgEkipBaslik" style="font-size:15px">Ekip</strong>
+          <strong id="orgEkipBaslik" style="font-size:14px">Ekip</strong>
           <button type="button" class="btn btn-ghost btn-sm" onclick="orgEkipKapat()">✕</button>
         </div>
         <div id="orgEkipIcerik"></div>
@@ -634,9 +632,9 @@ function jsonAttr(obj) {
             row.appendChild(mk('span', 'org-badge', '🧍 ' + (c.kendiZiyaret || 0) + ' ziyaret'));
             icerik.appendChild(row);
           });
-          document.getElementById('orgEkipOverlay').classList.add('open');
+          document.getElementById('orgEkipInline').classList.add('open');
         };
-        window.orgEkipKapat = function () { document.getElementById('orgEkipOverlay').classList.remove('open'); };
+        window.orgEkipKapat = function () { document.getElementById('orgEkipInline').classList.remove('open'); };
       })();
     </script>
     <% } %>
@@ -1328,7 +1326,7 @@ function jsonAttr(obj) {
     <!-- 1: En çok ziyaret -->
     <div class="soru-rapor" data-soru="1">
       <div class="table-wrap"><table>
-        <thead><tr><th>Mümessil</th><th>Son 30g</th><th>Son 90g</th><th>Durum</th></tr></thead>
+        <thead><tr><th>Mümessil</th><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 30g ⇅</th><th class="sortable" data-yon="desc" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 90g ▼</th><th>Durum</th></tr></thead>
         <tbody>
           <% perf.slice().sort((a,b)=>b.ziyaret90-a.ziyaret90).slice(0,10).forEach(r => { %>
           <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret30 %></td><td><%= r.ziyaret90 %></td>
