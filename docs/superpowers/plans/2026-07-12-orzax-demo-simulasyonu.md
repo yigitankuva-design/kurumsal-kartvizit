@@ -172,12 +172,11 @@ Expected: FAIL — "trendliTarih is not a function".
 
 ```js
 function trendliTarih(gunSayisi = 150) {
-  const carpik = Math.sqrt(Math.random()); // [0,1], sona ağırlıklı
-  const gunOnce = Math.floor((1 - carpik) * gunSayisi);
-  const d = new Date();
-  d.setDate(d.getDate() - gunOnce);
-  d.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60), Math.floor(Math.random() * 60), 0);
-  return d;
+  // carpik: [0,1] sona (bugüne) ağırlıklı. msGeri her zaman >= 0 olduğu için sonuç
+  // asla gelecekte olmaz; rastgele gün-içi saat de ms farkından doğal olarak gelir.
+  const carpik = Math.sqrt(Math.random());
+  const msGeri = Math.floor((1 - carpik) * gunSayisi * 86400000);
+  return new Date(Date.now() - msGeri);
 }
 ```
 
