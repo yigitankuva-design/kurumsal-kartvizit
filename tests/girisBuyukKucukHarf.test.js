@@ -28,7 +28,7 @@ describe('Web /giris — büyük/küçük harf duyarsızlık', () => {
     await agent.post('/giris').send({ giris_bilgisi: email.toUpperCase(), sifre });
     const res = await agent.get('/?tab=calisanlar');
     expect(res.statusCode).toBe(200);
-    expect(res.text).toContain('Hoş geldiniz');
+    expect(res.text).toContain('Yeni Çalışan');
   });
 });
 

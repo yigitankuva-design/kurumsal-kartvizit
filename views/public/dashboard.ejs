@@ -484,17 +484,6 @@ function jsonAttr(obj) {
 <!-- MAIN -->
 <div class="dash-main">
 
-  <!-- HEADER -->
-  <div class="dash-header">
-    <div>
-      <div class="dash-title">Hoş geldiniz</div>
-      <div class="dash-subtitle"><%= firma.yetkili_email %></div>
-    </div>
-    <% if (tab === 'calisanlar') { %>
-    <button class="btn btn-gold" onclick="openSlide()">+ Yeni Çalışan</button>
-    <% } %>
-  </div>
-
   <!-- ANA SAYFA (boş karşılama) -->
   <% if (tab === 'home') { %>
   <div class="table-wrap" style="padding:64px 24px;text-align:center">
@@ -504,25 +493,10 @@ function jsonAttr(obj) {
   </div>
   <% } %>
 
-  <!-- STATS -->
-  <% if (tab !== 'home') { %>
-  <div class="stat-row">
-    <div class="stat-card">
-      <div class="stat-card-n"><%= aktifSayisi + pasifSayisi %></div>
-      <div class="stat-card-l">Toplam çalışan</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-n"><%= aktifSayisi %></div>
-      <div class="stat-card-l">Aktif profil</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-n"><%= pasifSayisi %></div>
-      <div class="stat-card-l">Pasif profil</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-card-n"><%= toplamGoruntulenme %></div>
-      <div class="stat-card-l">Toplam görüntülenme</div>
-    </div>
+  <!-- HEADER (sadece Çalışanlar sekmesinde ekleme butonu) -->
+  <% if (tab === 'calisanlar') { %>
+  <div class="dash-header" style="justify-content:flex-end">
+    <button class="btn btn-gold" onclick="openSlide()">+ Yeni Çalışan</button>
   </div>
   <% } %>
 
@@ -569,15 +543,16 @@ function jsonAttr(obj) {
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
       </span>
     </div>
-    <div class="table-wrap" style="padding:8px;height:72vh;overflow:hidden;background:var(--surface)">
-      <svg id="orgSvg" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:100%"></svg>
+    <div class="table-wrap" style="padding:10px;max-height:74vh;overflow:auto;background:var(--surface)">
+      <svg id="orgSvg" style="display:block"></svg>
     </div>
     <script>
       (function () {
         const orgVeri = <%- JSON.stringify(hiyerarsiAgaci) %>;
         const svg = document.getElementById('orgSvg');
         const NS = 'http://www.w3.org/2000/svg';
-        const NW = 216, NH = 44, COLGAP = 66, ROWGAP = 12, PAD = 16;
+        // Yukarıdan aşağı ağaç: derinlik = dikey seviye, yaprak sırası = yatay konum
+        const NW = 172, NH = 54, HGAP = 22, VGAP = 62, PAD = 20;
         const renkler = [
           { bg: '#efeafc', br: '#c4b8ec', tx: '#4a3d8f' }, // kök (lavanta)
           { bg: '#dde9fb', br: '#93b6e6', tx: '#25497e' }, // 2. seviye (mavi)
@@ -594,21 +569,21 @@ function jsonAttr(obj) {
             const cocuk = n.cocuklar || [];
             const kapaliMi = kapali.has(n.id);
             const gorunen = kapaliMi ? [] : cocuk;
-            let y;
+            let x;
             if (!gorunen.length) {
-              y = leaf * (NH + ROWGAP) + NH / 2; leaf++;
+              x = leaf * (NW + HGAP) + PAD; leaf++;
             } else {
-              const ys = gorunen.map(c => walk(c, derinlik + 1));
-              y = (ys[0] + ys[ys.length - 1]) / 2;
+              const xs = gorunen.map(c => walk(c, derinlik + 1));
+              x = (xs[0] + xs[xs.length - 1]) / 2;
               gorunen.forEach(c => baglar.push([n, c]));
             }
-            yer.set(n, { x: derinlik * (NW + COLGAP) + PAD, y: y + PAD, derinlik, dolu: cocuk.length > 0, kapaliMi });
-            return y;
+            yer.set(n, { x, y: derinlik * (NH + VGAP) + PAD, derinlik, dolu: cocuk.length > 0, kapaliMi });
+            return x;
           }
           orgVeri.forEach(k => walk(k, 0));
-          let maxX = 0;
-          yer.forEach(p => { if (p.x > maxX) maxX = p.x; });
-          return { yer, baglar, w: maxX + NW + PAD, h: leaf * (NH + ROWGAP) + PAD * 2 };
+          let maxX = 0, maxY = 0;
+          yer.forEach(p => { if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y; });
+          return { yer, baglar, w: maxX + NW + PAD, h: maxY + NH + PAD };
         }
 
         function el(tag, attrs) {
@@ -619,15 +594,18 @@ function jsonAttr(obj) {
 
         function ciz() {
           const { yer, baglar, w, h } = hesapla();
+          svg.setAttribute('width', w);
+          svg.setAttribute('height', h);
           svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
           while (svg.firstChild) svg.removeChild(svg.firstChild);
 
+          // Bağlaçlar: ebeveyn alt-orta → çocuk üst-orta (dikey eğri)
           baglar.forEach(([p, c]) => {
             const pp = yer.get(p), cp = yer.get(c);
-            const x1 = pp.x + NW, y1 = pp.y, x2 = cp.x, y2 = cp.y, mx = (x1 + x2) / 2;
+            const x1 = pp.x + NW / 2, y1 = pp.y + NH, x2 = cp.x + NW / 2, y2 = cp.y, my = (y1 + y2) / 2;
             svg.appendChild(el('path', {
-              d: 'M' + x1 + ',' + y1 + ' C' + mx + ',' + y1 + ' ' + mx + ',' + y2 + ' ' + x2 + ',' + y2,
-              fill: 'none', stroke: '#c8cdd6', 'stroke-width': '1.6'
+              d: 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + my + ' ' + x2 + ',' + my + ' ' + x2 + ',' + y2,
+              fill: 'none', stroke: '#c8cdd6', 'stroke-width': '1.8'
             }));
           });
 
@@ -640,16 +618,19 @@ function jsonAttr(obj) {
               ciz();
             });
             g.appendChild(el('rect', {
-              x: pos.x, y: pos.y - NH / 2, width: NW, height: NH, rx: 11,
-              fill: r.bg, stroke: r.br, 'stroke-width': '1.6'
+              x: pos.x, y: pos.y, width: NW, height: NH, rx: 12,
+              fill: r.bg, stroke: r.br, 'stroke-width': '1.8'
             }));
-            const t1 = el('text', { x: pos.x + 13, y: pos.y - 3, fill: r.tx, 'font-size': '12.5', 'font-weight': '700' });
-            t1.textContent = (n.ad + ' ' + n.soyad).slice(0, 26);
+            const t1 = el('text', { x: pos.x + NW / 2, y: pos.y + 22, fill: r.tx, 'font-size': '13.5', 'font-weight': '700', 'text-anchor': 'middle' });
+            t1.textContent = (n.ad + ' ' + n.soyad).slice(0, 22);
             g.appendChild(t1);
-            const rozet = pos.dolu ? ('👥 ' + n.ekipZiyaret + (pos.kapaliMi ? '  ▸' : '  ▾')) : ('🧍 ' + n.kendiZiyaret);
-            const t2 = el('text', { x: pos.x + 13, y: pos.y + 13, fill: r.tx, 'font-size': '10.5', opacity: '0.82' });
-            t2.textContent = ((n.unvan || '') + ' · ' + rozet).slice(0, 34);
+            const t2 = el('text', { x: pos.x + NW / 2, y: pos.y + 38, fill: r.tx, 'font-size': '11', opacity: '0.85', 'text-anchor': 'middle' });
+            t2.textContent = (n.unvan || '').slice(0, 24);
             g.appendChild(t2);
+            const rozet = pos.dolu ? ('👥 ' + n.ekipZiyaret + (pos.kapaliMi ? ' ▸' : ' ▾')) : ('🧍 ' + n.kendiZiyaret);
+            const t3 = el('text', { x: pos.x + NW / 2, y: pos.y + NH - 6, fill: r.tx, 'font-size': '10.5', 'font-weight': '600', 'text-anchor': 'middle' });
+            t3.textContent = rozet;
+            g.appendChild(t3);
             svg.appendChild(g);
           });
         }
