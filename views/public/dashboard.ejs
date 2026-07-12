@@ -394,10 +394,10 @@ if (tab === 'home') aktifGrup = 'home';
 var grupEtiketleri = {
   home: 'Ana Sayfa',
   genel: 'Genel Bakış',
-  calisanlar: 'Çalışanlar',
-  eczane: 'Eczane Ağı',
-  icerik: 'İçerik',
-  saha: 'Saha Raporları'
+  calisanlar: 'Personel Yönetim Ağı',
+  eczane: 'Eczane Yönetim Ağı',
+  icerik: 'İçerik Yönetim',
+  saha: 'Saha Yönetim Ağı'
 };
 
 function jsonAttr(obj) {
@@ -414,15 +414,15 @@ function jsonAttr(obj) {
   <aside class="app-sidebar">
     <a href="/" class="sidebar-logo">NFC<em>Kartify</em></a>
     <nav class="sidebar-nav">
-      <div class="sidebar-group-label">İşletme</div>
+      <div class="sidebar-group-label">İşletme</div>
       <% if (rol !== 'sadece_saha') { %>
-      <a href="/?tab=calisanlar" class="sidebar-item <%= aktifGrup === 'calisanlar' ? 'active' : '' %>"><%- ikon('kullanici') %> Çalışanlar</a>
+      <a href="/?tab=calisanlar" class="sidebar-item <%= aktifGrup === 'calisanlar' ? 'active' : '' %>"><%- ikon('kullanici') %> Personel Yönetim Ağı</a>
       <% } %>
       <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
-      <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Ağı</a>
-      <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik</a>
+      <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Yönetim Ağı</a>
+      <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
       <% } %>
-      <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Raporları</a>
+      <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
     </nav>
     <div class="sidebar-foot">
       <div class="sidebar-user-dot"><%= firma.ad.slice(0, 2).toUpperCase() %></div>
@@ -680,6 +680,9 @@ function jsonAttr(obj) {
       <% if (ara) { %><a href="/?tab=calisanlar" class="btn btn-ghost btn-sm">Temizle</a><% } %>
     </form>
 
+    <button type="button" id="calisanListeBtn" class="btn btn-border btn-sm" style="margin-bottom:14px" onclick="listeToggle('calisanListeKutu','calisanListeBtn','Tüm Personeli Listele','Listeyi Gizle')"><%= ara ? 'Listeyi Gizle' : 'Tüm Personeli Listele' %></button>
+    <div id="calisanListeKutu" style="display:<%= ara ? 'block' : 'none' %>">
+
     <% if (aktifCalisanlar.length) { %>
     <div class="table-wrap">
       <table>
@@ -804,12 +807,13 @@ function jsonAttr(obj) {
       </table>
     </details>
     <% } %>
+    </div>
 
   <!-- TAB: İSTATİSTİK -->
   <% } else if (tab === 'istatistik') { %>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Ad Soyad</th><th>Görüntülenme</th><th>Durum</th><th>Kart</th></tr></thead>
+        <thead><tr><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Ad Soyad</th><th class="sortable" data-yon="desc" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Görüntülenme ▼</th><th>Durum</th><th>Kart</th></tr></thead>
         <tbody>
           <% [...calisanlar].sort((a,b) => (b.goruntuleme_sayisi||0) - (a.goruntuleme_sayisi||0)).forEach(c => { %>
           <tr>
@@ -1076,7 +1080,7 @@ function jsonAttr(obj) {
     <% if (indirimIstatistik.eczaneBazli.length) { %>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Eczane</th><th>Kullanılan indirim</th></tr></thead>
+        <thead><tr><th>Eczane</th><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Kullanılan indirim ⇅</th></tr></thead>
         <tbody>
           <% indirimIstatistik.eczaneBazli.forEach(e => { %>
           <tr>
@@ -1110,7 +1114,7 @@ function jsonAttr(obj) {
     <% const eczanelerFiltreli = eczaneAramaMetni
          ? eczaneler.filter(e => (e.ad + ' ' + (e.adres || '')).toLowerCase().includes(eczaneAramaMetni))
          : eczaneler; %>
-    <% const aktifEczanelerTum = eczanelerFiltreli.filter(e => e.durum !== 'pasif'); const pasifEczaneler = eczanelerFiltreli.filter(e => e.durum === 'pasif'); %>
+    <% const aktifEczanelerTum = eczanelerFiltreli.filter(e => e.durum !== 'pasif').sort((a, b) => (b.okutma_sayisi || 0) - (a.okutma_sayisi || 0)); const pasifEczaneler = eczanelerFiltreli.filter(e => e.durum === 'pasif'); %>
     <% const ECZANE_SAYFA_BOYUTU = 20; %>
     <% const eczaneToplamSayfa = Math.max(1, Math.ceil(aktifEczanelerTum.length / ECZANE_SAYFA_BOYUTU)); %>
     <% const eczaneMevcutSayfa = Math.min(Math.max(sayfa || 1, 1), eczaneToplamSayfa); %>
@@ -1124,6 +1128,9 @@ function jsonAttr(obj) {
       <% if (ara) { %><a href="/?tab=raf" class="btn btn-ghost btn-sm">Temizle</a><% } %>
     </form>
 
+    <button type="button" id="eczaneListeBtn" class="btn btn-border btn-sm" style="margin-bottom:14px" onclick="listeToggle('eczaneListeKutu','eczaneListeBtn','Tüm Eczaneleri Listele','Listeyi Gizle')"><%= ara ? 'Listeyi Gizle' : 'Tüm Eczaneleri Listele' %></button>
+    <div id="eczaneListeKutu" style="display:<%= ara ? 'block' : 'none' %>">
+
     <div class="table-wrap" style="padding:12px 20px;margin-bottom:0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <button type="button" id="eczaneTopluOnaylaBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('onayla')">✓ Toplu Onayla</button>
       <button type="button" id="eczaneTopluPasifBtn" disabled class="btn btn-border btn-sm" onclick="eczaneTopluIslem('pasife-al')"><%- ikon('duraklat') %>Toplu Pasife Al</button>
@@ -1131,7 +1138,7 @@ function jsonAttr(obj) {
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th style="width:34px"><input type="checkbox" id="eczaneTumSec" onchange="eczaneTumSecToggle(this)"></th><th>Eczane</th><th style="width:110px;text-align:right">Okutma</th><th style="width:90px"></th></tr></thead>
+        <thead><tr><th style="width:34px"><input type="checkbox" id="eczaneTumSec" onchange="eczaneTumSecToggle(this)"></th><th>Eczane</th><th style="width:110px;text-align:right;cursor:pointer;user-select:none" class="sortable" data-yon="desc" onclick="tabloSirala(this)">Okutma ▼</th><th style="width:90px"></th></tr></thead>
         <tbody>
           <% aktifEczaneler.forEach(e => { %>
           <tr>
@@ -1216,6 +1223,7 @@ function jsonAttr(obj) {
     </div>
 
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
+    </div>
   <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
     <% const k = sahaIstatistik.kpi || {}; const AS = sahaIstatistik.akilliSorular || {}; const perf = sahaIstatistik.performans || []; %>
     <!-- KPI ŞERİDİ -->
@@ -1776,6 +1784,33 @@ function jsonAttr(obj) {
   }
   function ecYonetimKapat() {
     document.getElementById('ecYonetimOverlay').classList.remove('open');
+  }
+
+  function listeToggle(id, btnId, gosterMetin, gizleMetin) {
+    var el = document.getElementById(id), btn = document.getElementById(btnId);
+    if (!el) return;
+    var acik = el.style.display !== 'none';
+    el.style.display = acik ? 'none' : 'block';
+    if (btn) btn.textContent = acik ? gosterMetin : gizleMetin;
+  }
+  function hucreDeger(td) {
+    if (!td) return '';
+    var t = td.getAttribute('data-sirala'); if (t == null) t = td.textContent.trim();
+    var n = parseFloat(String(t).replace(/[^d.,-]/g, '').replace(/./g, '').replace(/,/g, '.'));
+    return isNaN(n) ? String(t).toLocaleLowerCase('tr') : n;
+  }
+  function tabloSirala(th) {
+    var tablo = th.closest('table'); if (!tablo) return;
+    var basliklar = th.parentNode.children;
+    var idx = Array.prototype.indexOf.call(basliklar, th);
+    var tbody = tablo.tBodies[0]; if (!tbody) return;
+    var yon = th.getAttribute('data-yon') === 'desc' ? 'asc' : 'desc';
+    Array.prototype.forEach.call(basliklar, function (h) { h.removeAttribute('data-yon'); var o = h.querySelector('.sok'); if (o) o.remove(); });
+    th.setAttribute('data-yon', yon);
+    var satirlar = Array.prototype.slice.call(tbody.rows);
+    satirlar.sort(function (a, b) { var av = hucreDeger(a.cells[idx]), bv = hucreDeger(b.cells[idx]); if (av < bv) return yon === 'asc' ? -1 : 1; if (av > bv) return yon === 'asc' ? 1 : -1; return 0; });
+    satirlar.forEach(function (r) { tbody.appendChild(r); });
+    var ok = document.createElement('span'); ok.className = 'sok'; ok.textContent = yon === 'asc' ? ' ▲' : ' ▼'; th.appendChild(ok);
   }
 
   async function eczaneDetayGoster(eczaneId, eczaneAdi) {
