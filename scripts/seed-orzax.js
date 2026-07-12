@@ -237,6 +237,30 @@ async function main() {
     }
     console.log('Katalog gorulme durumlari ayarlandi.');
 
+    // Giriş bilgileri özeti
+    const yoneticiler = kisiler.map((p, i) => ({ ...p, id: kisiIdler[i], index: i }))
+      .filter(p => p.ekip_yoneticisi);
+    const ornekMumessiller = kisiler.map((p, i) => ({ ...p, index: i }))
+      .filter(p => p.unvan === 'Tıbbi Mümessil').slice(0, 3);
+    const emailUret = (p, i) => `orzax-${i + 1}-${p.ad}-${p.soyad}`.toLowerCase()
+      .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
+      .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') + '@orzax.com';
+
+    let md = `# Orzax Demo — Giriş Bilgileri\n\nOrtak şifre: \`${ORTAK_SIFRE}\`\n\n`;
+    md += `## Firma Paneli\n- Kullanıcı adı: \`orzax\` (veya \`panel@orzax.com\`)\n- Şifre: \`${ORTAK_SIFRE}\`\n\n`;
+    md += `## Rol Kullanıcıları (firma paneli)\n- \`tam@orzax.com\` — tam yetkili\n- \`saha@orzax.com\` — sadece saha\n- \`calisan@orzax.com\` — sadece çalışan\n\n`;
+    md += `## Yöneticiler (mobil uygulama — giriş e-postası)\n`;
+    yoneticiler.forEach(p => { md += `- ${p.unvan}: \`${emailUret(p, p.index)}\`\n`; });
+    md += `\n## Örnek Mümessiller\n`;
+    ornekMumessiller.forEach(p => { md += `- ${p.ad} ${p.soyad}: \`${emailUret(p, p.index)}\`\n`; });
+    md += `\n## Örnek Raf/Eczacı Kartı URL'leri\n`;
+    eczaneler.slice(0, 3).forEach(e => {
+      md += `- ${e.ad}: raf → \`/raf/${e.kod}\` , eczacı → \`/eczaci/${e.eczaci_kod}\`\n`;
+    });
+
+    fs.writeFileSync(path.join(__dirname, '..', 'docs', 'orzax-demo-giris-bilgileri.md'), md, 'utf8');
+    console.log('Giris bilgileri: docs/orzax-demo-giris-bilgileri.md');
+
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
     console.log(`Bagli bayi id: ${bayiId}`);
