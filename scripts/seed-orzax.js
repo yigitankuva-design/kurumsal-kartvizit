@@ -110,6 +110,16 @@ async function main() {
     }
     console.log(`${kisiler.length} calisan (hiyerarsi) olusturuldu.`);
 
+    // Profil görüntülenme simülasyonu — goruntuleme_sayisi + link_tiklama (son 100 gün)
+    const goruntulemeTiklama = [];
+    for (let i = 0; i < kisiIdler.length; i++) {
+      const sayi = 5 + Math.floor(Math.random() * 76); // 5-80
+      await client.query('UPDATE calisanlar SET goruntuleme_sayisi = $1 WHERE id = $2', [sayi, kisiIdler[i]]);
+      for (let n = 0; n < sayi; n++) goruntulemeTiklama.push([kisiIdler[i], 'profil_goruntuleme', H.trendliTarih()]);
+    }
+    await topluEkle(client, `link_tiklama (calisan_id, tip, created_at)`, goruntulemeTiklama, 3);
+    console.log(`${goruntulemeTiklama.length} profil goruntulenme simule edildi.`);
+
     const eczaneler = H.eczaneleriUret(kisiler, 1000);
     const eczaneSatirlari = eczaneler.map(e => {
       const musteriYazildi = Math.random() < 0.8;
@@ -204,7 +214,7 @@ async function main() {
         const ziyaretSayisi = yildiz ? 4 + Math.floor(Math.random() * 4) : geride ? Math.floor(Math.random() * 2) : 1 + Math.floor(Math.random() * 3);
         for (let n = 0; n < ziyaretSayisi; n++) {
           let tarih;
-          if (geride) { const g = 60 + Math.floor(Math.random() * 60); tarih = new Date(Date.now() - g * 86400000); }
+          if (geride) { const g = 60 + Math.floor(Math.random() * 39); tarih = new Date(Date.now() - g * 86400000); }
           else tarih = H.trendliTarih();
           ziyaretler.push([kisiIdler[mi], e.id, H.rastgele(NOTLAR), e.lat, e.lng, tarih]);
         }

@@ -29,7 +29,7 @@ function agirlikliIndeks(agirliklar) {
   return agirliklar.length - 1;
 }
 
-function trendliTarih(gunSayisi = 150) {
+function trendliTarih(gunSayisi = 100) {
   // carpik: [0,1] sona (bugüne) ağırlıklı. msGeri her zaman >= 0 olduğu için sonuç
   // asla gelecekte olmaz; rastgele gün-içi saat de ms farkından doğal olarak gelir.
   const carpik = Math.sqrt(Math.random());
