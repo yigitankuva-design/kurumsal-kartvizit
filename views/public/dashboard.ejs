@@ -537,114 +537,66 @@ function jsonAttr(obj) {
     <% } else { %>
     <div class="table-wrap" style="padding:14px 16px;margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <strong style="font-size:var(--fs-md)">Organizasyon Şeması</strong>
-      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Düğüme tıkla → alt ekibi aç/kapa · son 90 gün ekip ziyaretleri</span>
+      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Satıra tıkla → alt ekibi aç/kapa · her bölge kendi renginde · son 90 gün ekip ziyaretleri</span>
       <span style="margin-left:auto;display:flex;gap:8px">
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuAc()">Tümünü Aç</button>
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
       </span>
     </div>
-    <div class="table-wrap" style="padding:10px;max-height:74vh;overflow:auto;background:var(--surface)">
-      <svg id="orgSvg" style="display:block"></svg>
+    <style>
+      .org-row{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px}
+      .org-row.dolu{cursor:pointer}
+      .org-row:hover{background:var(--bg3)}
+      .org-tog{width:15px;flex:0 0 15px;text-align:center;color:var(--text-faint);font-size:11px}
+      .org-dot{width:9px;height:9px;flex:0 0 9px;border-radius:50%}
+      .org-ad{font-weight:600;font-size:14px}
+      .org-un{color:var(--text-faint);font-weight:400;font-size:12.5px}
+      .org-badge{margin-left:auto;font-size:12px;color:var(--text-faint);white-space:nowrap}
+      .org-lvl{margin-left:16px;padding-left:10px;border-left:2px solid var(--border)}
+    </style>
+    <div class="table-wrap" style="padding:8px 10px;max-height:76vh;overflow:auto;background:var(--surface)">
+      <div id="orgAgac"></div>
     </div>
     <script>
       (function () {
         const orgVeri = <%- JSON.stringify(hiyerarsiAgaci) %>;
-        const svg = document.getElementById('orgSvg');
-        const NS = 'http://www.w3.org/2000/svg';
-        // Yukarıdan aşağı ağaç: derinlik = dikey seviye, yaprak sırası = yatay konum
-        const NW = 172, NH = 54, HGAP = 22, VGAP = 62, PAD = 20;
-        const renkler = [
-          { bg: '#efeafc', br: '#c4b8ec', tx: '#4a3d8f' }, // kök (lavanta)
-          { bg: '#dde9fb', br: '#93b6e6', tx: '#25497e' }, // 2. seviye (mavi)
-          { bg: '#d7f0e3', br: '#8ecfae', tx: '#1f6b4a' }, // 3. seviye (yeşil)
-          { bg: '#e4f3e6', br: '#aad9b3', tx: '#396b41' }  // 4+ (açık yeşil)
-        ];
-        const kapali = new Set();
+        const host = document.getElementById('orgAgac');
+        const renkler = ['#3b82f6', '#16a34a', '#8b5cf6', '#d97706', '#0d9488', '#db2777', '#ea580c', '#6366f1'];
+        const KOK = '#c8a84b';
+        const acik = {};
+        (function ilk(list, d) { list.forEach(function (n) { if (d < 2) acik[n.id] = true; ilk(n.cocuklar || [], d + 1); }); })(orgVeri, 0);
 
-        function hesapla() {
-          let leaf = 0;
-          const yer = new Map();
-          const baglar = [];
-          function walk(n, derinlik) {
-            const cocuk = n.cocuklar || [];
-            const kapaliMi = kapali.has(n.id);
-            const gorunen = kapaliMi ? [] : cocuk;
-            let x;
-            if (!gorunen.length) {
-              x = leaf * (NW + HGAP) + PAD; leaf++;
-            } else {
-              const xs = gorunen.map(c => walk(c, derinlik + 1));
-              x = (xs[0] + xs[xs.length - 1]) / 2;
-              gorunen.forEach(c => baglar.push([n, c]));
-            }
-            yer.set(n, { x, y: derinlik * (NH + VGAP) + PAD, derinlik, dolu: cocuk.length > 0, kapaliMi });
-            return x;
-          }
-          orgVeri.forEach(k => walk(k, 0));
-          let maxX = 0, maxY = 0;
-          yer.forEach(p => { if (p.x > maxX) maxX = p.x; if (p.y > maxY) maxY = p.y; });
-          return { yer, baglar, w: maxX + NW + PAD, h: maxY + NH + PAD };
-        }
-
-        function el(tag, attrs) {
-          const e = document.createElementNS(NS, tag);
-          for (const k in attrs) e.setAttribute(k, attrs[k]);
-          return e;
-        }
+        function mk(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
 
         function ciz() {
-          const { yer, baglar, w, h } = hesapla();
-          svg.setAttribute('width', w);
-          svg.setAttribute('height', h);
-          svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
-          while (svg.firstChild) svg.removeChild(svg.firstChild);
-
-          // Bağlaçlar: ebeveyn alt-orta → çocuk üst-orta (dikey eğri)
-          baglar.forEach(([p, c]) => {
-            const pp = yer.get(p), cp = yer.get(c);
-            const x1 = pp.x + NW / 2, y1 = pp.y + NH, x2 = cp.x + NW / 2, y2 = cp.y, my = (y1 + y2) / 2;
-            svg.appendChild(el('path', {
-              d: 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + my + ' ' + x2 + ',' + my + ' ' + x2 + ',' + y2,
-              fill: 'none', stroke: '#c8cdd6', 'stroke-width': '1.8'
-            }));
-          });
-
-          yer.forEach((pos, n) => {
-            const r = renkler[Math.min(pos.derinlik, renkler.length - 1)];
-            const g = el('g', {});
-            g.style.cursor = pos.dolu ? 'pointer' : 'default';
-            if (pos.dolu) g.addEventListener('click', () => {
-              if (kapali.has(n.id)) kapali.delete(n.id); else kapali.add(n.id);
-              ciz();
-            });
-            g.appendChild(el('rect', {
-              x: pos.x, y: pos.y, width: NW, height: NH, rx: 12,
-              fill: r.bg, stroke: r.br, 'stroke-width': '1.8'
-            }));
-            const t1 = el('text', { x: pos.x + NW / 2, y: pos.y + 22, fill: r.tx, 'font-size': '13.5', 'font-weight': '700', 'text-anchor': 'middle' });
-            t1.textContent = (n.ad + ' ' + n.soyad).slice(0, 22);
-            g.appendChild(t1);
-            const t2 = el('text', { x: pos.x + NW / 2, y: pos.y + 38, fill: r.tx, 'font-size': '11', opacity: '0.85', 'text-anchor': 'middle' });
-            t2.textContent = (n.unvan || '').slice(0, 24);
-            g.appendChild(t2);
-            const rozet = pos.dolu ? ('👥 ' + n.ekipZiyaret + (pos.kapaliMi ? ' ▸' : ' ▾')) : ('🧍 ' + n.kendiZiyaret);
-            const t3 = el('text', { x: pos.x + NW / 2, y: pos.y + NH - 6, fill: r.tx, 'font-size': '10.5', 'font-weight': '600', 'text-anchor': 'middle' });
-            t3.textContent = rozet;
-            g.appendChild(t3);
-            svg.appendChild(g);
-          });
+          host.textContent = '';
+          function dugum(n, parent, renk) {
+            const yaprak = !(n.cocuklar && n.cocuklar.length);
+            const row = mk('div', 'org-row' + (yaprak ? '' : ' dolu'));
+            row.appendChild(mk('span', 'org-tog', yaprak ? '' : (acik[n.id] ? '▾' : '▸')));
+            const dot = mk('span', 'org-dot'); dot.style.background = renk; row.appendChild(dot);
+            const orta = mk('span');
+            orta.appendChild(mk('span', 'org-ad', (n.ad || '') + ' ' + (n.soyad || '')));
+            if (n.unvan) orta.appendChild(mk('span', 'org-un', ' · ' + n.unvan));
+            row.appendChild(orta);
+            row.appendChild(mk('span', 'org-badge', yaprak ? ('🧍 ' + n.kendiZiyaret + ' ziyaret') : ('👥 ' + n.ekipZiyaret)));
+            if (!yaprak) row.onclick = function () { acik[n.id] = !acik[n.id]; ciz(); };
+            parent.appendChild(row);
+            if (!yaprak && acik[n.id]) {
+              const box = mk('div', 'org-lvl'); box.style.borderLeftColor = renk;
+              n.cocuklar.forEach(function (c, i) {
+                const cr = (renk === KOK) ? renkler[i % renkler.length] : renk;
+                dugum(c, box, cr);
+              });
+              parent.appendChild(box);
+            }
+          }
+          orgVeri.forEach(function (k) { dugum(k, host, KOK); });
         }
-
-        window.orgTumunuAc = function () { kapali.clear(); ciz(); };
-        window.orgTumunuKapat = function () {
-          kapali.clear();
-          (function all(n) {
-            if ((n.cocuklar || []).length) { kapali.add(n.id); n.cocuklar.forEach(all); }
-          });
-          orgVeri.forEach(function tara(n) { if ((n.cocuklar || []).length) { kapali.add(n.id); n.cocuklar.forEach(tara); } });
-          ciz();
-        };
         ciz();
+
+        window.orgTumunuAc = function () { (function a(list) { list.forEach(function (n) { acik[n.id] = true; a(n.cocuklar || []); }); })(orgVeri); ciz(); };
+        window.orgTumunuKapat = function () { for (const k in acik) delete acik[k]; orgVeri.forEach(function (n) { acik[n.id] = true; }); ciz(); };
       })();
     </script>
     <% } %>
