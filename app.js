@@ -221,14 +221,14 @@ app.get('/', async (req, res) => {
     }
     const firma = firmaResult.rows[0];
     const calisanlarResult = await pool.query(
-      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM calisanlar WHERE firma_id = $1 ORDER BY LOWER(ad), LOWER(soyad)',
       [req.session.firmaId]
     );
     const calisanlar = calisanlarResult.rows;
     const aktifSayisi = calisanlar.filter(c => c.durum === 'aktif').length;
     const pasifSayisi = calisanlar.filter(c => c.durum === 'pasif').length;
     const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
-    let tab = req.query.tab || 'calisanlar';
+    let tab = req.query.tab || 'home';
     const CALISAN_ROLU_TABLARI = ['calisanlar', 'istatistik', 'excel', 'genel', 'analytics', 'gecmis', 'organizasyon'];
     const SAHA_ROLU_TABLARI = ['icerik', 'urunler', 'indirim', 'raf', 'saha', 'genel', 'analytics', 'gecmis'];
     if (req.session.rol === 'sadece_calisan' && !CALISAN_ROLU_TABLARI.includes(tab)) tab = 'calisanlar';

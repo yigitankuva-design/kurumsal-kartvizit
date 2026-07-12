@@ -389,8 +389,10 @@ function tabGrubuBul(aktifTab) {
   return 'calisanlar';
 }
 var aktifGrup = tabGrubuBul(tab);
+if (tab === 'home') aktifGrup = 'home';
 
 var grupEtiketleri = {
+  home: 'Ana Sayfa',
   genel: 'Genel Bakış',
   calisanlar: 'Çalışanlar',
   eczane: 'Eczane Ağı',
@@ -493,7 +495,17 @@ function jsonAttr(obj) {
     <% } %>
   </div>
 
+  <!-- ANA SAYFA (boş karşılama) -->
+  <% if (tab === 'home') { %>
+  <div class="table-wrap" style="padding:64px 24px;text-align:center">
+    <div style="font-size:42px;margin-bottom:12px">👋</div>
+    <div style="font-size:19px;font-weight:700;margin-bottom:6px"><%= firma.ad %> paneline hoş geldiniz</div>
+    <div style="color:var(--text-faint);font-size:13px">Başlamak için soldaki menüden bir bölüm seçin.</div>
+  </div>
+  <% } %>
+
   <!-- STATS -->
+  <% if (tab !== 'home') { %>
   <div class="stat-row">
     <div class="stat-card">
       <div class="stat-card-n"><%= aktifSayisi + pasifSayisi %></div>
@@ -512,9 +524,10 @@ function jsonAttr(obj) {
       <div class="stat-card-l">Toplam görüntülenme</div>
     </div>
   </div>
+  <% } %>
 
   <!-- SUB TABS -->
-  <% if (aktifGrup !== 'genel') { %>
+  <% if (aktifGrup !== 'genel' && tab !== 'home') { %>
   <div class="dash-tabs">
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
@@ -556,8 +569,8 @@ function jsonAttr(obj) {
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
       </span>
     </div>
-    <div class="table-wrap" style="padding:0;overflow:auto;max-height:80vh;background:var(--surface)">
-      <svg id="orgSvg" style="display:block;min-width:100%"></svg>
+    <div class="table-wrap" style="padding:8px;height:72vh;overflow:hidden;background:var(--surface)">
+      <svg id="orgSvg" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;height:100%"></svg>
     </div>
     <script>
       (function () {
@@ -606,8 +619,6 @@ function jsonAttr(obj) {
 
         function ciz() {
           const { yer, baglar, w, h } = hesapla();
-          svg.setAttribute('width', w);
-          svg.setAttribute('height', h);
           svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
           while (svg.firstChild) svg.removeChild(svg.firstChild);
 
@@ -1373,10 +1384,10 @@ function jsonAttr(obj) {
 
     <!-- Eczane Detay Modal -->
     <div id="eczaneDetayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;z-index:60;padding:16px">
-      <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative">
-        <button type="button" onclick="document.getElementById('eczaneDetayModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer">✕</button>
-        <h3 id="eczaneDetayBaslik" style="margin-bottom:16px;font-size:16px;font-weight:700"></h3>
-        <div id="eczaneDetayIcerik" style="font-size:13px;line-height:1.7"></div>
+      <div style="background:#fff;color:#1a1a1a;border-radius:12px;padding:24px;max-width:480px;width:100%;max-height:80vh;overflow-y:auto;position:relative">
+        <button type="button" onclick="document.getElementById('eczaneDetayModal').style.display='none'" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:#555">✕</button>
+        <h3 id="eczaneDetayBaslik" style="margin-bottom:16px;font-size:16px;font-weight:700;color:#1a1a1a"></h3>
+        <div id="eczaneDetayIcerik" style="font-size:13px;line-height:1.7;color:#333"></div>
       </div>
     </div>
 
