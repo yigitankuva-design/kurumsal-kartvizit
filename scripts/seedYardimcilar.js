@@ -19,4 +19,14 @@ const RAF_TIP = ['katalog','website','instagram','linkedin','twitter','youtube',
 
 function rastgele(dizi) { return dizi[Math.floor(Math.random() * dizi.length)]; }
 
-module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele };
+function agirlikliIndeks(agirliklar) {
+  const toplam = agirliklar.reduce((a, b) => a + b, 0);
+  let r = Math.random() * toplam;
+  for (let i = 0; i < agirliklar.length; i++) {
+    r -= agirliklar[i];
+    if (r < 0) return i;
+  }
+  return agirliklar.length - 1;
+}
+
+module.exports = { ADLAR, SOYADLAR, MAHALLELER, BOLGELER, URUNLER, RAF_TIP, rastgele, agirlikliIndeks };
