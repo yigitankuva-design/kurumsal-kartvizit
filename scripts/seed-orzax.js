@@ -64,6 +64,32 @@ async function main() {
     }
     console.log('Orzax firma + 3 rol kullanicisi olusturuldu.');
 
+    const kisiler = H.hiyerarsiKur();
+    const girisHash = await bcrypt.hash(ORTAK_SIFRE, 8);
+    const kisiIdler = []; // gecici index -> gercek calisan id
+
+    for (let i = 0; i < kisiler.length; i++) {
+      const p = kisiler[i];
+      const slug = `orzax-${i + 1}-${p.ad}-${p.soyad}`.toLowerCase()
+        .replace(/ç/g,'c').replace(/ğ/g,'g').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u')
+        .replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+      const girisEmail = `${slug}@orzax.com`;
+      const kartaYazildi = p.unvan === 'Tıbbi Mümessil' ? Math.random() < 0.7 : false;
+      const r = await client.query(
+        `INSERT INTO calisanlar (firma_id, ad, soyad, unvan, slug, giris_email, giris_sifre_hash, ekip_yoneticisi, karta_yazildi, onayli)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,true) RETURNING id`,
+        [firmaId, p.ad, p.soyad, p.unvan, slug, girisEmail, girisHash, p.ekip_yoneticisi, kartaYazildi]
+      );
+      kisiIdler.push(r.rows[0].id);
+    }
+    // amiri_id bagla
+    for (let i = 0; i < kisiler.length; i++) {
+      if (kisiler[i].amiri !== null) {
+        await client.query('UPDATE calisanlar SET amiri_id=$1 WHERE id=$2', [kisiIdler[kisiler[i].amiri], kisiIdler[i]]);
+      }
+    }
+    console.log(`${kisiler.length} calisan (hiyerarsi) olusturuldu.`);
+
     await client.query('COMMIT');
     console.log('\n✅ Seed tamamlandi.');
     console.log(`Bagli bayi id: ${bayiId}`);
