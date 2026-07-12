@@ -344,6 +344,9 @@
       .slide-panel { width: 100vw; }
       .form-row { grid-template-columns: 1fr; }
     }
+    .soru-chip { padding:7px 12px; border:1px solid var(--border); background:var(--surface,#fff); border-radius:20px; font-size:var(--fs-sm); cursor:pointer; color:var(--text-muted); transition:all .15s; }
+    .soru-chip:hover { border-color:var(--gold); color:var(--text); }
+    .soru-chip.active { background:var(--gold); border-color:var(--gold); color:#1a1a1a; font-weight:600; }
   </style>
 </head>
 <body>
@@ -1310,99 +1313,158 @@ function jsonAttr(obj) {
 
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
   <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
-    <% if (sahaIstatistik.ziyaretNotlari.length) { %>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px"><%- ikon('kalem', 16, 'ikon-heading') %>Temsilci Ziyaret Notları</h3>
-      <ul>
-        <% sahaIstatistik.ziyaretNotlari.forEach(n => { %>
-          <li style="margin-bottom:8px">
-            <strong><%= n.eczaneAd %></strong> — <%= n.ad %> <%= n.soyad %>
-            (<%= new Date(n.tarih).toLocaleDateString('tr-TR') %>):
-            <span style="color:var(--text-faint);font-style:italic">Not girildi (içerik sadece bağlı olduğu yöneticiye mobilde görünür)</span>
-          </li>
-        <% }) %>
-      </ul>
-    </div>
-    <% } %>
-    <% if (sahaIstatistik.ziyaretEdilmeyenEczaneler.length) { %>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px"><%- ikon('uyari', 16, 'ikon-heading') %>60+ Gündür Ziyaret Edilmeyen Eczaneler</h3>
-      <ul>
-        <% sahaIstatistik.ziyaretEdilmeyenEczaneler.forEach(e => { %>
-          <li>
-            <%= e.ad %> —
-            <% if (e.sonZiyaret) { %>
-              Son ziyaret: <%= new Date(e.sonZiyaret).toLocaleDateString('tr-TR') %>
-            <% } else { %>
-              Hiç ziyaret edilmedi
-            <% } %>
-          </li>
-        <% }) %>
-      </ul>
-    </div>
-    <% } %>
-    <% if (!sahaIstatistik.gunlukZiyaret.length && !sahaIstatistik.eczaneOkutma.length && !sahaIstatistik.tiklamaDagilimi.length) { %>
-    <div class="table-wrap">
-      <div class="empty-state">
-        <div class="empty-state-icon"><%- ikon('konum', 32, '') %></div>
-        <div class="empty-state-title">Henüz veri yok</div>
-        <div class="empty-state-sub">Temsilciler ziyaret kaydettikçe burada görünür</div>
+    <% const k = sahaIstatistik.kpi || {}; const AS = sahaIstatistik.akilliSorular || {}; const perf = sahaIstatistik.performans || []; %>
+    <!-- KPI ŞERİDİ -->
+    <div class="stat-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+      <div class="stat-card">
+        <div class="stat-card-n"><%= k.buAyZiyaret != null ? k.buAyZiyaret : 0 %></div>
+        <div class="stat-card-l">Bu ay ziyaret</div>
+        <% if (k.ziyaretDegisim != null) { %>
+          <div style="margin-top:6px;font-size:var(--fs-xs);font-weight:600;color:<%= k.ziyaretDegisim >= 0 ? 'var(--success)' : 'var(--danger)' %>">
+            <%= k.ziyaretDegisim >= 0 ? '↑' : '↓' %> %<%= Math.abs(k.ziyaretDegisim) %> geçen aya göre
+          </div>
+        <% } %>
       </div>
+      <div class="stat-card"><div class="stat-card-n">%<%= k.aktifMumessilOrani || 0 %></div><div class="stat-card-l">Aktif mümessil (bu ay)</div></div>
+      <div class="stat-card"><div class="stat-card-n">%<%= k.kartKapsamasi || 0 %></div><div class="stat-card-l">Kart kapsaması</div></div>
+      <div class="stat-card"><div class="stat-card-n">%<%= k.indirimDonusumu || 0 %></div><div class="stat-card-l">İndirim dönüşümü</div></div>
     </div>
-    <% } else { %>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <a href="/kurumsal/ziyaretler-excel" class="btn btn-border" style="height:36px;">⬇ Ziyaretleri Excel'e Aktar</a>
+
+    <!-- AKILLI SORU CHIP BAR -->
+    <div class="table-wrap" style="padding:12px 16px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <% const chipler = [
+        ['1','⭐ En çok ziyaret'], ['2','⚠️ 60+ gün geride'], ['3','📉 Bu ay ziyaretsiz'],
+        ['4','🏆 En aktif eczaneler'], ['5','💊 En çok ürün'], ['6','🪪 Kartı eksik'],
+        ['7','🗺️ Bölge performansı'], ['8','🎁 İndirim özeti'], ['9','📊 Grafikler']
+      ]; %>
+      <% chipler.forEach(([no, etiket], i) => { %>
+        <button class="soru-chip <%= i === 0 ? 'active' : '' %>" data-soru="<%= no %>" onclick="soruGoster('<%= no %>')"><%= etiket %></button>
+      <% }) %>
     </div>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px">Son 30 Gün — Günlük Ziyaret</h3>
-      <canvas id="chartGunluk" height="80"></canvas>
-    </div>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px">Temsilci Başına Ziyaret</h3>
-      <canvas id="chartTemsilci" height="80"></canvas>
-    </div>
-    <div class="table-wrap" style="padding:20px;margin-bottom:16px">
-      <h3 style="margin-bottom:12px">Eczane Başına Okutma</h3>
-      <canvas id="chartEczane" height="80"></canvas>
-    </div>
-    <div class="table-wrap" style="padding:20px">
-      <h3 style="margin-bottom:12px">İçerik Tıklama Dağılımı</h3>
-      <canvas id="chartTiklama" height="80"></canvas>
-    </div>
-    <% if (sahaIstatistik.tiklamaDagilimiEczaneBazli.length) { %>
-    <div class="table-wrap" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:12px">İçerik Tıklama Dağılımı — Eczane Bazlı Detay</h3>
-      <table>
-        <thead><tr><th>Eczane</th><th>Tıklama Tipi</th><th>Sayı</th></tr></thead>
+
+    <!-- 1: En çok ziyaret -->
+    <div class="soru-rapor" data-soru="1">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mümessil</th><th>Son 30g</th><th>Son 90g</th><th>Durum</th></tr></thead>
         <tbody>
-          <% sahaIstatistik.tiklamaDagilimiEczaneBazli.forEach(r => { %>
-          <tr><td><%= r.eczaneAd %></td><td><%= r.tip %></td><td><%= r.sayi %></td></tr>
+          <% perf.slice().sort((a,b)=>b.ziyaret90-a.ziyaret90).slice(0,10).forEach(r => { %>
+          <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret30 %></td><td><%= r.ziyaret90 %></td>
+            <td><%= r.durum === 'yildiz' ? '⭐ Yıldız' : r.durum === 'geride' ? '⚠️ Geride' : '—' %></td></tr>
           <% }) %>
         </tbody>
-      </table>
+      </table></div>
     </div>
-    <% } %>
+    <!-- 2: 60+ gün geride -->
+    <div class="soru-rapor" data-soru="2" style="display:none">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mümessil</th><th>Son ziyaret</th></tr></thead>
+        <tbody>
+          <% perf.filter(r => r.durum === 'geride').forEach(r => { %>
+          <tr><td style="color:var(--danger)"><%= r.ad %> <%= r.soyad %></td>
+            <td><%= r.sonZiyaret ? new Date(r.sonZiyaret).toLocaleDateString('tr-TR') : 'Hiç ziyaret yok' %></td></tr>
+          <% }) %>
+          <% if (!perf.filter(r => r.durum === 'geride').length) { %><tr><td colspan="2">Geride mümessil yok 👍</td></tr><% } %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 3: Bu ay ziyaretsiz -->
+    <div class="soru-rapor" data-soru="3" style="display:none">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Mümessil</th><th>Son 90g ziyaret</th></tr></thead>
+        <tbody>
+          <% perf.filter(r => r.ziyaret30 === 0).forEach(r => { %>
+          <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret90 %></td></tr>
+          <% }) %>
+          <% if (!perf.filter(r => r.ziyaret30 === 0).length) { %><tr><td colspan="2">Herkes bu ay ziyaret yapmış 👍</td></tr><% } %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 4: En aktif eczaneler -->
+    <div class="soru-rapor" data-soru="4" style="display:none">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Eczane</th><th>Raf okutma</th></tr></thead>
+        <tbody>
+          <% (sahaIstatistik.eczaneOkutma || []).forEach(r => { %><tr><td><%= r.ad %></td><td><%= r.sayi %></td></tr><% }) %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 5: En çok tıklanan ürünler -->
+    <div class="soru-rapor" data-soru="5" style="display:none">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Ürün</th><th>Tıklama</th></tr></thead>
+        <tbody>
+          <% (AS.enCokTiklananUrunler || []).forEach(r => { %><tr><td><%= r.ad %></td><td><%= r.sayi %></td></tr><% }) %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 6: Kartı eksik eczaneler -->
+    <div class="soru-rapor" data-soru="6" style="display:none">
+      <div class="table-wrap" style="padding:12px 16px;margin-bottom:8px">
+        Toplam <strong><%= AS.kartiEksikEczaneler ? AS.kartiEksikEczaneler.sayi : 0 %></strong> eczanede kart eksik (ilk 100 gösteriliyor).
+        <input id="kartiEksikAra" placeholder="Eczane ara…" oninput="tabloAra('kartiEksikAra','kartiEksikTablo')" style="margin-left:8px;padding:4px 8px">
+      </div>
+      <div class="table-wrap"><table id="kartiEksikTablo">
+        <thead><tr><th>Eczane</th><th>Eksik</th></tr></thead>
+        <tbody>
+          <% ((AS.kartiEksikEczaneler && AS.kartiEksikEczaneler.liste) || []).forEach(r => { %>
+          <tr><td><%= r.ad %></td><td style="color:var(--danger)"><%= r.eksik %></td></tr>
+          <% }) %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 7: Bölge performansı -->
+    <div class="soru-rapor" data-soru="7" style="display:none">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Bölge Müdürü</th><th>Ekip ziyareti (90g)</th></tr></thead>
+        <tbody>
+          <% (AS.bolgePerformans || []).forEach(r => { %><tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ekipZiyaret %></td></tr><% }) %>
+        </tbody>
+      </table></div>
+    </div>
+    <!-- 8: İndirim özeti -->
+    <div class="soru-rapor" data-soru="8" style="display:none">
+      <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card"><div class="stat-card-n"><%= AS.indirimOzeti ? AS.indirimOzeti.uretilen : 0 %></div><div class="stat-card-l">Üretilen kod</div></div>
+        <div class="stat-card"><div class="stat-card-n"><%= AS.indirimOzeti ? AS.indirimOzeti.kullanilan : 0 %></div><div class="stat-card-l">Kullanılan</div></div>
+        <div class="stat-card"><div class="stat-card-n">%<%= AS.indirimOzeti ? AS.indirimOzeti.oran : 0 %></div><div class="stat-card-l">Dönüşüm</div></div>
+      </div>
+    </div>
+    <!-- 9: Grafikler -->
+    <div class="soru-rapor" data-soru="9" style="display:none">
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px"><h3 style="margin-bottom:12px">Son 30 Gün — Günlük Ziyaret</h3><canvas id="chartGunluk" height="80"></canvas></div>
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px"><h3 style="margin-bottom:12px">Temsilci Başına Ziyaret</h3><canvas id="chartTemsilci" height="80"></canvas></div>
+      <div class="table-wrap" style="padding:20px;margin-bottom:16px"><h3 style="margin-bottom:12px">Eczane Başına Okutma</h3><canvas id="chartEczane" height="80"></canvas></div>
+      <div class="table-wrap" style="padding:20px"><h3 style="margin-bottom:12px">İçerik Tıklama Dağılımı</h3><canvas id="chartTiklama" height="80"></canvas></div>
+    </div>
+
+    <div class="table-wrap" style="padding:12px 16px;margin-top:16px">
+      <a href="/kurumsal/ziyaretler-excel" class="btn btn-border" style="height:34px">⬇ Ziyaretleri Excel'e Aktar</a>
+      <a href="/kurumsal/rapor-excel" class="btn btn-border" style="height:34px;margin-left:8px">⬇ Gelişmiş Rapor (.xlsx)</a>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-      const sahaVeri = <%- JSON.stringify(sahaIstatistik) %>;
-      new Chart(document.getElementById('chartGunluk'), {
-        type: 'line',
-        data: { labels: sahaVeri.gunlukZiyaret.map(r => r.gun), datasets: [{ label: 'Ziyaret', data: sahaVeri.gunlukZiyaret.map(r => r.sayi), borderColor: '#c9a15a', tension: 0.2 }] }
-      });
-      new Chart(document.getElementById('chartTemsilci'), {
-        type: 'bar',
-        data: { labels: sahaVeri.temsilciZiyaret.map(r => r.ad + ' ' + r.soyad), datasets: [{ label: 'Ziyaret', data: sahaVeri.temsilciZiyaret.map(r => r.sayi), backgroundColor: '#c9a15a' }] }
-      });
-      new Chart(document.getElementById('chartEczane'), {
-        type: 'bar',
-        data: { labels: sahaVeri.eczaneOkutma.map(r => r.ad), datasets: [{ label: 'Okutma', data: sahaVeri.eczaneOkutma.map(r => r.sayi), backgroundColor: '#3a7ca5' }] }
-      });
-      new Chart(document.getElementById('chartTiklama'), {
-        type: 'bar',
-        data: { labels: sahaVeri.tiklamaDagilimi.map(r => r.tip), datasets: [{ label: 'Tıklama', data: sahaVeri.tiklamaDagilimi.map(r => r.sayi), backgroundColor: '#7a9e7e' }] }
-      });
+      const sahaVeri = <%- JSON.stringify({ gunlukZiyaret: sahaIstatistik.gunlukZiyaret, temsilciZiyaret: sahaIstatistik.temsilciZiyaret, eczaneOkutma: sahaIstatistik.eczaneOkutma, tiklamaDagilimi: sahaIstatistik.tiklamaDagilimi }) %>;
+      let grafiklerHazir = false;
+      function grafikleriKur() {
+        if (grafiklerHazir) return; grafiklerHazir = true;
+        new Chart(document.getElementById('chartGunluk'), { type:'line', data:{ labels: sahaVeri.gunlukZiyaret.map(r=>r.gun), datasets:[{ label:'Ziyaret', data: sahaVeri.gunlukZiyaret.map(r=>r.sayi), borderColor:'#c9a15a', tension:0.2 }] } });
+        new Chart(document.getElementById('chartTemsilci'), { type:'bar', data:{ labels: sahaVeri.temsilciZiyaret.map(r=>r.ad+' '+r.soyad), datasets:[{ label:'Ziyaret', data: sahaVeri.temsilciZiyaret.map(r=>r.sayi), backgroundColor:'#c9a15a' }] } });
+        new Chart(document.getElementById('chartEczane'), { type:'bar', data:{ labels: sahaVeri.eczaneOkutma.map(r=>r.ad), datasets:[{ label:'Okutma', data: sahaVeri.eczaneOkutma.map(r=>r.sayi), backgroundColor:'#3a7ca5' }] } });
+        new Chart(document.getElementById('chartTiklama'), { type:'bar', data:{ labels: sahaVeri.tiklamaDagilimi.map(r=>r.tip), datasets:[{ label:'Tıklama', data: sahaVeri.tiklamaDagilimi.map(r=>r.sayi), backgroundColor:'#7a9e7e' }] } });
+      }
+      function soruGoster(no) {
+        document.querySelectorAll('.soru-rapor').forEach(el => { el.style.display = el.dataset.soru === no ? 'block' : 'none'; });
+        document.querySelectorAll('.soru-chip').forEach(el => { el.classList.toggle('active', el.dataset.soru === no); });
+        if (no === '9') grafikleriKur();
+      }
+      function tabloAra(inputId, tabloId) {
+        const q = document.getElementById(inputId).value.toLowerCase();
+        document.querySelectorAll('#' + tabloId + ' tbody tr').forEach(tr => {
+          tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      }
     </script>
-    <% } %>
   <% } %>
 
 </div><!-- /dash-main -->
