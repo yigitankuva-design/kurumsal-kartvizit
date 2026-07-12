@@ -412,7 +412,7 @@ app.get('/', async (req, res) => {
       };
     }
 
-    let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], tiklamaDagilimiEczaneBazli: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [] };
+    let sahaIstatistik = { gunlukZiyaret: [], temsilciZiyaret: [], eczaneOkutma: [], tiklamaDagilimi: [], tiklamaDagilimiEczaneBazli: [], ziyaretEdilmeyenEczaneler: [], ziyaretNotlari: [], performans: [], akilliSorular: null, kpi: null };
     if (tab === 'saha' && firma.paket === 'kurumsal') {
       const gunlukResult = await pool.query(
         `SELECT TO_CHAR(z.created_at, 'YYYY-MM-DD') AS gun, COUNT(*) AS sayi
@@ -478,6 +478,107 @@ app.get('/', async (req, res) => {
         ziyaretNotlari: notlarResult.rows.map(r => ({
           ad: r.ad, soyad: r.soyad, eczaneAd: r.eczane_ad, notVarMi: true, tarih: r.created_at
         })),
+      };
+
+      // Performans (soru 1-2-3)
+      const perfResult = await pool.query(
+        `SELECT c.id, c.ad, c.soyad, c.unvan,
+                COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '30 days') AS ziyaret30,
+                COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '90 days') AS ziyaret90,
+                MAX(z.created_at) AS son_ziyaret
+         FROM calisanlar c LEFT JOIN ziyaretler z ON z.calisan_id = c.id
+         WHERE c.firma_id = $1 AND c.durum = 'aktif' AND c.ekip_yoneticisi = false
+         GROUP BY c.id, c.ad, c.soyad, c.unvan`,
+        [req.session.firmaId]
+      );
+      const perfSatir = perfResult.rows.map(r => ({
+        id: r.id, ad: r.ad, soyad: r.soyad, unvan: r.unvan,
+        ziyaret30: Number(r.ziyaret30), ziyaret90: Number(r.ziyaret90), sonZiyaret: r.son_ziyaret,
+      }));
+      sahaIstatistik.performans = mumessilPerformansi(perfSatir);
+
+      // Akıllı sorular — küçük agregasyonlar
+      const enCokUrunResult = await pool.query(
+        `SELECT u.ad, COUNT(*) AS sayi
+         FROM urun_tiklamalar ut JOIN urunler u ON u.id = ut.urun_id
+         WHERE u.firma_id = $1 GROUP BY u.id, u.ad ORDER BY sayi DESC LIMIT 10`,
+        [req.session.firmaId]
+      );
+      const kartiEksikResult = await pool.query(
+        `SELECT ad, musteri_karta_yazildi, eczaci_karta_yazildi
+         FROM eczaneler
+         WHERE firma_id = $1 AND (musteri_karta_yazildi = false OR eczaci_karta_yazildi = false)
+         ORDER BY ad LIMIT 100`,
+        [req.session.firmaId]
+      );
+      const kartiEksikSayiResult = await pool.query(
+        `SELECT COUNT(*) AS sayi FROM eczaneler
+         WHERE firma_id = $1 AND (musteri_karta_yazildi = false OR eczaci_karta_yazildi = false)`,
+        [req.session.firmaId]
+      );
+      const indirimOzetResult = await pool.query(
+        `SELECT COUNT(*) AS uretilen, COUNT(*) FILTER (WHERE kullanildi) AS kullanilan
+         FROM indirim_kodlari WHERE firma_id = $1`,
+        [req.session.firmaId]
+      );
+      const io = indirimOzetResult.rows[0];
+      const ekipZiyaretResult = await pool.query(
+        `SELECT c.id, c.ad, c.soyad, c.unvan, c.amiri_id, c.ekip_yoneticisi,
+                COALESCE((SELECT COUNT(*) FROM ziyaretler z WHERE z.calisan_id = c.id AND z.created_at >= NOW() - INTERVAL '90 days'),0) AS sayi
+         FROM calisanlar c WHERE c.firma_id = $1 AND c.durum = 'aktif'`,
+        [req.session.firmaId]
+      );
+      const ezMap = {};
+      ekipZiyaretResult.rows.forEach(r => { ezMap[r.id] = Number(r.sayi); });
+      const ezAgac = hiyerarsiAgaciKur(ekipZiyaretResult.rows, ezMap);
+      const bolgePerf = [];
+      const gezBolge = d => {
+        if (d.unvan === 'Bölge Müdürü') bolgePerf.push({ ad: d.ad, soyad: d.soyad, ekipZiyaret: d.ekipZiyaret });
+        d.cocuklar.forEach(gezBolge);
+      };
+      ezAgac.forEach(gezBolge);
+      bolgePerf.sort((a, b) => b.ekipZiyaret - a.ekipZiyaret);
+
+      sahaIstatistik.akilliSorular = {
+        enCokTiklananUrunler: enCokUrunResult.rows.map(r => ({ ad: r.ad, sayi: Number(r.sayi) })),
+        kartiEksikEczaneler: {
+          sayi: Number(kartiEksikSayiResult.rows[0].sayi),
+          liste: kartiEksikResult.rows.map(r => ({
+            ad: r.ad,
+            eksik: [!r.musteri_karta_yazildi ? 'Müşteri kartı' : null, !r.eczaci_karta_yazildi ? 'Eczacı kartı' : null].filter(Boolean).join(', '),
+          })),
+        },
+        bolgePerformans: bolgePerf,
+        indirimOzeti: {
+          uretilen: Number(io.uretilen), kullanilan: Number(io.kullanilan),
+          oran: Number(io.uretilen) ? Math.round((Number(io.kullanilan) / Number(io.uretilen)) * 100) : 0,
+        },
+      };
+
+      // KPI şeridi
+      const kpiResult = await pool.query(
+        `SELECT
+           (SELECT COUNT(*) FROM ziyaretler z JOIN calisanlar c ON c.id=z.calisan_id
+              WHERE c.firma_id=$1 AND z.created_at >= date_trunc('month', NOW())) AS bu_ay,
+           (SELECT COUNT(*) FROM ziyaretler z JOIN calisanlar c ON c.id=z.calisan_id
+              WHERE c.firma_id=$1 AND z.created_at >= date_trunc('month', NOW()) - INTERVAL '1 month'
+              AND z.created_at < date_trunc('month', NOW())) AS gecen_ay,
+           (SELECT COUNT(DISTINCT z.calisan_id) FROM ziyaretler z JOIN calisanlar c ON c.id=z.calisan_id
+              WHERE c.firma_id=$1 AND z.created_at >= date_trunc('month', NOW())) AS aktif_mumessil,
+           (SELECT COUNT(*) FROM calisanlar WHERE firma_id=$1 AND durum='aktif' AND ekip_yoneticisi=false) AS toplam_mumessil,
+           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1) AS toplam_eczane,
+           (SELECT COUNT(*) FROM eczaneler WHERE firma_id=$1 AND musteri_karta_yazildi=true) AS kartli_eczane`,
+        [req.session.firmaId]
+      );
+      const kp = kpiResult.rows[0];
+      const yuzde = (a, b) => (Number(b) ? Math.round((Number(a) / Number(b)) * 100) : 0);
+      const buAy = Number(kp.bu_ay), gecenAy = Number(kp.gecen_ay);
+      sahaIstatistik.kpi = {
+        buAyZiyaret: buAy,
+        ziyaretDegisim: gecenAy ? Math.round(((buAy - gecenAy) / gecenAy) * 100) : null,
+        aktifMumessilOrani: yuzde(kp.aktif_mumessil, kp.toplam_mumessil),
+        kartKapsamasi: yuzde(kp.kartli_eczane, kp.toplam_eczane),
+        indirimDonusumu: sahaIstatistik.akilliSorular.indirimOzeti.oran,
       };
     }
 
