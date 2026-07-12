@@ -414,8 +414,7 @@ function jsonAttr(obj) {
   <aside class="app-sidebar">
     <a href="/" class="sidebar-logo">NFC<em>Kartify</em></a>
     <nav class="sidebar-nav">
-      <div class="sidebar-group-label">İşletme</div>
-      <a href="/?tab=genel" class="sidebar-item <%= aktifGrup === 'genel' ? 'active' : '' %>"><%- ikon('pano') %> Genel Bakış</a>
+      <div class="sidebar-group-label">İşletme</div>
       <% if (rol !== 'sadece_saha') { %>
       <a href="/?tab=calisanlar" class="sidebar-item <%= aktifGrup === 'calisanlar' ? 'active' : '' %>"><%- ikon('kullanici') %> Çalışanlar</a>
       <% } %>
@@ -602,116 +601,8 @@ function jsonAttr(obj) {
     <% } %>
   <% } %>
 
-  <!-- TAB: GENEL BAKIŞ -->
-  <% if (tab === 'genel') { %>
-    <% if (!genelBakis) { %>
-    <div class="table-wrap">
-      <div class="empty-state">
-        <div class="empty-state-icon"><%- ikon('grafik', 32, '') %></div>
-        <div class="empty-state-title">Henüz veri yok</div>
-        <div class="empty-state-sub">Profil linkleri paylaşıldıkça burada trendler görünür</div>
-      </div>
-    </div>
-    <% } else { %>
-    <div class="stat-row" style="grid-template-columns:repeat(2,1fr);margin-bottom:16px">
-      <div class="stat-card">
-        <div class="stat-card-n"><%= genelBakis.tiklamaBuDonem %></div>
-        <div class="stat-card-l">Son 7 gün — toplam tıklama</div>
-        <div style="margin-top:6px">
-          <% if (genelBakis.tiklamaDegisim === null) { %>
-            <span style="color:var(--text-faint);font-size:var(--fs-xs)">yeni veri</span>
-          <% } else if (genelBakis.tiklamaDegisim > 0) { %>
-            <span style="color:var(--success);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↑ %<%= genelBakis.tiklamaDegisim %> önceki haftaya göre</span>
-          <% } else if (genelBakis.tiklamaDegisim < 0) { %>
-            <span style="color:var(--danger);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↓ %<%= Math.abs(genelBakis.tiklamaDegisim) %> önceki haftaya göre</span>
-          <% } else { %>
-            <span style="color:var(--text-faint);font-size:var(--fs-xs)">önceki haftayla aynı</span>
-          <% } %>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-n"><%= genelBakis.goruntulemeBuDonem %></div>
-        <div class="stat-card-l">Son 7 gün — profil görüntüleme</div>
-        <div style="margin-top:6px">
-          <% if (genelBakis.goruntulemeDegisim === null) { %>
-            <span style="color:var(--text-faint);font-size:var(--fs-xs)">yeni veri</span>
-          <% } else if (genelBakis.goruntulemeDegisim > 0) { %>
-            <span style="color:var(--success);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↑ %<%= genelBakis.goruntulemeDegisim %> önceki haftaya göre</span>
-          <% } else if (genelBakis.goruntulemeDegisim < 0) { %>
-            <span style="color:var(--danger);font-size:var(--fs-xs);font-weight:var(--fw-semibold)">↓ %<%= Math.abs(genelBakis.goruntulemeDegisim) %> önceki haftaya göre</span>
-          <% } else { %>
-            <span style="color:var(--text-faint);font-size:var(--fs-xs)">önceki haftayla aynı</span>
-          <% } %>
-        </div>
-      </div>
-    </div>
-    <div class="table-wrap" style="padding:20px">
-      <h3 style="margin-bottom:12px">Son 14 Gün — Tıklama Trendi</h3>
-      <canvas id="chartGenelSparkline" height="60"></canvas>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-      const genelSparkline = <%- JSON.stringify(genelBakis.sparkline) %>;
-      new Chart(document.getElementById('chartGenelSparkline'), {
-        type: 'line',
-        data: {
-          labels: genelSparkline.map((_, i) => i - 13),
-          datasets: [{ data: genelSparkline, borderColor: '#c8a84b', backgroundColor: 'rgba(200,168,75,0.1)', fill: true, tension: 0.3, pointRadius: 0 }]
-        },
-        options: { plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
-      });
-    </script>
-    <div class="table-wrap" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:12px">Son 90 Gün — Aktivite Yoğunluğu</h3>
-      <div class="isi-haritasi">
-        <% genelBakis.isiHaritasi.forEach(g => { %>
-        <div class="isi-haritasi-gun" data-seviye="<%= g.seviye %>" title="<%= g.tarih %>: <%= g.sayi %> etkileşim"></div>
-        <% }) %>
-      </div>
-    </div>
-    <% if (genelBakis.tiklamaDagilimi.length) { %>
-    <div class="table-wrap" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:12px">Tıklama Dağılımı — Son 90 Gün</h3>
-      <canvas id="chartTiklamaDagilimi" height="80"></canvas>
-    </div>
-    <script>
-      const dagilimVeri = <%- JSON.stringify(genelBakis.tiklamaDagilimi) %>;
-      new Chart(document.getElementById('chartTiklamaDagilimi'), {
-        type: 'doughnut',
-        data: {
-          labels: dagilimVeri.map(r => r.tip),
-          datasets: [{ data: dagilimVeri.map(r => r.sayi), backgroundColor: ['#c8a84b','#3a7ca5','#7a9e7e','#a5673a','#8a5ca5','#a53a5c','#5ca58a','#a5a53a'] }]
-        }
-      });
-    </script>
-    <% } %>
-    <div class="table-wrap liderlik-tablosu" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:12px">Liderlik Tablosu — Son 30 Gün En Aktif Çalışanlar</h3>
-      <% if (!genelBakis.liderlikTablosu.length) { %>
-      <div class="empty-state-sub">Henüz veri yok</div>
-      <% } else { %>
-      <table>
-        <thead><tr><th>Çalışan</th><th>Etkileşim</th></tr></thead>
-        <tbody>
-          <% genelBakis.liderlikTablosu.forEach((r, i) => { %>
-          <tr><td><%= i + 1 %>. <%= r.ad %> <%= r.soyad %></td><td><%= r.sayi %></td></tr>
-          <% }) %>
-        </tbody>
-      </table>
-      <% } %>
-    </div>
-    <% if (firma.paket === 'kurumsal') { %>
-    <div class="table-wrap" style="padding:20px;margin-top:16px">
-      <h3 style="margin-bottom:12px">Gelişmiş Rapor</h3>
-      <p style="font-size:var(--fs-sm);color:var(--text-muted);margin-bottom:12px">Ziyaretler, eczane özeti, temsilci özeti ve indirim kullanımını tek dosyada indirin.</p>
-      <a href="/kurumsal/rapor-excel" class="btn btn-border" style="height:36px;">⬇ Gelişmiş Raporu İndir (.xlsx)</a>
-      <a href="/kurumsal/rapor-pdf" class="btn btn-border" style="height:36px;margin-left:8px;">⬇ Haftalık Özet PDF</a>
-    </div>
-    <% } %>
-    <% } %>
-
   <!-- TAB: KULLANICILAR -->
-  <% } else if (tab === 'kullanicilar') { %>
+  <% if (tab === 'kullanicilar') { %>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px">
       <h3 style="margin-bottom:12px">Yeni Kullanıcı Davet Et</h3>
       <form method="POST" action="/firma/kullanicilar/ekle" style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
@@ -1453,6 +1344,7 @@ function jsonAttr(obj) {
     <div class="table-wrap" style="padding:12px 16px;margin-top:16px">
       <a href="/kurumsal/ziyaretler-excel" class="btn btn-border" style="height:34px">⬇ Ziyaretleri Excel'e Aktar</a>
       <a href="/kurumsal/rapor-excel" class="btn btn-border" style="height:34px;margin-left:8px">⬇ Gelişmiş Rapor (.xlsx)</a>
+      <a href="/kurumsal/rapor-pdf" class="btn btn-border" style="height:34px;margin-left:8px">⬇ Haftalık Özet PDF</a>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

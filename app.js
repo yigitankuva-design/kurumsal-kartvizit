@@ -232,8 +232,9 @@ app.get('/', async (req, res) => {
     const CALISAN_ROLU_TABLARI = ['calisanlar', 'istatistik', 'excel', 'genel', 'analytics', 'gecmis', 'organizasyon'];
     const SAHA_ROLU_TABLARI = ['icerik', 'urunler', 'indirim', 'raf', 'saha', 'genel', 'analytics', 'gecmis'];
     if (req.session.rol === 'sadece_calisan' && !CALISAN_ROLU_TABLARI.includes(tab)) tab = 'calisanlar';
-    if (req.session.rol === 'sadece_saha' && !SAHA_ROLU_TABLARI.includes(tab)) tab = 'genel';
-    if (tab === 'kullanicilar' && req.session.rol && req.session.rol !== 'tam_yetkili') tab = 'genel';
+    if (req.session.rol === 'sadece_saha' && !SAHA_ROLU_TABLARI.includes(tab)) tab = 'home';
+    if (tab === 'kullanicilar' && req.session.rol && req.session.rol !== 'tam_yetkili') tab = 'home';
+    if (tab === 'genel') tab = 'home'; // Genel Bakış kaldırıldı (pharma'ya uygun değildi)
 
     let islemGecmisi = [];
     if (tab === 'gecmis') {
