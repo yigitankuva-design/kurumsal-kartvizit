@@ -536,7 +536,7 @@ function jsonAttr(obj) {
     <% } else { %>
     <div class="table-wrap" style="padding:14px 16px;margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <strong style="font-size:var(--fs-md)">Organizasyon Şeması</strong>
-      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Satıra tıkla → alt ekibi aç/kapa · her bölge kendi renginde · son 90 gün ekip ziyaretleri</span>
+      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Satıra tıkla → alt ekibi aç/kapa · her bölge kendi renginde · son 1 yıl ekip ziyaretleri</span>
       <span style="margin-left:auto;display:flex;gap:8px">
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuAc()">Tümünü Aç</button>
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
@@ -1411,7 +1411,7 @@ function jsonAttr(obj) {
     <!-- 1: En çok ziyaret -->
     <div class="soru-rapor" data-soru="1">
       <div class="table-wrap"><table>
-        <thead><tr><th>Mümessil</th><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 30g ⇅</th><th class="sortable" data-yon="desc" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 90g ▼</th><th>Durum</th></tr></thead>
+        <thead><tr><th>Mümessil</th><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 30g ⇅</th><th class="sortable" data-yon="desc" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Son 1 Yıl ▼</th><th>Durum</th></tr></thead>
         <tbody>
           <% perf.slice().sort((a,b)=>b.ziyaret90-a.ziyaret90).slice(0,10).forEach(r => { %>
           <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret30 %></td><td><%= r.ziyaret90 %></td>

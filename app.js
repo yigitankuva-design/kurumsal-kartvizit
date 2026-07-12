@@ -259,7 +259,7 @@ app.get('/', async (req, res) => {
       const ziyaretSayiResult = await pool.query(
         `SELECT z.calisan_id, COUNT(*) AS sayi
          FROM ziyaretler z JOIN calisanlar c ON c.id = z.calisan_id
-         WHERE c.firma_id = $1 AND z.created_at >= NOW() - INTERVAL '90 days'
+         WHERE c.firma_id = $1 AND z.created_at >= NOW() - INTERVAL '365 days'
          GROUP BY z.calisan_id`,
         [req.session.firmaId]
       );
@@ -485,7 +485,7 @@ app.get('/', async (req, res) => {
       const perfResult = await pool.query(
         `SELECT c.id, c.ad, c.soyad, c.unvan,
                 COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '30 days') AS ziyaret30,
-                COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '90 days') AS ziyaret90,
+                COUNT(*) FILTER (WHERE z.created_at >= NOW() - INTERVAL '365 days') AS ziyaret90,
                 MAX(z.created_at) AS son_ziyaret
          FROM calisanlar c LEFT JOIN ziyaretler z ON z.calisan_id = c.id
          WHERE c.firma_id = $1 AND c.durum = 'aktif' AND c.ekip_yoneticisi = false
@@ -525,7 +525,7 @@ app.get('/', async (req, res) => {
       const io = indirimOzetResult.rows[0];
       const ekipZiyaretResult = await pool.query(
         `SELECT c.id, c.ad, c.soyad, c.unvan, c.amiri_id, c.ekip_yoneticisi,
-                COALESCE((SELECT COUNT(*) FROM ziyaretler z WHERE z.calisan_id = c.id AND z.created_at >= NOW() - INTERVAL '90 days'),0) AS sayi
+                COALESCE((SELECT COUNT(*) FROM ziyaretler z WHERE z.calisan_id = c.id AND z.created_at >= NOW() - INTERVAL '365 days'),0) AS sayi
          FROM calisanlar c WHERE c.firma_id = $1 AND c.durum = 'aktif'`,
         [req.session.firmaId]
       );
