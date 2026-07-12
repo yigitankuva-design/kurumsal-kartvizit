@@ -539,7 +539,7 @@ function jsonAttr(obj) {
     <% } else { %>
     <div class="table-wrap" style="padding:14px 16px;margin-bottom:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
       <strong style="font-size:var(--fs-md)">Organizasyon Şeması</strong>
-      <span style="font-size:var(--fs-xs);color:var(--text-faint)">Karta tıkla → profil detayı açılır · alttaki −/+ ile ekibi aç/kapa · her departman kendi renginde</span>
+      <span style="font-size:var(--fs-xs);color:var(--text-faint)">En üst yönetici üstte ayrı · yöneticilerin −/+ ile ekibini aç/kapa · karta tıkla → çalışanın profil sayfası açılır</span>
       <span style="margin-left:auto;display:flex;gap:8px">
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuAc()">Tümünü Aç</button>
         <button type="button" class="btn btn-border btn-sm" onclick="orgTumunuKapat()">Tümünü Kapat</button>
@@ -581,57 +581,32 @@ function jsonAttr(obj) {
       .oc-fold{position:absolute;bottom:-11px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:50%;
         background:#fff;color:#555;border:1px solid var(--border);font-size:13px;line-height:1;cursor:pointer;
         display:grid;place-items:center;box-shadow:0 3px 8px -2px rgba(0,0,0,.25);z-index:2}
-      .oc-drawer-bg{position:fixed;inset:0;background:rgba(15,23,42,.42);opacity:0;visibility:hidden;transition:.2s;z-index:60}
-      .oc-drawer-bg.open{opacity:1;visibility:visible}
-      .oc-drawer{position:fixed;top:0;right:0;height:100%;width:362px;max-width:92vw;background:var(--surface);
-        box-shadow:-14px 0 40px -18px rgba(0,0,0,.5);transform:translateX(100%);transition:transform .22s ease;z-index:61;
-        overflow-y:auto;display:flex;flex-direction:column}
-      .oc-drawer.open{transform:none}
-      .oc-dhead{padding:22px 20px 18px;color:#fff;background:linear-gradient(158deg,var(--dc1,#334155),var(--dc2,#1e293b));position:relative}
-      .oc-dclose{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
-        background:rgba(255,255,255,.22);color:#fff;font-size:15px}
-      .oc-dav{width:74px;height:74px;border-radius:50%;object-fit:cover;display:grid;place-items:center;font-weight:750;font-size:24px;
-        color:#fff;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.6);margin-bottom:10px}
-      .oc-dnm{font-size:18px;font-weight:750}
-      .oc-dti{font-size:13px;color:rgba(255,255,255,.9);margin-top:2px}
-      .oc-dchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-      .oc-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;padding:3px 10px;border-radius:999px;
-        background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.34);color:#fff}
-      .oc-dbody{padding:16px 20px 26px;display:flex;flex-direction:column;gap:14px}
-      .oc-sec-t{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-faint);margin-bottom:2px}
-      .oc-kv{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px}
-      .oc-kv:last-child{border-bottom:none}
-      .oc-kv .k{color:var(--text-faint);min-width:74px;font-size:12px}
-      .oc-kv a{color:var(--gold);text-decoration:none;word-break:break-all}
-      .oc-stat{display:flex;gap:10px}
-      .oc-stat .box{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:11px;padding:11px 12px;text-align:center}
-      .oc-stat .n{font-size:19px;font-weight:750}
-      .oc-stat .l{font-size:10.5px;color:var(--text-faint);margin-top:2px}
-      .oc-links{display:flex;flex-wrap:wrap;gap:8px}
-      .oc-links a{font-size:12px;font-weight:600;padding:7px 12px;border-radius:9px;border:1px solid var(--border);
-        background:var(--bg3);color:var(--text);text-decoration:none}
-      .oc-profil{margin-top:6px;display:block;text-align:center;padding:11px;border-radius:11px;font-weight:700;font-size:13.5px;
-        background:var(--gold);color:#fff;text-decoration:none}
+      .oc-wrap{background:var(--surface)}
+      .oc-kok{display:flex;justify-content:center;padding:20px 16px 2px}
+      .oc-kokcard{display:flex;align-items:center;gap:14px;min-width:300px;max-width:520px;cursor:pointer;
+        border-radius:16px;padding:14px 20px;color:#fff;background:linear-gradient(135deg,var(--c1),var(--c2));
+        border:1px solid rgba(255,255,255,.28);box-shadow:0 14px 26px -14px var(--sh),inset 0 1px 0 rgba(255,255,255,.35);
+        transition:transform .12s ease}
+      .oc-kokcard:hover{transform:translateY(-2px)}
+      .oc-kokcard .oc-av{width:56px;height:56px;font-size:18px}
+      .oc-kokcard .kk-info{text-align:left;min-width:0}
+      .oc-kokcard .kk-nm{font-size:16px;font-weight:750;line-height:1.2}
+      .oc-kokcard .kk-ti{font-size:12.5px;color:rgba(255,255,255,.9)}
+      .oc-kokcard .kk-badge{margin-left:auto;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;
+        background:#fff;color:#333;padding:4px 10px;border-radius:999px}
     </style>
-    <div class="table-wrap oc-scroll">
-      <div class="oc-chart" id="ocChart"></div>
-    </div>
-    <div class="oc-drawer-bg" id="ocDrawerBg" onclick="ocKapat()"></div>
-    <aside class="oc-drawer" id="ocDrawer" aria-hidden="true">
-      <div class="oc-dhead" id="ocDHead">
-        <button type="button" class="oc-dclose" onclick="ocKapat()">✕</button>
-        <div id="ocDAv"></div>
-        <div class="oc-dnm" id="ocDNm"></div>
-        <div class="oc-dti" id="ocDTi"></div>
-        <div class="oc-dchips" id="ocDChips"></div>
+    <div class="table-wrap oc-wrap">
+      <div id="ocKok" class="oc-kok"></div>
+      <div class="oc-scroll">
+        <div class="oc-chart" id="ocChart"></div>
       </div>
-      <div class="oc-dbody" id="ocDBody"></div>
-    </aside>
+    </div>
     <script>
       (function () {
         const orgVeri = <%- JSON.stringify(hiyerarsiAgaci) %>;
         const FIRMA_SLUG = <%- JSON.stringify(typeof firma !== 'undefined' && firma ? (firma.slug || '') : '') %>;
         const host = document.getElementById('ocChart');
+        const kokHost = document.getElementById('ocKok');
         const PAIRS = [['#3b82f6','#1d4ed8'],['#14b8a6','#0d7d72'],['#8b5cf6','#6d28d9'],['#e0a020','#b4680a'],['#db2777','#a21657'],['#ea580c','#c2410c'],['#0ea5e9','#0369a1'],['#65a30d','#3f6212']];
         const KOK = ['#d4b25a','#a9822f'];
         const depMap = {}; let depIdx = 0;
@@ -641,101 +616,72 @@ function jsonAttr(obj) {
         function el(tag, cls){ const e = document.createElement(tag); if (cls) e.className = cls; return e; }
         function initials(n){ return (((n.ad||' ')[0]||'') + ((n.soyad||' ')[0]||'')).toLocaleUpperCase('tr'); }
         function avatar(n, cls){ if (n.foto_url){ const im = el('img', cls); im.src = n.foto_url; im.alt = ''; return im; } const d = el('div', cls); d.textContent = initials(n); return d; }
+        function profilUrl(n){ return (FIRMA_SLUG && n.slug) ? ('/' + FIRMA_SLUG + '/' + n.slug) : null; }
+        function git(n){ const u = profilUrl(n); if (u) window.open(u, '_blank', 'noopener'); }
 
-        function card(n, isKok){
-          const pair = isKok ? KOK : pairFor(n.departman);
-          const nd = el('div', 'oc-node' + (isKok ? ' kok' : ''));
+        function card(n){
+          const pair = pairFor(n.departman);
+          const nd = el('div', 'oc-node');
           nd.style.setProperty('--c1', pair[0]); nd.style.setProperty('--c2', pair[1]); nd.style.setProperty('--sh', pair[1] + '99');
-          if (n.ekip_yoneticisi || isKok){ const b = el('div', 'oc-badge'); b.textContent = isKok ? 'Genel' : 'Yönetici'; nd.appendChild(b); }
+          if (n.ekip_yoneticisi){ const b = el('div', 'oc-badge'); b.textContent = 'Yönetici'; nd.appendChild(b); }
           nd.appendChild(avatar(n, 'oc-av'));
           const nm = el('div', 'oc-nm'); nm.textContent = ((n.ad || '') + ' ' + (n.soyad || '')).trim(); nd.appendChild(nm);
           if (n.unvan){ const t = el('div', 'oc-ti'); t.textContent = n.unvan; nd.appendChild(t); }
           if (n.departman){ const dp = el('div', 'oc-dp'); dp.textContent = n.departman; nd.appendChild(dp); }
-          nd.onclick = function(){ ocGoster(n, pair); };
+          if (profilUrl(n)){ nd.onclick = function(){ git(n); }; } else { nd.style.cursor = 'default'; }
           if (n.cocuklar && n.cocuklar.length){
             const f = el('button', 'oc-fold'); f.type = 'button'; f.textContent = collapsed[n.id] ? '+' : '−';
+            f.title = collapsed[n.id] ? 'Ekibi göster' : 'Ekibi gizle';
             f.onclick = function(ev){ ev.stopPropagation(); collapsed[n.id] = !collapsed[n.id]; ciz(); };
             nd.appendChild(f);
           }
           return nd;
         }
 
-        function liFor(n, isKok){
+        function liFor(n){
           const li = el('li');
-          li.appendChild(card(n, isKok));
+          li.appendChild(card(n));
           if (n.cocuklar && n.cocuklar.length && !collapsed[n.id]){
             const ul = el('ul');
-            n.cocuklar.forEach(function(c){ ul.appendChild(liFor(c, false)); });
+            n.cocuklar.forEach(function(c){ ul.appendChild(liFor(c)); });
             li.appendChild(ul);
           }
           return li;
         }
 
+        // En üst yönetici (tek kök) varsa onu ayrı başlık kartına al; şemanın kökleri onun ekibi olur.
+        let kok = null, roots = orgVeri;
+        if (orgVeri.length === 1 && orgVeri[0].cocuklar && orgVeri[0].cocuklar.length){ kok = orgVeri[0]; roots = kok.cocuklar; }
+
+        // Ekrana sığması için: ekibi olan tüm düğümler varsayılan KAPALI (yalnızca yöneticiler görünür).
+        (function katla(list){ list.forEach(function(n){ if (n.cocuklar && n.cocuklar.length){ collapsed[n.id] = true; katla(n.cocuklar); } }); })(roots);
+
+        function kokCiz(){
+          kokHost.textContent = '';
+          if (!kok) return;
+          const c = el('div', 'oc-kokcard');
+          c.style.setProperty('--c1', KOK[0]); c.style.setProperty('--c2', KOK[1]); c.style.setProperty('--sh', KOK[1] + '99');
+          c.appendChild(avatar(kok, 'oc-av'));
+          const info = el('div', 'kk-info');
+          const nm = el('div', 'kk-nm'); nm.textContent = ((kok.ad || '') + ' ' + (kok.soyad || '')).trim(); info.appendChild(nm);
+          if (kok.unvan){ const t = el('div', 'kk-ti'); t.textContent = kok.unvan; info.appendChild(t); }
+          c.appendChild(info);
+          const b = el('div', 'kk-badge'); b.textContent = 'En Üst Yönetici'; c.appendChild(b);
+          if (profilUrl(kok)){ c.onclick = function(){ git(kok); }; } else { c.style.cursor = 'default'; }
+          kokHost.appendChild(c);
+        }
+
         function ciz(){
           host.textContent = '';
           const ul = el('ul');
-          orgVeri.forEach(function(k){ ul.appendChild(liFor(k, true)); });
+          roots.forEach(function(r){ ul.appendChild(liFor(r)); });
           host.appendChild(ul);
         }
+        kokCiz();
         ciz();
 
         window.orgTumunuAc = function(){ for (const k in collapsed) delete collapsed[k]; ciz(); };
-        window.orgTumunuKapat = function(){ (function rec(list, d){ list.forEach(function(n){ if (d >= 1 && n.cocuklar && n.cocuklar.length) collapsed[n.id] = true; rec(n.cocuklar || [], d + 1); }); })(orgVeri, 0); ciz(); };
-
-        // ── Detay çekmecesi ──
-        const bg = document.getElementById('ocDrawerBg'), dr = document.getElementById('ocDrawer');
-        window.ocKapat = function(){ bg.classList.remove('open'); dr.classList.remove('open'); dr.setAttribute('aria-hidden', 'true'); };
-        document.addEventListener('keydown', function(e){ if (e.key === 'Escape') ocKapat(); });
-
-        function kv(k, val, href, blank){
-          const row = el('div', 'oc-kv'); const kk = el('span', 'k'); kk.textContent = k; row.appendChild(kk);
-          if (href){ const a = document.createElement('a'); a.href = href; a.textContent = val; if (blank) a.target = '_blank'; row.appendChild(a); }
-          else { const s = document.createElement('span'); s.textContent = val; row.appendChild(s); }
-          return row;
-        }
-        function sosyalUrl(t, v){
-          v = String(v).trim(); const bare = v.replace(/^@/, '').replace(/^https?:\/\//, '');
-          if (v.startsWith('http') && t !== 'whatsapp') return v;
-          switch (t){
-            case 'instagram': return 'https://instagram.com/' + bare.replace(/^instagram\.com\//, '');
-            case 'twitter':   return 'https://x.com/' + bare.replace(/^(x|twitter)\.com\//, '');
-            case 'tiktok':    return 'https://tiktok.com/@' + bare.replace(/^tiktok\.com\/@?/, '');
-            case 'youtube':   return 'https://youtube.com/' + bare;
-            case 'whatsapp':  return 'https://wa.me/' + v.replace(/\D/g, '');
-            default:          return 'https://' + bare;
-          }
-        }
-
-        window.ocGoster = function(n, pair){
-          const head = document.getElementById('ocDHead');
-          head.style.setProperty('--dc1', pair[0]); head.style.setProperty('--dc2', pair[1]);
-          const avHost = document.getElementById('ocDAv'); avHost.textContent = ''; avHost.appendChild(avatar(n, 'oc-dav'));
-          document.getElementById('ocDNm').textContent = ((n.ad || '') + ' ' + (n.soyad || '')).trim();
-          document.getElementById('ocDTi').textContent = n.unvan || '';
-          const chips = document.getElementById('ocDChips'); chips.textContent = '';
-          if (n.departman){ const c = el('span', 'oc-chip'); c.textContent = n.departman; chips.appendChild(c); }
-          const rc = el('span', 'oc-chip'); rc.textContent = n.ekip_yoneticisi ? 'Ekip Yöneticisi' : 'Çalışan'; chips.appendChild(rc);
-
-          const body = document.getElementById('ocDBody'); body.textContent = '';
-          const stat = el('div', 'oc-stat');
-          const b1 = el('div', 'box'); b1.innerHTML = '<div class="n">' + (n.kendiZiyaret || 0) + '</div><div class="l">Kendi ziyareti</div>'; stat.appendChild(b1);
-          if (n.cocuklar && n.cocuklar.length){ const b2 = el('div', 'box'); b2.innerHTML = '<div class="n">' + (n.ekipZiyaret || 0) + '</div><div class="l">Ekip ziyareti</div>'; stat.appendChild(b2); }
-          body.appendChild(stat);
-
-          const ilet = [];
-          if (n.telefon) ilet.push(kv('Telefon', n.telefon, 'tel:' + n.telefon));
-          if (n.email)   ilet.push(kv('E-posta', n.email, 'mailto:' + n.email));
-          if (ilet.length){ const t = el('div', 'oc-sec-t'); t.textContent = 'İletişim'; body.appendChild(t); ilet.forEach(function(r){ body.appendChild(r); }); }
-
-          const linkler = [['linkedin','LinkedIn'],['instagram','Instagram'],['twitter','X'],['youtube','YouTube'],['website','Web'],['whatsapp','WhatsApp'],['tiktok','TikTok'],['google_yorum_link','Google']];
-          const lc = el('div', 'oc-links'); let varmi = false;
-          linkler.forEach(function(p){ const v = n[p[0]]; if (v){ varmi = true; const a = document.createElement('a'); a.textContent = p[1]; a.href = sosyalUrl(p[0], v); a.target = '_blank'; lc.appendChild(a); } });
-          if (varmi){ const t = el('div', 'oc-sec-t'); t.textContent = 'Bağlantılar'; body.appendChild(t); body.appendChild(lc); }
-
-          if (FIRMA_SLUG && n.slug){ const a = document.createElement('a'); a.className = 'oc-profil'; a.href = '/' + FIRMA_SLUG + '/' + n.slug; a.target = '_blank'; a.textContent = 'Dijital Kartını Aç →'; body.appendChild(a); }
-
-          bg.classList.add('open'); dr.classList.add('open'); dr.setAttribute('aria-hidden', 'false');
-        };
+        window.orgTumunuKapat = function(){ (function katla(list){ list.forEach(function(n){ if (n.cocuklar && n.cocuklar.length){ collapsed[n.id] = true; katla(n.cocuklar); } }); })(roots); ciz(); };
       })();
     </script>
     <% } %>
