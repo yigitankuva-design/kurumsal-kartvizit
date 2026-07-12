@@ -1559,11 +1559,21 @@ function jsonAttr(obj) {
           </div>
           <div class="field">
             <label>Unvan</label>
-            <input type="text" name="unvan" id="f_unvan" placeholder="Satış Temsilcisi">
+            <input type="text" name="unvan" id="f_unvan" placeholder="Satış Temsilcisi" list="unvanOnerileri">
+            <datalist id="unvanOnerileri">
+              <option value="Tıbbi Mümessil"><option value="Satış Temsilcisi"><option value="Bölge Müdürü">
+              <option value="Ekip Yöneticisi"><option value="Ürün Müdürü"><option value="Satış Müdürü">
+              <option value="Pazarlama Müdürü"><option value="Muhasebe Müdürü"><option value="İnsan Kaynakları Müdürü">
+              <option value="Saha Direktörü"><option value="Genel Müdür">
+            </datalist>
           </div>
           <div class="field">
             <label>Departman</label>
-            <input type="text" name="departman" id="f_departman" placeholder="Satış">
+            <input type="text" name="departman" id="f_departman" placeholder="Satış" list="departmanOnerileri">
+            <datalist id="departmanOnerileri">
+              <option value="Satış"><option value="Saha"><option value="Pazarlama">
+              <option value="Muhasebe"><option value="İnsan Kaynakları"><option value="Ürün"><option value="Yönetim">
+            </datalist>
           </div>
           <div class="field">
             <label>Telefon</label>
@@ -1983,6 +1993,16 @@ function jsonAttr(obj) {
   const overlay = document.getElementById('panelOverlay');
   let editId = null;
 
+  function govdeKilitle() {
+    var barGenislik = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = barGenislik + 'px';
+    document.body.style.overflow = 'hidden';
+  }
+  function govdeSerbest() {
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
   function openSlide() {
     editId = null;
     document.getElementById('slideTitle').textContent = 'Yeni Çalışan';
@@ -1992,7 +2012,7 @@ function jsonAttr(obj) {
     document.getElementById('f_kvkk').required = true;
     clearForm();
     overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    govdeKilitle();
   }
 
   function openSlideEdit(c) {
@@ -2015,12 +2035,12 @@ function jsonAttr(obj) {
     const ekipKutu = document.getElementById('f_ekip_yoneticisi');
     if (ekipKutu) ekipKutu.checked = !!c.ekip_yoneticisi;
     overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    govdeKilitle();
   }
 
   function closeSlide() {
     overlay.classList.remove('open');
-    document.body.style.overflow = '';
+    govdeSerbest();
   }
 
   function closeSlideOutside(e) {
