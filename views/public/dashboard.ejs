@@ -661,9 +661,9 @@ function jsonAttr(obj) {
 
   <!-- TAB: ÇALIŞANLAR -->
   <% } else if (tab === 'calisanlar') { %>
-    <% const aramaMetni = (ara || '').toLowerCase().trim(); %>
+    <% const aramaMetni = (ara || '').toLocaleLowerCase('tr').trim(); %>
     <% const calisanlarFiltreli = aramaMetni
-         ? calisanlar.filter(c => (c.ad + ' ' + c.soyad + ' ' + (c.email || '')).toLowerCase().includes(aramaMetni))
+         ? calisanlar.filter(c => (c.ad || '').toLocaleLowerCase('tr').startsWith(aramaMetni) || (c.soyad || '').toLocaleLowerCase('tr').startsWith(aramaMetni))
          : calisanlar; %>
     <% const aktifCalisanlarTum = calisanlarFiltreli.filter(c => c.durum === 'aktif'); %>
     <% const pasifCalisanlar = calisanlarFiltreli.filter(c => c.durum === 'pasif'); %>
@@ -674,7 +674,7 @@ function jsonAttr(obj) {
 
     <form method="GET" action="/" style="margin-bottom:16px;display:flex;gap:8px;max-width:380px;align-items:center">
       <input type="hidden" name="tab" value="calisanlar">
-      <input type="text" name="ara" placeholder="İsim veya e-posta ara..." value="<%= ara || '' %>"
+      <input type="text" name="ara" placeholder="İsim veya e-posta ara..." value="<%= ara || '' %>" oninput="aramaOtomatikGonder(this)"
              style="flex:1;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:var(--fs-sm);font-family:inherit">
       <button type="submit" class="btn btn-border btn-sm">Ara</button>
       <% if (ara) { %><a href="/?tab=calisanlar" class="btn btn-ghost btn-sm">Temizle</a><% } %>
@@ -1110,9 +1110,9 @@ function jsonAttr(obj) {
         <button type="submit" class="btn btn-gold">Ekle</button>
       </form>
     </div>
-    <% const eczaneAramaMetni = (ara || '').toLowerCase().trim(); %>
+    <% const eczaneAramaMetni = (ara || '').toLocaleLowerCase('tr').trim(); %>
     <% const eczanelerFiltreli = eczaneAramaMetni
-         ? eczaneler.filter(e => (e.ad + ' ' + (e.adres || '')).toLowerCase().includes(eczaneAramaMetni))
+         ? eczaneler.filter(e => (e.ad || '').toLocaleLowerCase('tr').startsWith(eczaneAramaMetni))
          : eczaneler; %>
     <% const aktifEczanelerTum = eczanelerFiltreli.filter(e => e.durum !== 'pasif').sort((a, b) => (b.okutma_sayisi || 0) - (a.okutma_sayisi || 0)); const pasifEczaneler = eczanelerFiltreli.filter(e => e.durum === 'pasif'); %>
     <% const ECZANE_SAYFA_BOYUTU = 20; %>
@@ -1784,6 +1784,12 @@ function jsonAttr(obj) {
   }
   function ecYonetimKapat() {
     document.getElementById('ecYonetimOverlay').classList.remove('open');
+  }
+
+  var _aramaZamanlayici = null;
+  function aramaOtomatikGonder(input) {
+    clearTimeout(_aramaZamanlayici);
+    _aramaZamanlayici = setTimeout(function () { input.form.submit(); }, 400);
   }
 
   function listeToggle(id, btnId, gosterMetin, gizleMetin) {
