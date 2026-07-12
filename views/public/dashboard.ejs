@@ -1005,94 +1005,114 @@ function jsonAttr(obj) {
       .icr-sosyal-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
       .icr-sosyal-item label{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:5px}
       .icr-sosyal-item .ikon-inline{color:var(--gold);flex-shrink:0}
+      .icr-section{margin-bottom:28px}
+      .icr-section-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+      .icr-section-title{font-size:15.5px;font-weight:700}
+      .icr-section-badge{font-size:10.5px;font-weight:600;color:var(--text-faint);background:var(--bg3);padding:3px 9px;border-radius:20px;text-transform:uppercase;letter-spacing:.03em}
     </style>
 
-    <div class="icr-grid">
-      <!-- Logo -->
-      <div class="table-wrap icr-card">
-        <div class="icr-head"><span class="icr-icon"><%- ikon('kamera', 17, '') %></span><span class="icr-title">Logo</span></div>
-        <div class="icr-sub">Panel ve raf kartı sayfalarında görünür</div>
-        <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
-          <div class="icr-upload-row" style="margin-bottom:12px">
-            <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" class="icr-logo-preview"><% } else { %>
-            <div class="icr-logo-preview" style="display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:10px">Yok</div>
-            <% } %>
-            <input type="file" name="logo" id="logoInput" accept="image/*" required>
-          </div>
-          <button type="submit" class="btn btn-gold" style="width:100%">Logoyu Yükle</button>
-        </form>
+    <!-- BÖLÜM: RAF KARTI İÇERİĞİ (eczane/müşteri tarafı) -->
+    <div class="icr-section">
+      <div class="icr-section-head">
+        <span class="icr-section-title">🏪 Raf Kartı İçeriği</span>
+        <span class="icr-section-badge">Eczane · Müşteri tarafı</span>
       </div>
-
-      <!-- Katalog PDF -->
-      <div class="table-wrap icr-card">
-        <div class="icr-head"><span class="icr-icon"><%- ikon('pano', 17, '') %></span><span class="icr-title">Ürün Kataloğu</span></div>
-        <div class="icr-sub">PDF — raf kartı sayfasında indirilebilir</div>
-        <div class="icr-status <%= firma.katalog_url ? 'dolu' : 'bos' %>">
-          <%- ikon(firma.katalog_url ? 'pano' : 'uyari', 14, '') %>
-          <% if (firma.katalog_url) { %><a href="<%= firma.katalog_url %>" target="_blank">Mevcut kataloğu görüntüle</a><% } else { %>Henüz yüklenmedi<% } %>
+      <div class="icr-grid">
+        <!-- Logo -->
+        <div class="table-wrap icr-card">
+          <div class="icr-head"><span class="icr-icon"><%- ikon('kamera', 17, '') %></span><span class="icr-title">Logo</span></div>
+          <div class="icr-sub">Panel ve raf kartı sayfalarında görünür</div>
+          <form method="POST" action="/kurumsal/logo" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
+            <div class="icr-upload-row" style="margin-bottom:12px">
+              <% if (firma.logo_url) { %><img src="<%= firma.logo_url %>" alt="" class="icr-logo-preview"><% } else { %>
+              <div class="icr-logo-preview" style="display:flex;align-items:center;justify-content:center;color:var(--text-faint);font-size:10px">Yok</div>
+              <% } %>
+              <input type="file" name="logo" id="logoInput" accept="image/*" required>
+            </div>
+            <button type="submit" class="btn btn-gold" style="width:100%">Logoyu Yükle</button>
+          </form>
         </div>
-        <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
-          <div class="icr-upload-row" style="margin-bottom:12px">
-            <input type="file" name="katalog" accept="application/pdf" required>
-          </div>
-          <button type="submit" class="btn btn-gold" style="width:100%">Kataloğu Yükle</button>
-        </form>
-      </div>
 
-      <!-- Eczacı Sayfası -->
-      <div class="table-wrap icr-card">
-        <div class="icr-head"><span class="icr-icon"><%- ikon('kullanici', 17, '') %></span><span class="icr-title">Eczacı Sayfası</span></div>
-        <div class="icr-sub">Eczacılara özel kampanya / eğitim içeriği</div>
-        <form method="POST" action="/kurumsal/eczaci-icerik" style="display:flex;flex-direction:column;gap:12px">
-          <div>
-            <span class="icr-field-label">Kampanya başlığı</span>
-            <input name="eczaci_baslik" placeholder="Örn. Kış Sezonu Vitamin Kampanyası" value="<%= firma.eczaci_baslik || '' %>">
+        <!-- Katalog PDF -->
+        <div class="table-wrap icr-card">
+          <div class="icr-head"><span class="icr-icon"><%- ikon('pano', 17, '') %></span><span class="icr-title">Ürün Kataloğu</span></div>
+          <div class="icr-sub">PDF — raf kartı sayfasında indirilebilir</div>
+          <div class="icr-status <%= firma.katalog_url ? 'dolu' : 'bos' %>">
+            <%- ikon(firma.katalog_url ? 'pano' : 'uyari', 14, '') %>
+            <% if (firma.katalog_url) { %><a href="<%= firma.katalog_url %>" target="_blank">Mevcut kataloğu görüntüle</a><% } else { %>Henüz yüklenmedi<% } %>
           </div>
-          <div>
-            <span class="icr-field-label">Kampanya / eğitim metni</span>
-            <textarea name="eczaci_metin" placeholder="Eczacılara gösterilecek açıklama metni" rows="4"><%= firma.eczaci_metin || '' %></textarea>
-          </div>
-          <div>
-            <span class="icr-field-label">YouTube video linki</span>
-            <input name="eczaci_video_url" placeholder="https://youtube.com/..." value="<%= firma.eczaci_video_url || '' %>">
-          </div>
-          <button type="submit" class="btn btn-gold">Kaydet</button>
-        </form>
-      </div>
-
-      <!-- Eğitim Dokümanı -->
-      <div class="table-wrap icr-card">
-        <div class="icr-head"><span class="icr-icon"><%- ikon('pano', 17, '') %></span><span class="icr-title">Eğitim Dokümanı</span></div>
-        <div class="icr-sub">PDF — eczacı sayfasında indirilebilir</div>
-        <div class="icr-status <%= firma.eczaci_pdf_url ? 'dolu' : 'bos' %>">
-          <%- ikon(firma.eczaci_pdf_url ? 'pano' : 'uyari', 14, '') %>
-          <% if (firma.eczaci_pdf_url) { %><a href="<%= firma.eczaci_pdf_url %>" target="_blank">Mevcut dokümanı görüntüle</a><% } else { %>Henüz yüklenmedi<% } %>
+          <form method="POST" action="/kurumsal/katalog" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
+            <div class="icr-upload-row" style="margin-bottom:12px">
+              <input type="file" name="katalog" accept="application/pdf" required>
+            </div>
+            <button type="submit" class="btn btn-gold" style="width:100%">Kataloğu Yükle</button>
+          </form>
         </div>
-        <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
-          <div class="icr-upload-row" style="margin-bottom:12px">
-            <input type="file" name="eczaci_pdf" accept="application/pdf" required>
-          </div>
-          <button type="submit" class="btn btn-gold" style="width:100%">Dokümanı Yükle</button>
-        </form>
+
+        <!-- Sosyal / Web Linkleri -->
+        <div class="table-wrap icr-card" style="grid-column:1/-1">
+          <div class="icr-head"><span class="icr-icon"><%- ikon('konum', 17, '') %></span><span class="icr-title">Web ve Sosyal Medya Linkleri</span></div>
+          <div class="icr-sub">Raf kartı sayfasında ikon olarak görünür</div>
+          <form method="POST" action="/kurumsal/icerik">
+            <div class="icr-sosyal-grid" style="margin-bottom:16px">
+              <div class="icr-sosyal-item"><label><%- ikon('konum', 14, '') %>Web sitesi</label><input name="website" placeholder="https://..." value="<%= firma.website || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>Instagram</label><input name="instagram" placeholder="kullaniciadi" value="<%= firma.instagram || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('kullanici', 14, '') %>LinkedIn</label><input name="linkedin" placeholder="şirket sayfası" value="<%= firma.linkedin || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('grafik', 14, '') %>Twitter / X</label><input name="twitter" placeholder="kullaniciadi" value="<%= firma.twitter || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>YouTube</label><input name="youtube" placeholder="kanal linki" value="<%= firma.youtube || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>TikTok</label><input name="tiktok" placeholder="kullaniciadi" value="<%= firma.tiktok || '' %>"></div>
+              <div class="icr-sosyal-item"><label><%- ikon('kullanici', 14, '') %>WhatsApp</label><input name="whatsapp" placeholder="+90 5xx xxx xx xx" value="<%= firma.whatsapp || '' %>"></div>
+            </div>
+            <button type="submit" class="btn btn-gold">Linkleri Kaydet</button>
+          </form>
+        </div>
       </div>
     </div>
 
-    <!-- Sosyal / Web Linkleri -->
-    <div class="table-wrap icr-card">
-      <div class="icr-head"><span class="icr-icon"><%- ikon('konum', 17, '') %></span><span class="icr-title">Web ve Sosyal Medya Linkleri</span></div>
-      <div class="icr-sub">Raf kartı sayfasında ikon olarak görünür</div>
-      <form method="POST" action="/kurumsal/icerik">
-        <div class="icr-sosyal-grid" style="margin-bottom:16px">
-          <div class="icr-sosyal-item"><label><%- ikon('konum', 14, '') %>Web sitesi</label><input name="website" placeholder="https://..." value="<%= firma.website || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>Instagram</label><input name="instagram" placeholder="kullaniciadi" value="<%= firma.instagram || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('kullanici', 14, '') %>LinkedIn</label><input name="linkedin" placeholder="şirket sayfası" value="<%= firma.linkedin || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('grafik', 14, '') %>Twitter / X</label><input name="twitter" placeholder="kullaniciadi" value="<%= firma.twitter || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>YouTube</label><input name="youtube" placeholder="kanal linki" value="<%= firma.youtube || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('kamera', 14, '') %>TikTok</label><input name="tiktok" placeholder="kullaniciadi" value="<%= firma.tiktok || '' %>"></div>
-          <div class="icr-sosyal-item"><label><%- ikon('kullanici', 14, '') %>WhatsApp</label><input name="whatsapp" placeholder="+90 5xx xxx xx xx" value="<%= firma.whatsapp || '' %>"></div>
+    <!-- BÖLÜM: ECZACI SAYFASI İÇERİĞİ (eczacı tarafı) -->
+    <div class="icr-section">
+      <div class="icr-section-head">
+        <span class="icr-section-title">💊 Eczacı Sayfası İçeriği</span>
+        <span class="icr-section-badge">Eczacı tarafı</span>
+      </div>
+      <div class="icr-grid">
+        <!-- Eczacı Sayfası -->
+        <div class="table-wrap icr-card">
+          <div class="icr-head"><span class="icr-icon"><%- ikon('kullanici', 17, '') %></span><span class="icr-title">Kampanya / Eğitim Metni</span></div>
+          <div class="icr-sub">Eczacılara özel kampanya / eğitim içeriği</div>
+          <form method="POST" action="/kurumsal/eczaci-icerik" style="display:flex;flex-direction:column;gap:12px">
+            <div>
+              <span class="icr-field-label">Kampanya başlığı</span>
+              <input name="eczaci_baslik" placeholder="Örn. Kış Sezonu Vitamin Kampanyası" value="<%= firma.eczaci_baslik || '' %>">
+            </div>
+            <div>
+              <span class="icr-field-label">Kampanya / eğitim metni</span>
+              <textarea name="eczaci_metin" placeholder="Eczacılara gösterilecek açıklama metni" rows="4"><%= firma.eczaci_metin || '' %></textarea>
+            </div>
+            <div>
+              <span class="icr-field-label">YouTube video linki</span>
+              <input name="eczaci_video_url" placeholder="https://youtube.com/..." value="<%= firma.eczaci_video_url || '' %>">
+            </div>
+            <button type="submit" class="btn btn-gold">Kaydet</button>
+          </form>
         </div>
-        <button type="submit" class="btn btn-gold">Linkleri Kaydet</button>
-      </form>
+
+        <!-- Eğitim Dokümanı -->
+        <div class="table-wrap icr-card">
+          <div class="icr-head"><span class="icr-icon"><%- ikon('pano', 17, '') %></span><span class="icr-title">Eğitim Dokümanı</span></div>
+          <div class="icr-sub">PDF — eczacı sayfasında indirilebilir</div>
+          <div class="icr-status <%= firma.eczaci_pdf_url ? 'dolu' : 'bos' %>">
+            <%- ikon(firma.eczaci_pdf_url ? 'pano' : 'uyari', 14, '') %>
+            <% if (firma.eczaci_pdf_url) { %><a href="<%= firma.eczaci_pdf_url %>" target="_blank">Mevcut dokümanı görüntüle</a><% } else { %>Henüz yüklenmedi<% } %>
+          </div>
+          <form method="POST" action="/kurumsal/eczaci-pdf" enctype="multipart/form-data" onsubmit="return formYukleniyorGoster(this, 'Yükleniyor...')">
+            <div class="icr-upload-row" style="margin-bottom:12px">
+              <input type="file" name="eczaci_pdf" accept="application/pdf" required>
+            </div>
+            <button type="submit" class="btn btn-gold" style="width:100%">Dokümanı Yükle</button>
+          </form>
+        </div>
+      </div>
     </div>
 
   <!-- TAB: ÜRÜNLER -->
