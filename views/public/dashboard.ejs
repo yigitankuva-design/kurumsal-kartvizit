@@ -1925,7 +1925,7 @@ function jsonAttr(obj) {
   function hucreDeger(td) {
     if (!td) return '';
     var t = td.getAttribute('data-sirala'); if (t == null) t = td.textContent.trim();
-    var n = parseFloat(String(t).replace(/[^d.,-]/g, '').replace(/./g, '').replace(/,/g, '.'));
+    var n = parseFloat(String(t).replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(/,/g, '.'));
     return isNaN(n) ? String(t).toLocaleLowerCase('tr') : n;
   }
   function tabloSirala(th) {
