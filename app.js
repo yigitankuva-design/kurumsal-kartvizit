@@ -10,6 +10,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
+const { hiyerarsiAgaciKur, mumessilPerformansi } = require('./utils/sahaAnaliz');
 
 const authRoutes = require('./routes/auth');
 const panelRoutes = require('./routes/panel');
@@ -228,7 +229,7 @@ app.get('/', async (req, res) => {
     const pasifSayisi = calisanlar.filter(c => c.durum === 'pasif').length;
     const toplamGoruntulenme = calisanlar.reduce((sum, c) => sum + (c.goruntuleme_sayisi || 0), 0);
     let tab = req.query.tab || 'calisanlar';
-    const CALISAN_ROLU_TABLARI = ['calisanlar', 'istatistik', 'excel', 'genel', 'analytics', 'gecmis'];
+    const CALISAN_ROLU_TABLARI = ['calisanlar', 'istatistik', 'excel', 'genel', 'analytics', 'gecmis', 'organizasyon'];
     const SAHA_ROLU_TABLARI = ['icerik', 'urunler', 'indirim', 'raf', 'saha', 'genel', 'analytics', 'gecmis'];
     if (req.session.rol === 'sadece_calisan' && !CALISAN_ROLU_TABLARI.includes(tab)) tab = 'calisanlar';
     if (req.session.rol === 'sadece_saha' && !SAHA_ROLU_TABLARI.includes(tab)) tab = 'genel';
@@ -250,6 +251,21 @@ app.get('/', async (req, res) => {
         [req.session.firmaId]
       );
       kullanicilarListesi = kullanicilarSonuc.rows;
+    }
+
+    let hiyerarsiAgaci = [];
+    if (tab === 'organizasyon' && calisanlar.length) {
+      const ziyaretSayiResult = await pool.query(
+        `SELECT z.calisan_id, COUNT(*) AS sayi
+         FROM ziyaretler z JOIN calisanlar c ON c.id = z.calisan_id
+         WHERE c.firma_id = $1 AND z.created_at >= NOW() - INTERVAL '90 days'
+         GROUP BY z.calisan_id`,
+        [req.session.firmaId]
+      );
+      const ziyaretMap = {};
+      ziyaretSayiResult.rows.forEach(r => { ziyaretMap[r.calisan_id] = Number(r.sayi); });
+      const aktifCalisanlar = calisanlar.filter(c => c.durum === 'aktif');
+      hiyerarsiAgaci = hiyerarsiAgaciKur(aktifCalisanlar, ziyaretMap);
     }
 
     let genelBakis = null;
@@ -471,7 +487,7 @@ app.get('/', async (req, res) => {
     res.render('public/dashboard', {
       layout: false, firma, calisanlar, aktifSayisi, pasifSayisi,
       toplamGoruntulenme, tab, linkAnalytics, eczaneler, sahaIstatistik, urunler: urunlerSonuc.rows,
-      indirimIstatistik, ara, sayfa, islemGecmisi, genelBakis, kullanicilarListesi, rol: req.session.rol
+      indirimIstatistik, ara, sayfa, islemGecmisi, genelBakis, kullanicilarListesi, hiyerarsiAgaci, rol: req.session.rol
     });
   } catch (err) {
     console.error(err);
