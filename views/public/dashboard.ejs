@@ -1603,10 +1603,11 @@ function jsonAttr(obj) {
             <label>Bağlı Olduğu Yönetici</label>
             <select name="amiri_id" id="f_amiri_id">
               <option value="">— Doğrudan firma sahibine bağlı —</option>
-              <% calisanlar.forEach(diger => { %>
-                <option value="<%= diger.id %>" data-calisan-id="<%= diger.id %>"><%= diger.ad %> <%= diger.soyad %></option>
+              <% calisanlar.filter(diger => diger.ekip_yoneticisi).forEach(diger => { %>
+                <option value="<%= diger.id %>" data-calisan-id="<%= diger.id %>"><%= diger.ad %> <%= diger.soyad %><%= diger.unvan ? ' — ' + diger.unvan : '' %></option>
               <% }); %>
             </select>
+            <div style="font-size:11px;color:var(--text-faint);margin-top:4px">Sadece "Ekip yöneticisi" işaretli çalışanlar burada listelenir.</div>
           </div>
           <div class="field">
             <label style="display:flex;align-items:center;gap:6px">
