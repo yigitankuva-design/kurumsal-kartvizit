@@ -131,11 +131,13 @@ describe('Kurumsal panel uçları', () => {
     expect(res.text).not.toContain('Raf Kartları');
   });
 
-  test('veri yokken saha istatistikleri sekmesi boş durum mesajı gösterir', async () => {
+  test('veri yokken saha istatistikleri sekmesi KPI şeridi + akıllı soru chipleri gösterir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.get('/?tab=saha');
     expect(res.statusCode).toBe(200);
-    expect(res.text).toContain('Henüz veri yok');
+    // Yeni tasarım: veri olmasa da KPI şeridi ve akıllı soru chip bar'ı görünür.
+    expect(res.text).toContain('Bu ay ziyaret');
+    expect(res.text).toContain('En çok ziyaret');
   });
 
   test('ziyaret/okutma verisi varken saha istatistikleri grafikleri gösterir', async () => {
@@ -155,29 +157,12 @@ describe('Kurumsal panel uçları', () => {
     const agent = kurumsalAgent;
     const res = await agent.get('/?tab=saha');
     expect(res.statusCode).toBe(200);
+    // Grafikler artık "Grafikler" chip'i altında (canvas gömülü render edilir).
     expect(res.text).toContain('chartGunluk');
-    expect(res.text).not.toContain('Henüz veri yok');
-    expect(res.text).toContain('Temsilci Ziyaret Notları');
-    // Not içeriği artık firma sahibine gösterilmiyor (sadece not olduğu bilgisi) — bkz. Hiyerarsi T9
+    // Not içeriği firma sahibine gösterilmez (gizlilik — bkz. Hiyerarsi T9); yeni tasarımda not bloğu tamamen kaldırıldı.
     expect(res.text).not.toContain('Eczacı stok yetersiz olduğunu söyledi');
-  });
-
-  test('İçerik Tıklama Dağılımı eczane bazlı detay tablosu gösterir', async () => {
-    const eczaneSonuc = await pool.query(
-      `INSERT INTO eczaneler (firma_id, ad, kod) VALUES ($1, 'Tiklama Detay Eczanesi', 'tiklamadetay1') RETURNING id`,
-      [kurumsalId]
-    );
-    await pool.query(
-      `INSERT INTO raf_tiklamalar (eczane_id, tip) VALUES ($1, 'katalog'), ($1, 'katalog'), ($1, 'instagram')`,
-      [eczaneSonuc.rows[0].id]
-    );
-    const agent = kurumsalAgent;
-    const res = await agent.get('/?tab=saha');
-    expect(res.statusCode).toBe(200);
-    expect(res.text).toContain('İçerik Tıklama Dağılımı — Eczane Bazlı Detay');
-    expect(res.text).toContain('Tiklama Detay Eczanesi');
-    expect(res.text).toContain('katalog');
-    expect(res.text).toContain('instagram');
+    // Akıllı soru chip bar'ı ve KPI şeridi mevcut.
+    expect(res.text).toContain('En aktif eczaneler');
   });
 
   test('basic firma dashboardında Saha İstatistikleri sekmesi görünmez', async () => {
@@ -206,7 +191,7 @@ describe('Kurumsal panel uçları', () => {
     expect(rows.length).toBeGreaterThan(1); // önceki testte eklenen ziyaret satırı dahil
   });
 
-  test('gelişmiş rapor Excel çıktısı 4 sayfa içerir ve doğru başlıklara sahiptir', async () => {
+  test('gelişmiş rapor Excel çıktısı Özet+Performans dahil 6 sayfa içerir ve doğru başlıklara sahiptir', async () => {
     const agent = kurumsalAgent;
     const res = await agent.get('/kurumsal/rapor-excel').buffer(true).parse((res, cb) => {
       res.setEncoding('binary');
@@ -219,7 +204,7 @@ describe('Kurumsal panel uçları', () => {
     const wb = new ExcelJS.Workbook();
     await wb.xlsx.load(res.body);
     const sayfaAdlari = wb.worksheets.map(ws => ws.name);
-    expect(sayfaAdlari).toEqual(['Ziyaretler', 'Eczane Özeti', 'Temsilci Özeti', 'İndirim Kullanımı']);
+    expect(sayfaAdlari).toEqual(['Özet', 'Mümessil Performansı', 'Ziyaretler', 'Eczane Özeti', 'Temsilci Özeti', 'İndirim Kullanımı']);
     const ziyaretlerSayfa = wb.getWorksheet('Ziyaretler');
     expect(ziyaretlerSayfa.getRow(1).values.slice(1)).toEqual(['Temsilci', 'Eczane', 'Tarih', 'Not']);
   });
