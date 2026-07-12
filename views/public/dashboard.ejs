@@ -552,9 +552,24 @@ function jsonAttr(obj) {
       .org-un{color:var(--text-faint);font-weight:400;font-size:12.5px}
       .org-badge{margin-left:auto;font-size:12px;color:var(--text-faint);white-space:nowrap}
       .org-lvl{margin-left:16px;padding-left:10px;border-left:2px solid var(--border)}
+      .org-ekip-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;z-index:70;justify-content:flex-end}
+      .org-ekip-overlay.open{display:flex}
+      .org-ekip-panel{width:360px;max-width:92vw;height:100%;background:var(--surface);box-shadow:-6px 0 24px rgba(0,0,0,.18);padding:20px;overflow-y:auto}
+      .org-ekip-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+      .org-ekip-row:last-child{border-bottom:none}
     </style>
     <div class="table-wrap" style="padding:8px 10px;max-height:76vh;overflow:auto;background:var(--surface)">
       <div id="orgAgac"></div>
+    </div>
+
+    <div class="org-ekip-overlay" id="orgEkipOverlay" onclick="if (event.target === this) orgEkipKapat()">
+      <div class="org-ekip-panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <strong id="orgEkipBaslik" style="font-size:15px">Ekip</strong>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="orgEkipKapat()">✕</button>
+        </div>
+        <div id="orgEkipIcerik"></div>
+      </div>
     </div>
     <script>
       (function () {
@@ -571,17 +586,23 @@ function jsonAttr(obj) {
           host.textContent = '';
           function dugum(n, parent, renk) {
             const yaprak = !(n.cocuklar && n.cocuklar.length);
+            // ekipYaprak: alt eleman çıkmayan tüm çocukları mümessil (yaprak) — bunlar sağa açılır, aşağı değil
+            const ekipYaprak = !yaprak && n.cocuklar.every(function (c) { return !(c.cocuklar && c.cocuklar.length); });
             const row = mk('div', 'org-row' + (yaprak ? '' : ' dolu'));
-            row.appendChild(mk('span', 'org-tog', yaprak ? '' : (acik[n.id] ? '▾' : '▸')));
+            row.appendChild(mk('span', 'org-tog', yaprak ? '' : (ekipYaprak ? '›' : (acik[n.id] ? '▾' : '▸'))));
             const dot = mk('span', 'org-dot'); dot.style.background = renk; row.appendChild(dot);
             const orta = mk('span');
             orta.appendChild(mk('span', 'org-ad', (n.ad || '') + ' ' + (n.soyad || '')));
             if (n.unvan) orta.appendChild(mk('span', 'org-un', ' · ' + n.unvan));
             row.appendChild(orta);
             row.appendChild(mk('span', 'org-badge', yaprak ? ('🧍 ' + n.kendiZiyaret + ' ziyaret') : ('👥 ' + n.ekipZiyaret)));
-            if (!yaprak) row.onclick = function () { acik[n.id] = !acik[n.id]; ciz(); };
+            if (ekipYaprak) {
+              row.onclick = function () { orgEkipGoster(n, renk); };
+            } else if (!yaprak) {
+              row.onclick = function () { acik[n.id] = !acik[n.id]; ciz(); };
+            }
             parent.appendChild(row);
-            if (!yaprak && acik[n.id]) {
+            if (!yaprak && !ekipYaprak && acik[n.id]) {
               const box = mk('div', 'org-lvl'); box.style.borderLeftColor = renk;
               n.cocuklar.forEach(function (c, i) {
                 const cr = (renk === KOK) ? renkler[i % renkler.length] : renk;
@@ -596,6 +617,26 @@ function jsonAttr(obj) {
 
         window.orgTumunuAc = function () { (function a(list) { list.forEach(function (n) { acik[n.id] = true; a(n.cocuklar || []); }); })(orgVeri); ciz(); };
         window.orgTumunuKapat = function () { for (const k in acik) delete acik[k]; orgVeri.forEach(function (n) { acik[n.id] = true; }); ciz(); };
+
+        window.orgEkipGoster = function (n, renk) {
+          document.getElementById('orgEkipBaslik').textContent = (n.ad || '') + ' ' + (n.soyad || '') + ' — Ekibi';
+          const icerik = document.getElementById('orgEkipIcerik');
+          icerik.textContent = '';
+          n.cocuklar.slice().sort(function (a, b) { return (b.kendiZiyaret || 0) - (a.kendiZiyaret || 0); }).forEach(function (c) {
+            const row = mk('div', 'org-ekip-row');
+            const sol = mk('span');
+            const dot = mk('span', 'org-dot'); dot.style.background = renk; dot.style.marginRight = '8px'; dot.style.display = 'inline-block';
+            sol.appendChild(dot);
+            const isim = mk('span', 'org-ad', (c.ad || '') + ' ' + (c.soyad || ''));
+            sol.appendChild(isim);
+            if (c.unvan) sol.appendChild(mk('span', 'org-un', ' · ' + c.unvan));
+            row.appendChild(sol);
+            row.appendChild(mk('span', 'org-badge', '🧍 ' + (c.kendiZiyaret || 0) + ' ziyaret'));
+            icerik.appendChild(row);
+          });
+          document.getElementById('orgEkipOverlay').classList.add('open');
+        };
+        window.orgEkipKapat = function () { document.getElementById('orgEkipOverlay').classList.remove('open'); };
       })();
     </script>
     <% } %>
@@ -811,11 +852,25 @@ function jsonAttr(obj) {
 
   <!-- TAB: İSTATİSTİK -->
   <% } else if (tab === 'istatistik') { %>
+    <% const aramaMetniIst = (ara || '').toLocaleLowerCase('tr').trim(); %>
+    <% const calisanlarIstatistik = aramaMetniIst
+         ? calisanlar.filter(c => (c.ad || '').toLocaleLowerCase('tr').startsWith(aramaMetniIst) || (c.soyad || '').toLocaleLowerCase('tr').startsWith(aramaMetniIst))
+         : calisanlar; %>
+    <form method="GET" action="/" style="margin-bottom:16px;display:flex;gap:8px;max-width:380px;align-items:center">
+      <input type="hidden" name="tab" value="istatistik">
+      <input type="text" name="ara" placeholder="İsimle ara..." value="<%= ara || '' %>" oninput="aramaOtomatikGonder(this)"
+             style="flex:1;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:var(--fs-sm);font-family:inherit">
+      <button type="submit" class="btn btn-border btn-sm">Ara</button>
+      <% if (ara) { %><a href="/?tab=istatistik" class="btn btn-ghost btn-sm">Temizle</a><% } %>
+    </form>
+
+    <button type="button" id="istatistikListeBtn" class="btn btn-border btn-sm" style="margin-bottom:14px" onclick="listeToggle('istatistikListeKutu','istatistikListeBtn','Tüm Listeyi Göster','Listeyi Gizle')"><%= ara ? 'Listeyi Gizle' : 'Tüm Listeyi Göster' %></button>
+    <div id="istatistikListeKutu" style="display:<%= ara ? 'block' : 'none' %>">
     <div class="table-wrap">
       <table>
         <thead><tr><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Ad Soyad</th><th class="sortable" data-yon="desc" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Görüntülenme ▼</th><th>Durum</th><th>Kart</th></tr></thead>
         <tbody>
-          <% [...calisanlar].sort((a,b) => (b.goruntuleme_sayisi||0) - (a.goruntuleme_sayisi||0)).forEach(c => { %>
+          <% [...calisanlarIstatistik].sort((a,b) => (b.goruntuleme_sayisi||0) - (a.goruntuleme_sayisi||0)).forEach(c => { %>
           <tr>
             <td class="td-name"><%= c.ad %> <%= c.soyad %></td>
             <td style="font-weight:var(--fw-semibold);color:var(--gold)"><%= c.goruntuleme_sayisi || 0 %></td>
@@ -839,6 +894,7 @@ function jsonAttr(obj) {
           <% }); %>
         </tbody>
       </table>
+    </div>
     </div>
 
   <!-- TAB: ANALYTICS -->
@@ -1078,11 +1134,25 @@ function jsonAttr(obj) {
     </div>
 
     <% if (indirimIstatistik.eczaneBazli.length) { %>
+    <% const aramaMetniIndirim = (ara || '').toLocaleLowerCase('tr').trim(); %>
+    <% const indirimEczaneleri = aramaMetniIndirim
+         ? indirimIstatistik.eczaneBazli.filter(e => (e.ad || '').toLocaleLowerCase('tr').startsWith(aramaMetniIndirim))
+         : indirimIstatistik.eczaneBazli; %>
+    <form method="GET" action="/" style="margin-bottom:16px;display:flex;gap:8px;max-width:380px;align-items:center">
+      <input type="hidden" name="tab" value="indirim">
+      <input type="text" name="ara" placeholder="Eczane adı ara..." value="<%= ara || '' %>" oninput="aramaOtomatikGonder(this)"
+             style="flex:1;height:32px;padding:0 12px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:var(--fs-sm);font-family:inherit">
+      <button type="submit" class="btn btn-border btn-sm">Ara</button>
+      <% if (ara) { %><a href="/?tab=indirim" class="btn btn-ghost btn-sm">Temizle</a><% } %>
+    </form>
+
+    <button type="button" id="indirimListeBtn" class="btn btn-border btn-sm" style="margin-bottom:14px" onclick="listeToggle('indirimListeKutu','indirimListeBtn','Tüm Listeyi Göster','Listeyi Gizle')"><%= ara ? 'Listeyi Gizle' : 'Tüm Listeyi Göster' %></button>
+    <div id="indirimListeKutu" style="display:<%= ara ? 'block' : 'none' %>">
     <div class="table-wrap">
       <table>
         <thead><tr><th>Eczane</th><th class="sortable" onclick="tabloSirala(this)" style="cursor:pointer;user-select:none">Kullanılan indirim ⇅</th></tr></thead>
         <tbody>
-          <% indirimIstatistik.eczaneBazli.forEach(e => { %>
+          <% indirimEczaneleri.forEach(e => { %>
           <tr>
             <td class="td-name"><%= e.ad %></td>
             <td><%= e.kullanilanSayi %></td>
@@ -1090,6 +1160,7 @@ function jsonAttr(obj) {
           <% }); %>
         </tbody>
       </table>
+    </div>
     </div>
     <% } else { %>
     <div class="table-wrap">
@@ -1245,9 +1316,9 @@ function jsonAttr(obj) {
     <!-- AKILLI SORU CHIP BAR -->
     <div class="table-wrap" style="padding:12px 16px;margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
       <% const chipler = [
-        ['1','⭐ En çok ziyaret'], ['2','⚠️ 60+ gün geride'], ['3','📉 Bu ay ziyaretsiz'],
+        ['1','⭐ En çok ziyaret'],
         ['4','🏆 En aktif eczaneler'], ['5','💊 En çok ürün'], ['6','🪪 Kartı eksik'],
-        ['7','🗺️ Bölge performansı'], ['8','🎁 İndirim özeti'], ['9','📊 Grafikler']
+        ['7','🗺️ Bölge performansı'], ['9','📊 Grafikler']
       ]; %>
       <% chipler.forEach(([no, etiket], i) => { %>
         <button class="soru-chip <%= i === 0 ? 'active' : '' %>" data-soru="<%= no %>" onclick="soruGoster('<%= no %>')"><%= etiket %></button>
@@ -1263,31 +1334,6 @@ function jsonAttr(obj) {
           <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret30 %></td><td><%= r.ziyaret90 %></td>
             <td><%= r.durum === 'yildiz' ? '⭐ Yıldız' : r.durum === 'geride' ? '⚠️ Geride' : '—' %></td></tr>
           <% }) %>
-        </tbody>
-      </table></div>
-    </div>
-    <!-- 2: 60+ gün geride -->
-    <div class="soru-rapor" data-soru="2" style="display:none">
-      <div class="table-wrap"><table>
-        <thead><tr><th>Mümessil</th><th>Son ziyaret</th></tr></thead>
-        <tbody>
-          <% perf.filter(r => r.durum === 'geride').forEach(r => { %>
-          <tr><td style="color:var(--danger)"><%= r.ad %> <%= r.soyad %></td>
-            <td><%= r.sonZiyaret ? new Date(r.sonZiyaret).toLocaleDateString('tr-TR') : 'Hiç ziyaret yok' %></td></tr>
-          <% }) %>
-          <% if (!perf.filter(r => r.durum === 'geride').length) { %><tr><td colspan="2">Geride mümessil yok 👍</td></tr><% } %>
-        </tbody>
-      </table></div>
-    </div>
-    <!-- 3: Bu ay ziyaretsiz -->
-    <div class="soru-rapor" data-soru="3" style="display:none">
-      <div class="table-wrap"><table>
-        <thead><tr><th>Mümessil</th><th>Son 90g ziyaret</th></tr></thead>
-        <tbody>
-          <% perf.filter(r => r.ziyaret30 === 0).forEach(r => { %>
-          <tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ziyaret90 %></td></tr>
-          <% }) %>
-          <% if (!perf.filter(r => r.ziyaret30 === 0).length) { %><tr><td colspan="2">Herkes bu ay ziyaret yapmış 👍</td></tr><% } %>
         </tbody>
       </table></div>
     </div>
@@ -1332,14 +1378,6 @@ function jsonAttr(obj) {
           <% (AS.bolgePerformans || []).forEach(r => { %><tr><td><%= r.ad %> <%= r.soyad %></td><td><%= r.ekipZiyaret %></td></tr><% }) %>
         </tbody>
       </table></div>
-    </div>
-    <!-- 8: İndirim özeti -->
-    <div class="soru-rapor" data-soru="8" style="display:none">
-      <div class="stat-row" style="grid-template-columns:repeat(3,1fr)">
-        <div class="stat-card"><div class="stat-card-n"><%= AS.indirimOzeti ? AS.indirimOzeti.uretilen : 0 %></div><div class="stat-card-l">Üretilen kod</div></div>
-        <div class="stat-card"><div class="stat-card-n"><%= AS.indirimOzeti ? AS.indirimOzeti.kullanilan : 0 %></div><div class="stat-card-l">Kullanılan</div></div>
-        <div class="stat-card"><div class="stat-card-n">%<%= AS.indirimOzeti ? AS.indirimOzeti.oran : 0 %></div><div class="stat-card-l">Dönüşüm</div></div>
-      </div>
     </div>
     <!-- 9: Grafikler -->
     <div class="soru-rapor" data-soru="9" style="display:none">
