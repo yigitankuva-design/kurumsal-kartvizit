@@ -380,10 +380,11 @@ function ikon(isim, boyut, sinif) {
 
 var tabGruplari = {
   genel: ['genel'],
-  calisanlar: ['calisanlar', 'istatistik', 'excel', 'kullanicilar'],
+  calisanlar: ['calisanlar', 'excel', 'kullanicilar'],
   eczane: ['raf', 'indirim'],
   icerik: ['icerik', 'urunler'],
-  saha: ['saha', 'analytics', 'gecmis']
+  istatistik: ['istatistik', 'saha'],
+  saha: ['analytics', 'gecmis']
 };
 function tabGrubuBul(aktifTab) {
   for (var grup in tabGruplari) {
@@ -400,6 +401,7 @@ var grupEtiketleri = {
   calisanlar: 'Personel Yönetim Ağı',
   eczane: 'Eczane Yönetim Ağı',
   icerik: 'İçerik Yönetim',
+  istatistik: 'İstatistikler',
   saha: 'Saha Yönetim Ağı'
 };
 
@@ -425,7 +427,15 @@ function jsonAttr(obj) {
       <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Yönetim Ağı</a>
       <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
       <% } %>
-      <a href="/?tab=<%= firma.paket === 'kurumsal' ? 'saha' : 'analytics' %>" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
+      <a href="/?tab=analytics" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
+
+      <div class="sidebar-group-label">İstatistikler</div>
+      <% if (rol !== 'sadece_saha') { %>
+      <a href="/?tab=istatistik" class="sidebar-item <%= tab === 'istatistik' ? 'active' : '' %>"><%- ikon('grafik') %> Personel İstatistikleri</a>
+      <% } %>
+      <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
+      <a href="/?tab=saha" class="sidebar-item <%= tab === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Eczane İstatistikleri</a>
+      <% } %>
     </nav>
     <div class="sidebar-foot">
       <div class="sidebar-user-dot"><%= firma.ad.slice(0, 2).toUpperCase() %></div>
@@ -503,11 +513,10 @@ function jsonAttr(obj) {
   <% } %>
 
   <!-- SUB TABS -->
-  <% if (aktifGrup !== 'genel' && tab !== 'home') { %>
+  <% if (aktifGrup !== 'genel' && aktifGrup !== 'istatistik' && tab !== 'home') { %>
   <div class="dash-tabs">
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
-    <a href="/?tab=istatistik" class="dash-tab <%= tab === 'istatistik' ? 'active' : '' %>">İstatistik</a>
     <a href="/?tab=organizasyon" class="dash-tab <%= tab === 'organizasyon' ? 'active' : '' %>">Organizasyon</a>
     <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
     <% if (!rol || rol === 'tam_yetkili') { %>
@@ -520,9 +529,6 @@ function jsonAttr(obj) {
     <a href="/?tab=icerik"  class="dash-tab <%= tab === 'icerik'  ? 'active' : '' %>">İçerik</a>
     <a href="/?tab=urunler" class="dash-tab <%= tab === 'urunler' ? 'active' : '' %>">Ürünler</a>
     <% } else if (aktifGrup === 'saha') { %>
-    <% if (firma.paket === 'kurumsal') { %>
-    <a href="/?tab=saha" class="dash-tab <%= tab === 'saha' ? 'active' : '' %>">Saha İstatistikleri</a>
-    <% } %>
     <a href="/?tab=analytics" class="dash-tab <%= tab === 'analytics' ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
