@@ -179,6 +179,16 @@
     /* ── MAIN LAYOUT ── */
     .dash-main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 64px; }
     .dash-main.dash-main--wide { max-width: 1680px; }
+    .ipucu { display: flex; align-items: flex-start; gap: 9px; background: var(--gold-dim); border: 1px solid var(--border-gold); border-radius: 10px; padding: 11px 15px; margin-bottom: 16px; font-size: 13px; color: var(--text); line-height: 1.5; }
+    .ipucu .ipucu-ikon { flex: 0 0 auto; font-size: 15px; line-height: 1.3; }
+    .ipucu b { color: var(--gold); }
+    .nk-intro { color: var(--text-muted); margin: 0 0 20px; font-size: 14px; line-height: 1.6; max-width: 70ch; }
+    .nk-list { display: flex; flex-direction: column; gap: 13px; }
+    .nk-adim { display: flex; gap: 14px; align-items: flex-start; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 15px 18px; }
+    .nk-no { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; background: var(--gold); color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 15px; }
+    .nk-adim .nk-bas { font-size: 15px; font-weight: 700; color: var(--text); }
+    .nk-adim p { margin: 5px 0 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
+    .nk-adim p b { color: var(--gold); font-weight: 700; }
 
     /* ── HEADER ── */
     .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
@@ -386,7 +396,8 @@ var tabGruplari = {
   icerik: ['icerik', 'urunler'],
   veriekle: ['excel'],
   istatistik: ['istatistik', 'saha'],
-  saha: ['analytics', 'gecmis']
+  saha: ['analytics', 'gecmis'],
+  yardim: ['yardim']
 };
 function tabGrubuBul(aktifTab) {
   for (var grup in tabGruplari) {
@@ -405,7 +416,8 @@ var grupEtiketleri = {
   icerik: 'İçerik Yönetim',
   veriekle: 'Veri Ekle',
   istatistik: 'İstatistikler',
-  saha: 'Saha Yönetim Ağı'
+  saha: 'Saha Yönetim Ağı',
+  yardim: 'Nasıl Kullanılır'
 };
 
 function jsonAttr(obj) {
@@ -448,6 +460,9 @@ function jsonAttr(obj) {
       <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
       <a href="/?tab=saha" class="sidebar-item <%= tab === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Eczane İstatistikleri</a>
       <% } %>
+
+      <div class="sidebar-group-label">Yardım</div>
+      <a href="/?tab=yardim" class="sidebar-item <%= aktifGrup === 'yardim' ? 'active' : '' %>"><span style="width:16px;display:inline-flex;justify-content:center;flex-shrink:0">❔</span> Nasıl Kullanılır?</a>
     </nav>
     <div class="sidebar-foot">
       <div class="sidebar-user-dot"><%= firma.ad.slice(0, 2).toUpperCase() %></div>
@@ -525,7 +540,7 @@ function jsonAttr(obj) {
   <% } %>
 
   <!-- SUB TABS -->
-  <% if (aktifGrup !== 'genel' && aktifGrup !== 'istatistik' && aktifGrup !== 'veriekle' && tab !== 'home') { %>
+  <% if (aktifGrup !== 'genel' && aktifGrup !== 'istatistik' && aktifGrup !== 'veriekle' && aktifGrup !== 'yardim' && tab !== 'home') { %>
   <div class="dash-tabs">
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
@@ -543,6 +558,55 @@ function jsonAttr(obj) {
     <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
   </div>
+  <% } %>
+
+  <!-- TAB: NASIL KULLANILIR -->
+  <% if (tab === 'yardim') { %>
+    <div class="table-wrap" style="padding:24px 24px 28px">
+      <h2 style="margin:0 0 6px;font-size:20px">Nasıl Kullanılır?</h2>
+      <p class="nk-intro">Sistemi ilk kez mi kullanıyorsun? Merak etme, çok basit. Aşağıdaki adımları sırayla yap; her adımda tam olarak nereye tıklayacağın yazıyor. Soldaki menü hep açık kalır, oradan istediğin yere geçebilirsin.</p>
+      <div class="nk-list">
+
+        <div class="nk-adim"><span class="nk-no">1</span><div>
+          <div class="nk-bas">Çalışanlarını ekle</div>
+          <p>Soldan <b>Personel Yönetim Ağı</b>'na tıkla. Sağ üstteki <b>+ Yeni Çalışan</b> düğmesiyle bir kişiyi ekle (ad, soyad, görev, telefon...). <br>Çok kişi varsa tek tek uğraşma: <b>Veri Ekle → Toplu Yükleme</b>'ye git, <b>Şablonu İndir</b>, Excel'i doldur, sonra <b>dosyayı seçip Yükle</b>.</p>
+        </div></div>
+
+        <div class="nk-adim"><span class="nk-no">2</span><div>
+          <div class="nk-bas">Kim kimin altında çalışıyor belirle</div>
+          <p><b>Personel Yönetim Ağı → Organizasyon</b>'a tıkla. Bir çalışanı düzenlerken <b>Amiri</b> kısmından bağlı olduğu yöneticiyi seç. Kişi bir ekibin başıysa <b>Ekip yöneticisi</b> kutusunu işaretle. Şirket şeması burada kendiliğinden çizilir.</p>
+        </div></div>
+
+        <% if (firma.paket === 'kurumsal') { %>
+        <div class="nk-adim"><span class="nk-no">3</span><div>
+          <div class="nk-bas">Eczaneleri ekle</div>
+          <p><b>Eczane Yönetim Ağı → Raf Kartları</b>'na git, <b>+ Eczane Ekle</b> ile ekle. Çok eczane varsa yine <b>Veri Ekle → Toplu Yükleme → Eczane Şablonu İndir</b> ile topluca yükle.</p>
+        </div></div>
+
+        <div class="nk-adim"><span class="nk-no">4</span><div>
+          <div class="nk-bas">Firmanın görsellerini yükle</div>
+          <p><b>Veri Ekle → İçerik Yönetim</b>'e git. Buradan firmanın <b>logosunu</b>, <b>kataloğunu (PDF)</b> ve <b>eczacı eğitim dokümanını (PDF)</b> yükle. Bunlar müşterinin gördüğü kartlarda görünür.</p>
+        </div></div>
+
+        <div class="nk-adim"><span class="nk-no">5</span><div>
+          <div class="nk-bas">Ürünlerini ekle</div>
+          <p><b>Veri Ekle → İçerik Yönetim → Ürünler</b>'e git, <b>+ Ürün Ekle</b> ile ürünü, fotoğrafını ve varsa broşürünü (PDF) ekle. Ürünler raf kartında listelenir.</p>
+        </div></div>
+
+        <div class="nk-adim"><span class="nk-no">6</span><div>
+          <div class="nk-bas">İndirim kampanyası aç (istersen)</div>
+          <p><b>Eczane Yönetim Ağı → İndirim</b>'e git. Kampanyayı aç, indirim yüzdesini yaz, <b>Kaydet</b>'e bas. Müşteri raf sayfasında indirim kodu alabilir.</p>
+        </div></div>
+        <% } %>
+
+        <div class="nk-adim"><span class="nk-no"><%= firma.paket === 'kurumsal' ? '7' : '3' %></span><div>
+          <div class="nk-bas">Sonuçları takip et</div>
+          <p><b>İstatistikler → Personel İstatistikleri</b>'nde çalışan kartlarının kaç kez görüntülendiğini görürsün.<% if (firma.paket === 'kurumsal') { %> <b>Eczane İstatistikleri</b>'nde saha ziyaretlerini izlersin.<% } %> Kimin ne değiştirdiğini <b>Saha Yönetim Ağı → İşlem Geçmişi</b>'nde bulursun.</p>
+        </div></div>
+
+      </div>
+      <p class="nk-intro" style="margin-top:22px;margin-bottom:0">Takıldığın bir yer olursa her ekranın en üstündeki <b>💡 ipucu</b> satırına bak — orada o sayfada ne yapman gerektiği kısaca yazıyor.</p>
+    </div>
   <% } %>
 
   <!-- TAB: ORGANİZASYON -->
@@ -817,6 +881,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: ÇALIŞANLAR -->
   <% } else if (tab === 'calisanlar') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Çalışanlarını buradan görürsün. Yeni eklemek için sağ üstteki <b>+ Yeni Çalışan</b>'a bas; bir çalışana tıklarsan bilgilerini açıp düzenlersin.</span></div>
     <% const aramaMetni = (ara || '').toLocaleLowerCase('tr').trim(); %>
     <% const calisanlarFiltreli = aramaMetni
          ? calisanlar.filter(c => (c.ad || '').toLocaleLowerCase('tr').startsWith(aramaMetni) || (c.soyad || '').toLocaleLowerCase('tr').startsWith(aramaMetni))
@@ -967,6 +1032,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: İSTATİSTİK -->
   <% } else if (tab === 'istatistik') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Çalışan kartlarının kaç kez görüntülendiğini ve performansını burada görürsün. Üstteki kutudan isimle arayabilirsin.</span></div>
     <% const aramaMetniIst = (ara || '').toLocaleLowerCase('tr').trim(); %>
     <% const calisanlarIstatistik = aramaMetniIst
          ? calisanlar.filter(c => (c.ad || '').toLocaleLowerCase('tr').startsWith(aramaMetniIst) || (c.soyad || '').toLocaleLowerCase('tr').startsWith(aramaMetniIst))
@@ -1038,6 +1104,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: EXCEL -->
   <% } else if (tab === 'excel') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Çok sayıda kaydı tek tek girmek yerine buradan topluca ekle: önce <b>Şablonu İndir</b>, Excel'i doldur, sonra <b>dosyayı seçip Yükle</b>. Çalışan ve eczane için ayrı şablon var.</span></div>
     <div class="excel-card">
       <h3>Excel ile toplu yükleme</h3>
       <p>Önce şablonu indirin, doldurun, ardından yükleyin. 100 çalışanı saniyeler içinde ekleyin.</p>
@@ -1104,6 +1171,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: KURUMSAL İÇERİK -->
   <% } else if (tab === 'icerik' && firma.paket === 'kurumsal') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Firmanın <b>logosu</b>, <b>kataloğu</b> ve <b>eczacı eğitim dokümanı</b>nı buradan yükle. Bunlar müşterinin gördüğü kartlarda görünür.</span></div>
     <style>
       .icr-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:16px}
       .icr-card{padding:20px}
@@ -1234,6 +1302,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: ÜRÜNLER -->
   <% } else if (tab === 'urunler' && firma.paket === 'kurumsal') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Ürünlerini buradan ekle (<b>+ Ürün Ekle</b>). Fotoğraf ve broşür (PDF) ekleyebilirsin; ürünler raf kartında listelenir.</span></div>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:560px">
       <h3 style="margin-bottom:12px">Yeni Ürün Ekle</h3>
       <form method="POST" action="/kurumsal/urunler" enctype="multipart/form-data" style="display:flex;flex-direction:column;gap:8px" onsubmit="return formYukleniyorGoster(this, 'Kaydediliyor...')">
@@ -1307,6 +1376,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: İNDİRİM -->
   <% } else if (tab === 'indirim' && firma.paket === 'kurumsal') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>İndirim kampanyanı buradan aç/kapat, yüzdesini yaz ve <b>Kaydet</b>'e bas. Müşteri raf sayfasında indirim kodu alabilir.</span></div>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:420px">
       <h3 style="margin-bottom:12px">İndirim Kampanyası</h3>
       <form method="POST" action="/kurumsal/indirim-ayar" style="display:flex;flex-direction:column;gap:10px">
@@ -1373,6 +1443,7 @@ function jsonAttr(obj) {
 
   <!-- TAB: RAF KARTLARI -->
   <% } else if (tab === 'raf' && firma.paket === 'kurumsal') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Eczaneleri buradan yönet. Yeni eklemek için <b>+ Eczane Ekle</b>; her eczanenin kendi kartı ve kodu olur. Toplu eklemek için Veri Ekle → Toplu Yükleme'yi kullan.</span></div>
     <div class="table-wrap" style="padding:20px;margin-bottom:16px;max-width:560px">
       <h3 style="margin-bottom:12px">Yeni Eczane Ekle</h3>
       <form method="POST" action="/kurumsal/eczane-ekle" style="display:flex;gap:8px;flex-wrap:wrap">
@@ -1496,6 +1567,7 @@ function jsonAttr(obj) {
   <!-- TAB: SAHA İSTATİSTİKLERİ -->
     </div>
   <% } else if (tab === 'saha' && firma.paket === 'kurumsal') { %>
+    <div class="ipucu"><span class="ipucu-ikon">💡</span><span>Saha ziyaret verileri: bu ay kaç ziyaret yapıldı, aktif mümessil oranı, eczane ziyaretleri burada. Mümessillerin sahadaki performansını takip et.</span></div>
     <% const k = sahaIstatistik.kpi || {}; const AS = sahaIstatistik.akilliSorular || {}; const perf = sahaIstatistik.performans || []; %>
     <!-- KPI ŞERİDİ -->
     <div class="stat-row" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
