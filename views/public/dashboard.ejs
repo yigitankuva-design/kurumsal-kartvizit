@@ -189,6 +189,8 @@
     .nk-adim .nk-bas { font-size: 15px; font-weight: 700; color: var(--text); }
     .nk-adim p { margin: 5px 0 0; color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
     .nk-adim p b { color: var(--gold); font-weight: 700; }
+    .nk-link { color: var(--gold); font-weight: 700; text-decoration: none; border-bottom: 1.5px solid var(--border-gold); white-space: nowrap; cursor: pointer; }
+    .nk-link:hover { border-bottom-color: var(--gold); background: var(--gold-dim); border-radius: 4px; }
 
     /* ── HEADER ── */
     .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
@@ -569,43 +571,43 @@ function jsonAttr(obj) {
 
         <div class="nk-adim"><span class="nk-no">1</span><div>
           <div class="nk-bas">Çalışanlarını ekle</div>
-          <p>Soldan <b>Personel Yönetim Ağı</b>'na tıkla. Sağ üstteki <b>+ Yeni Çalışan</b> düğmesiyle bir kişiyi ekle (ad, soyad, görev, telefon...). <br>Çok kişi varsa tek tek uğraşma: <b>Veri Ekle → Toplu Yükleme</b>'ye git, <b>Şablonu İndir</b>, Excel'i doldur, sonra <b>dosyayı seçip Yükle</b>.</p>
+          <p>Soldan <a class="nk-link" href="/?tab=calisanlar">Personel Yönetim Ağı</a>'na git. Sağ üstteki <b>+ Yeni Çalışan</b> düğmesiyle bir kişiyi ekle (ad, soyad, görev, telefon...). <br>Çok kişi varsa tek tek uğraşma: <a class="nk-link" href="/?tab=excel">Veri Ekle → Toplu Yükleme</a>'ye git, <b>Şablonu İndir</b>, Excel'i doldur, sonra <b>dosyayı seçip Yükle</b>.</p>
         </div></div>
 
         <div class="nk-adim"><span class="nk-no">2</span><div>
           <div class="nk-bas">Kim kimin altında çalışıyor belirle</div>
-          <p><b>Personel Yönetim Ağı → Organizasyon</b>'a tıkla. Bir çalışanı düzenlerken <b>Amiri</b> kısmından bağlı olduğu yöneticiyi seç. Kişi bir ekibin başıysa <b>Ekip yöneticisi</b> kutusunu işaretle. Şirket şeması burada kendiliğinden çizilir.</p>
+          <p><a class="nk-link" href="/?tab=organizasyon">Personel Yönetim Ağı → Organizasyon</a>'a git. Bir çalışanı düzenlerken <b>Amiri</b> kısmından bağlı olduğu yöneticiyi seç. Kişi bir ekibin başıysa <b>Ekip yöneticisi</b> kutusunu işaretle. Şirket şeması burada kendiliğinden çizilir.</p>
         </div></div>
 
         <% if (firma.paket === 'kurumsal') { %>
         <div class="nk-adim"><span class="nk-no">3</span><div>
           <div class="nk-bas">Eczaneleri ekle</div>
-          <p><b>Eczane Yönetim Ağı → Raf Kartları</b>'na git, <b>+ Eczane Ekle</b> ile ekle. Çok eczane varsa yine <b>Veri Ekle → Toplu Yükleme → Eczane Şablonu İndir</b> ile topluca yükle.</p>
+          <p><a class="nk-link" href="/?tab=raf">Eczane Yönetim Ağı → Raf Kartları</a>'na git, <b>+ Eczane Ekle</b> ile ekle. Çok eczane varsa yine <a class="nk-link" href="/?tab=excel">Veri Ekle → Toplu Yükleme</a>'den <b>Eczane Şablonu</b> ile topluca yükle.</p>
         </div></div>
 
         <div class="nk-adim"><span class="nk-no">4</span><div>
           <div class="nk-bas">Firmanın görsellerini yükle</div>
-          <p><b>Veri Ekle → İçerik Yönetim</b>'e git. Buradan firmanın <b>logosunu</b>, <b>kataloğunu (PDF)</b> ve <b>eczacı eğitim dokümanını (PDF)</b> yükle. Bunlar müşterinin gördüğü kartlarda görünür.</p>
+          <p><a class="nk-link" href="/?tab=icerik">Veri Ekle → İçerik Yönetim</a>'e git. Buradan firmanın <b>logosunu</b>, <b>kataloğunu (PDF)</b> ve <b>eczacı eğitim dokümanını (PDF)</b> yükle. Bunlar müşterinin gördüğü kartlarda görünür.</p>
         </div></div>
 
         <div class="nk-adim"><span class="nk-no">5</span><div>
           <div class="nk-bas">Ürünlerini ekle</div>
-          <p><b>Veri Ekle → İçerik Yönetim → Ürünler</b>'e git, <b>+ Ürün Ekle</b> ile ürünü, fotoğrafını ve varsa broşürünü (PDF) ekle. Ürünler raf kartında listelenir.</p>
+          <p><a class="nk-link" href="/?tab=urunler">Veri Ekle → İçerik Yönetim → Ürünler</a>'e git, <b>+ Ürün Ekle</b> ile ürünü, fotoğrafını ve varsa broşürünü (PDF) ekle. Ürünler raf kartında listelenir.</p>
         </div></div>
 
         <div class="nk-adim"><span class="nk-no">6</span><div>
           <div class="nk-bas">İndirim kampanyası aç (istersen)</div>
-          <p><b>Eczane Yönetim Ağı → İndirim</b>'e git. Kampanyayı aç, indirim yüzdesini yaz, <b>Kaydet</b>'e bas. Müşteri raf sayfasında indirim kodu alabilir.</p>
+          <p><a class="nk-link" href="/?tab=indirim">Eczane Yönetim Ağı → İndirim</a>'e git. Kampanyayı aç, indirim yüzdesini yaz, <b>Kaydet</b>'e bas. Müşteri raf sayfasında indirim kodu alabilir.</p>
         </div></div>
         <% } %>
 
         <div class="nk-adim"><span class="nk-no"><%= firma.paket === 'kurumsal' ? '7' : '3' %></span><div>
           <div class="nk-bas">Sonuçları takip et</div>
-          <p><b>İstatistikler → Personel İstatistikleri</b>'nde çalışan kartlarının kaç kez görüntülendiğini görürsün.<% if (firma.paket === 'kurumsal') { %> <b>Eczane İstatistikleri</b>'nde saha ziyaretlerini izlersin.<% } %> Kimin ne değiştirdiğini <b>Saha Yönetim Ağı → İşlem Geçmişi</b>'nde bulursun.</p>
+          <p><a class="nk-link" href="/?tab=istatistik">İstatistikler → Personel İstatistikleri</a>'nde çalışan kartlarının kaç kez görüntülendiğini görürsün.<% if (firma.paket === 'kurumsal') { %> <a class="nk-link" href="/?tab=saha">Eczane İstatistikleri</a>'nde saha ziyaretlerini izlersin.<% } %> Kimin ne değiştirdiğini <a class="nk-link" href="/?tab=gecmis">Saha Yönetim Ağı → İşlem Geçmişi</a>'nde bulursun.</p>
         </div></div>
 
       </div>
-      <p class="nk-intro" style="margin-top:22px;margin-bottom:0">Takıldığın bir yer olursa her ekranın en üstündeki <b>💡 ipucu</b> satırına bak — orada o sayfada ne yapman gerektiği kısaca yazıyor.</p>
+      <p class="nk-intro" style="margin-top:22px;margin-bottom:0">Yukarıda <b>altı çizili</b> yazılara tıklayınca doğrudan o sayfaya gidersin. Ayrıca her ekranın en üstündeki <b>💡 ipucu</b> satırına bakarsan, o sayfada ne yapman gerektiği kısaca yazıyor.</p>
     </div>
   <% } %>
 
