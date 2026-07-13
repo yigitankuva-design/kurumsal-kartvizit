@@ -178,6 +178,7 @@
 
     /* ── MAIN LAYOUT ── */
     .dash-main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 64px; }
+    .dash-main.dash-main--wide { max-width: 1680px; }
 
     /* ── HEADER ── */
     .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
@@ -494,7 +495,7 @@ function jsonAttr(obj) {
 <% } %>
 
 <!-- MAIN -->
-<div class="dash-main">
+<div class="dash-main <%= tab === 'organizasyon' ? 'dash-main--wide' : '' %>">
 
   <!-- ANA SAYFA (boş karşılama) -->
   <% if (tab === 'home') { %>
@@ -547,36 +548,37 @@ function jsonAttr(obj) {
       <span style="font-size:var(--fs-xs);color:var(--text-faint)">Bir yöneticiye tıkla → ekibi açılır · ekipte isim ara · yönetici üyeye tıkla → alt ekibine in · isme tıkla → profil sayfası</span>
     </div>
     <style>
-      .oc-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+      .oc-stats{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
       .oc-stat{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px;font-size:11.5px;color:var(--text-faint);font-weight:600}
       .oc-stat b{display:block;font-size:17px;color:var(--text);font-weight:800;line-height:1.05}
-      .oc-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 18px 22px}
-      .oc-av{border-radius:50%;object-fit:cover;display:grid;place-items:center;font-weight:750;color:#fff;
-        background:rgba(255,255,255,.20);border:2px solid rgba(255,255,255,.55);box-shadow:0 3px 10px rgba(0,0,0,.18);flex:0 0 auto}
-      .oc-kok{display:flex;justify-content:center;margin-bottom:18px}
-      .oc-kokcard{display:flex;align-items:center;gap:15px;min-width:300px;max-width:560px;cursor:pointer;color:#fff;
-        border-radius:18px;padding:16px 24px;background:linear-gradient(135deg,#e4c878,#a9822f);
-        box-shadow:0 20px 40px -22px rgba(140,100,30,.75),inset 0 1px 0 rgba(255,255,255,.4);
-        border:1px solid rgba(255,255,255,.35);transition:transform .14s ease,box-shadow .14s ease}
-      .oc-kokcard:hover{transform:translateY(-2px);box-shadow:0 26px 48px -22px rgba(140,100,30,.8),inset 0 1px 0 rgba(255,255,255,.5)}
-      .oc-kokcard .oc-av{width:58px;height:58px;font-size:19px}
-      .oc-kokcard .kk-nm{font-size:17px;font-weight:800;letter-spacing:-.01em}
-      .oc-kokcard .kk-ti{font-size:12.5px;color:rgba(255,255,255,.92);margin-top:1px}
-      .oc-kokcard .kk-badge{margin-left:auto;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;
-        background:rgba(255,255,255,.92);color:#8a6a24;padding:5px 11px;border-radius:999px}
-      .oc-mgrrow{display:flex;flex-wrap:wrap;gap:14px;justify-content:center}
-      .oc-mgr{position:relative;width:186px;border-radius:18px;padding:16px 13px 14px;color:#fff;cursor:pointer;text-align:center;
-        background:linear-gradient(158deg,var(--c1),var(--c2));border:1px solid rgba(255,255,255,.30);
-        box-shadow:0 18px 34px -20px var(--sh),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .14s ease,box-shadow .14s ease}
-      .oc-mgr:hover{transform:translateY(-3px);box-shadow:0 26px 44px -20px var(--sh),inset 0 1px 0 rgba(255,255,255,.5)}
-      .oc-mgr.active{outline:2px solid rgba(255,255,255,.9);outline-offset:3px}
-      .oc-mgr .badge{position:absolute;top:-10px;right:12px;font-size:8.5px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;
-        padding:4px 9px;border-radius:999px;background:#fff;color:#333;box-shadow:0 4px 10px -3px rgba(0,0,0,.35)}
-      .oc-mgr .oc-av{width:54px;height:54px;font-size:17px;margin:0 auto 8px}
-      .oc-mgr .nm{font-size:13.5px;font-weight:750;line-height:1.2}
-      .oc-mgr .ti{font-size:10.5px;color:rgba(255,255,255,.9);margin-top:1px}
-      .oc-mgr .sz{margin-top:9px;font-size:11px;font-weight:750;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.35);
-        border-radius:999px;padding:3px 11px;display:inline-block}
+      .oc-wrap{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 20px 24px}
+      .oc-av{border-radius:50%;object-fit:cover;display:grid;place-items:center;font-weight:750;color:#fff;flex:0 0 auto}
+      /* Kök — tam genişlik neon banner */
+      .oc-kok{margin-bottom:16px}
+      .oc-kokcard{position:relative;overflow:hidden;display:flex;align-items:center;gap:16px;width:100%;cursor:pointer;color:#fff;
+        border-radius:18px;padding:18px 24px;background:linear-gradient(158deg,#241c0e,#16120a);
+        border:1px solid rgba(234,179,8,.38);box-shadow:0 20px 46px -24px rgba(234,179,8,.5);transition:transform .14s ease}
+      .oc-kokcard:hover{transform:translateY(-2px)}
+      .oc-kokcard::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#f59e0b,#fbbf24,#f97316)}
+      .oc-kokcard .oc-av{width:62px;height:62px;font-size:20px;background:#16120a;border:2px solid #fbbf24;box-shadow:0 0 18px -3px #fbbf24}
+      .oc-kokcard .kk-nm{font-size:18px;font-weight:800;letter-spacing:-.01em}
+      .oc-kokcard .kk-gorev{margin-left:auto;flex:0 0 auto;font-size:11px;font-weight:800;background:#fbbf24;color:#1a1205;
+        padding:6px 14px;border-radius:999px;box-shadow:0 0 14px -3px #fbbf24;white-space:nowrap}
+      /* Yönetici kartları — genişliği dolduran yatay neon kutular */
+      .oc-mgrrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:16px}
+      .oc-mgr{position:relative;overflow:hidden;display:flex;align-items:center;gap:14px;cursor:pointer;color:#fff;
+        border-radius:16px;padding:16px 16px 16px 22px;background:linear-gradient(158deg,#1b2131,#12161f);
+        border:1px solid rgba(255,255,255,.09);box-shadow:0 18px 40px -22px var(--c2);transition:transform .14s ease,box-shadow .14s ease}
+      .oc-mgr::before{content:'';position:absolute;top:0;bottom:0;left:0;width:5px;background:linear-gradient(180deg,var(--c1),var(--c2),var(--c3))}
+      .oc-mgr:hover{transform:translateY(-3px);box-shadow:0 26px 50px -22px var(--c2)}
+      .oc-mgr.active{outline:2px solid var(--c2);outline-offset:2px}
+      .oc-mgr .oc-av{width:54px;height:54px;font-size:16px;background:#12161f;border:2px solid var(--c2);box-shadow:0 0 15px -3px var(--c2)}
+      .oc-mgr .info{min-width:0;padding-right:56px}
+      .oc-mgr .nm{font-size:15px;font-weight:750;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .oc-mgr .sz{margin-top:7px;font-size:11px;font-weight:750;color:var(--c2);background:#12161f;border:1px solid var(--c2);border-radius:999px;padding:3px 11px;display:inline-block}
+      .oc-mgr .gorev{position:absolute;top:11px;right:12px;max-width:54%;font-size:9.5px;font-weight:800;padding:4px 11px;border-radius:999px;
+        color:#0b0e14;background:var(--c2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-shadow:0 0 12px -3px var(--c2)}
+      /* Ekip paneli */
       .oc-team{display:none;margin-top:18px;border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface);
         box-shadow:0 24px 50px -28px rgba(0,0,0,.5)}
       .oc-team.open{display:block}
@@ -584,15 +586,17 @@ function jsonAttr(obj) {
       .oc-bc a{color:var(--gold);cursor:pointer;text-decoration:none;font-weight:600}
       .oc-bc span.sep{color:var(--text-faint);opacity:.6}
       .oc-bc span.cur{color:var(--text-faint)}
-      .oc-thead{display:flex;align-items:center;gap:13px;padding:15px 18px;color:#fff;flex-wrap:wrap;background:linear-gradient(135deg,var(--c1),var(--c2))}
-      .oc-thead .oc-av{width:52px;height:52px;font-size:16px}
+      .oc-thead{position:relative;overflow:hidden;display:flex;align-items:center;gap:13px;padding:16px 18px;color:#fff;flex-wrap:wrap;background:linear-gradient(158deg,#1b2131,#12161f)}
+      .oc-thead::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c1))}
+      .oc-thead .oc-av{width:52px;height:52px;font-size:16px;background:#12161f;border:2px solid var(--c2);box-shadow:0 0 15px -3px var(--c2)}
       .oc-thead .th-nm{font-size:16px;font-weight:800;letter-spacing:-.01em}
-      .oc-thead .th-ti{font-size:12px;color:rgba(255,255,255,.9)}
-      .oc-thead .th-prof{font-size:11px;font-weight:700;background:rgba(255,255,255,.92);color:#1c1c20;border:none;cursor:pointer;padding:7px 13px;border-radius:9px;text-decoration:none}
+      .oc-thead .th-ti{font-size:12px;color:rgba(255,255,255,.85)}
+      .oc-thead .th-prof{font-size:11px;font-weight:700;background:var(--c2);color:#0b0e14;border:none;cursor:pointer;padding:7px 13px;border-radius:9px;text-decoration:none}
       .oc-thead .grow{margin-left:auto;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-      .oc-thead input{border:none;border-radius:10px;padding:9px 13px;font-size:13px;width:210px;max-width:52vw;background:rgba(255,255,255,.94);color:#1c1c20}
-      .oc-thead .x{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;background:rgba(255,255,255,.25);color:#fff;font-size:16px}
-      .oc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;padding:16px 18px;max-height:54vh;overflow:auto}
+      .oc-thead input{border:none;border-radius:10px;padding:9px 13px;font-size:13px;width:210px;max-width:52vw;background:rgba(255,255,255,.12);color:#fff}
+      .oc-thead input::placeholder{color:rgba(255,255,255,.6)}
+      .oc-thead .x{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;background:rgba(255,255,255,.18);color:#fff;font-size:16px}
+      .oc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;padding:16px 18px;max-height:56vh;overflow:auto}
       .oc-mem{display:flex;align-items:center;gap:11px;padding:10px 12px;border:1px solid var(--border);border-left:4px solid var(--mc);
         border-radius:13px;background:var(--surface);cursor:pointer;transition:background .12s ease,transform .12s ease}
       .oc-mem:hover{background:var(--bg3);transform:translateY(-1px)}
@@ -626,8 +630,8 @@ function jsonAttr(obj) {
       (function () {
         const orgVeri = <%- JSON.stringify(hiyerarsiAgaci) %>;
         const FIRMA_SLUG = <%- JSON.stringify(typeof firma !== 'undefined' && firma ? (firma.slug || '') : '') %>;
-        // Premium mücevher tonları (departmandan bağımsız, her ekibe bir renk)
-        const PAIRS = [['#4f46e5','#3730a3'],['#0f766e','#134e4a'],['#9333ea','#6b21a8'],['#b45309','#7c2d12'],['#1d4ed8','#1e3a8a'],['#be123c','#881337'],['#047857','#064e3b'],['#0e7490','#155e75'],['#7c3aed','#5b21b6'],['#a16207','#713f12']];
+        // Neon renk üçlüleri (departmandan bağımsız, her ekibe bir üçlü)
+        const PAIRS = [['#6366f1','#a855f7','#ec4899'],['#06b6d4','#3b82f6','#8b5cf6'],['#10b981','#84cc16','#f59e0b'],['#f43f5e','#fb7185','#f59e0b'],['#8b5cf6','#d946ef','#f472b6'],['#0ea5e9','#22d3ee','#34d399'],['#f59e0b','#f97316','#ef4444'],['#14b8a6','#06b6d4','#3b82f6'],['#a855f7','#ec4899','#f43f5e'],['#22c55e','#84cc16','#eab308']];
 
         const $ = id => document.getElementById(id);
         function el(tag, cls){ const e = document.createElement(tag); if (cls) e.className = cls; return e; }
@@ -662,9 +666,8 @@ function jsonAttr(obj) {
           const c = el('div', 'oc-kokcard');
           c.appendChild(avatar(kok, 'oc-av'));
           const info = el('div'); const nm = el('div','kk-nm'); nm.textContent = tamAd(kok); info.appendChild(nm);
-          if (kok.unvan){ const t = el('div','kk-ti'); t.textContent = kok.unvan; info.appendChild(t); }
           c.appendChild(info);
-          const b = el('div','kk-badge'); b.textContent = 'En Üst Yönetici'; c.appendChild(b);
+          if (kok.unvan){ const g = el('div','kk-gorev'); g.textContent = kok.unvan; c.appendChild(g); }
           if (profilUrl(kok)) c.onclick = function(){ git(kok); }; else c.style.cursor = 'default';
           h.appendChild(c);
         })();
@@ -673,14 +676,15 @@ function jsonAttr(obj) {
         (function(){
           const row = $('ocMgrRow');
           topList.forEach(function(n){
-            const pair = renk(n);
+            const t3 = renk(n);
             const c = el('div','oc-mgr'); c.dataset.id = n.id;
-            c.style.setProperty('--c1', pair[0]); c.style.setProperty('--c2', pair[1]); c.style.setProperty('--sh', pair[1] + 'aa');
-            if (yonetici(n)){ const bd = el('div','badge'); bd.textContent = 'Yönetici'; c.appendChild(bd); }
+            c.style.setProperty('--c1', t3[0]); c.style.setProperty('--c2', t3[1]); c.style.setProperty('--c3', t3[2] || t3[1]);
+            if (n.unvan){ const g = el('div','gorev'); g.textContent = n.unvan; c.appendChild(g); }  // sağ üst = GÖREV
             c.appendChild(avatar(n, 'oc-av'));
-            const nm = el('div','nm'); nm.textContent = tamAd(n); c.appendChild(nm);
-            if (n.unvan){ const t = el('div','ti'); t.textContent = n.unvan; c.appendChild(t); }
-            if (yonetici(n)){ const sz = el('div','sz'); sz.textContent = ekipBuyuk(n) + ' kişi'; c.appendChild(sz); }
+            const info = el('div','info');
+            const nm = el('div','nm'); nm.textContent = tamAd(n); info.appendChild(nm);
+            if (yonetici(n)){ const sz = el('div','sz'); sz.textContent = ekipBuyuk(n) + ' kişi'; info.appendChild(sz); }
+            c.appendChild(info);
             c.onclick = function(){ if (yonetici(n)) ekipAc([n]); else git(n); };
             row.appendChild(c);
           });
