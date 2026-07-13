@@ -427,7 +427,7 @@ function jsonAttr(obj) {
       <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Yönetim Ağı</a>
       <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
       <% } %>
-      <a href="/?tab=analytics" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
+      <a href="/?tab=gecmis" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
 
       <div class="sidebar-group-label">İstatistikler</div>
       <% if (rol !== 'sadece_saha') { %>
@@ -529,7 +529,6 @@ function jsonAttr(obj) {
     <a href="/?tab=icerik"  class="dash-tab <%= tab === 'icerik'  ? 'active' : '' %>">İçerik</a>
     <a href="/?tab=urunler" class="dash-tab <%= tab === 'urunler' ? 'active' : '' %>">Ürünler</a>
     <% } else if (aktifGrup === 'saha') { %>
-    <a href="/?tab=analytics" class="dash-tab <%= tab === 'analytics' ? 'active' : '' %>">Link Analytics</a>
     <a href="/?tab=gecmis"    class="dash-tab <%= tab === 'gecmis'    ? 'active' : '' %>">İşlem Geçmişi</a>
     <% } %>
   </div>
