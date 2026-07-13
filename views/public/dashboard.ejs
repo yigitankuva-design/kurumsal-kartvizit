@@ -381,9 +381,10 @@ function ikon(isim, boyut, sinif) {
 
 var tabGruplari = {
   genel: ['genel'],
-  calisanlar: ['calisanlar', 'excel', 'kullanicilar'],
+  calisanlar: ['calisanlar', 'kullanicilar'],
   eczane: ['raf', 'indirim'],
   icerik: ['icerik', 'urunler'],
+  veriekle: ['excel'],
   istatistik: ['istatistik', 'saha'],
   saha: ['analytics', 'gecmis']
 };
@@ -402,6 +403,7 @@ var grupEtiketleri = {
   calisanlar: 'Personel Yönetim Ağı',
   eczane: 'Eczane Yönetim Ağı',
   icerik: 'İçerik Yönetim',
+  veriekle: 'Veri Ekle',
   istatistik: 'İstatistikler',
   saha: 'Saha Yönetim Ağı'
 };
@@ -429,6 +431,11 @@ function jsonAttr(obj) {
       <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
       <% } %>
       <a href="/?tab=gecmis" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
+
+      <% if (rol !== 'sadece_saha') { %>
+      <div class="sidebar-group-label">Veri Ekle</div>
+      <a href="/?tab=excel" class="sidebar-item <%= aktifGrup === 'veriekle' ? 'active' : '' %>"><%- ikon('kutu') %> Toplu Yükleme</a>
+      <% } %>
 
       <div class="sidebar-group-label">İstatistikler</div>
       <% if (rol !== 'sadece_saha') { %>
@@ -514,12 +521,11 @@ function jsonAttr(obj) {
   <% } %>
 
   <!-- SUB TABS -->
-  <% if (aktifGrup !== 'genel' && aktifGrup !== 'istatistik' && tab !== 'home') { %>
+  <% if (aktifGrup !== 'genel' && aktifGrup !== 'istatistik' && aktifGrup !== 'veriekle' && tab !== 'home') { %>
   <div class="dash-tabs">
     <% if (aktifGrup === 'calisanlar') { %>
     <a href="/?tab=calisanlar" class="dash-tab <%= tab === 'calisanlar' ? 'active' : '' %>">Çalışanlar</a>
     <a href="/?tab=organizasyon" class="dash-tab <%= tab === 'organizasyon' ? 'active' : '' %>">Organizasyon</a>
-    <a href="/?tab=excel"      class="dash-tab <%= tab === 'excel'      ? 'active' : '' %>">Excel Yükle</a>
     <% if (!rol || rol === 'tam_yetkili') { %>
     <a href="/?tab=kullanicilar" class="dash-tab <%= tab === 'kullanicilar' ? 'active' : '' %>">Kullanıcılar</a>
     <% } %>
