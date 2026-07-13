@@ -428,13 +428,17 @@ function jsonAttr(obj) {
       <% } %>
       <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
       <a href="/?tab=raf" class="sidebar-item <%= aktifGrup === 'eczane' ? 'active' : '' %>"><%- ikon('kutu') %> Eczane Yönetim Ağı</a>
-      <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
       <% } %>
       <a href="/?tab=gecmis" class="sidebar-item <%= aktifGrup === 'saha' ? 'active' : '' %>"><%- ikon('grafik') %> Saha Yönetim Ağı</a>
 
-      <% if (rol !== 'sadece_saha') { %>
+      <% if (rol !== 'sadece_saha' || (firma.paket === 'kurumsal' && rol !== 'sadece_calisan')) { %>
       <div class="sidebar-group-label">Veri Ekle</div>
+      <% if (rol !== 'sadece_saha') { %>
       <a href="/?tab=excel" class="sidebar-item <%= aktifGrup === 'veriekle' ? 'active' : '' %>"><%- ikon('kutu') %> Toplu Yükleme</a>
+      <% } %>
+      <% if (firma.paket === 'kurumsal' && rol !== 'sadece_calisan') { %>
+      <a href="/?tab=icerik" class="sidebar-item <%= aktifGrup === 'icerik' ? 'active' : '' %>"><%- ikon('kamera') %> İçerik Yönetim</a>
+      <% } %>
       <% } %>
 
       <div class="sidebar-group-label">İstatistikler</div>
