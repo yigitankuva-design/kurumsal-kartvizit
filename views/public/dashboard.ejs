@@ -607,10 +607,9 @@ function jsonAttr(obj) {
         const FIRMA_SLUG = <%- JSON.stringify(typeof firma !== 'undefined' && firma ? (firma.slug || '') : '') %>;
         const host = document.getElementById('ocChart');
         const kokHost = document.getElementById('ocKok');
-        const PAIRS = [['#3b82f6','#1d4ed8'],['#14b8a6','#0d7d72'],['#8b5cf6','#6d28d9'],['#e0a020','#b4680a'],['#db2777','#a21657'],['#ea580c','#c2410c'],['#0ea5e9','#0369a1'],['#65a30d','#3f6212']];
+        const PAIRS = [['#3b82f6','#1d4ed8'],['#14b8a6','#0d7d72'],['#8b5cf6','#6d28d9'],['#e0a020','#b4680a'],['#db2777','#a21657'],['#ea580c','#c2410c'],['#0ea5e9','#0369a1'],['#65a30d','#3f6212'],['#6366f1','#4338ca'],['#f43f5e','#be123c'],['#0891b2','#155e75'],['#059669','#047857']];
         const KOK = ['#d4b25a','#a9822f'];
-        const depMap = {}; let depIdx = 0;
-        function pairFor(dep){ const key = dep || '—'; if (!(key in depMap)) { depMap[key] = PAIRS[depIdx % PAIRS.length]; depIdx++; } return depMap[key]; }
+        const colorMap = {};   // düğüm id → renk (EKİBE göre; departmandan bağımsız)
         const collapsed = {};
 
         function el(tag, cls){ const e = document.createElement(tag); if (cls) e.className = cls; return e; }
@@ -620,7 +619,7 @@ function jsonAttr(obj) {
         function git(n){ const u = profilUrl(n); if (u) window.open(u, '_blank', 'noopener'); }
 
         function card(n){
-          const pair = pairFor(n.departman);
+          const pair = colorMap[n.id] || PAIRS[0];
           const nd = el('div', 'oc-node');
           nd.style.setProperty('--c1', pair[0]); nd.style.setProperty('--c2', pair[1]); nd.style.setProperty('--sh', pair[1] + '99');
           if (n.ekip_yoneticisi){ const b = el('div', 'oc-badge'); b.textContent = 'Yönetici'; nd.appendChild(b); }
@@ -652,6 +651,18 @@ function jsonAttr(obj) {
         // En üst yönetici (tek kök) varsa onu ayrı başlık kartına al; şemanın kökleri onun ekibi olur.
         let kok = null, roots = orgVeri;
         if (orgVeri.length === 1 && orgVeri[0].cocuklar && orgVeri[0].cocuklar.length){ kok = orgVeri[0]; roots = kok.cocuklar; }
+
+        // Renk EKİBE göre: bir ekip başı (alt kişisi olan düğüm) yeni renk alır; ekibindekiler o rengi devralır.
+        // Böylece departman boş olsa bile her ekip farklı renkte görünür.
+        let renkSayaci = 0;
+        (function renkAta(list, devralinan){
+          list.forEach(function(n){
+            let p = devralinan;
+            if (n.cocuklar && n.cocuklar.length){ p = PAIRS[renkSayaci % PAIRS.length]; renkSayaci++; }
+            colorMap[n.id] = p || PAIRS[0];
+            renkAta(n.cocuklar || [], p || PAIRS[0]);
+          });
+        })(roots, null);
 
         // Ekrana sığması için: ekibi olan tüm düğümler varsayılan KAPALI (yalnızca yöneticiler görünür).
         (function katla(list){ list.forEach(function(n){ if (n.cocuklar && n.cocuklar.length){ collapsed[n.id] = true; katla(n.cocuklar); } }); })(roots);
