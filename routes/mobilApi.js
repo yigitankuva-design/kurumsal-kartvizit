@@ -115,6 +115,50 @@ router.post('/firma-giris', firmaGirisLimiter, async (req, res) => {
   }
 });
 
+const girisTekLimiter = createJsonLimiter('Çok fazla deneme yaptınız. Lütfen 15 dakika sonra tekrar deneyin.');
+
+router.post('/giris-tek', girisTekLimiter, async (req, res) => {
+  const { giris_bilgisi, sifre } = req.body;
+  if (!giris_bilgisi || !sifre) {
+    return res.status(400).json({ ok: false, error: 'E-posta/kullanıcı adı ve şifre zorunlu.' });
+  }
+  try {
+    // 1) Temsilci (calisanlar.giris_email)
+    const calisanRes = await pool.query(
+      "SELECT * FROM calisanlar WHERE LOWER(giris_email) = LOWER($1) AND durum != 'silindi'",
+      [giris_bilgisi]
+    );
+    if (calisanRes.rows.length && calisanRes.rows[0].giris_sifre_hash) {
+      const calisan = calisanRes.rows[0];
+      if (await bcrypt.compare(sifre, calisan.giris_sifre_hash)) {
+        const token = calisanTokenUret(calisan.id);
+        return res.json({
+          ok: true,
+          rol: 'temsilci',
+          token,
+          calisan: { id: calisan.id, ad: calisan.ad, soyad: calisan.soyad, firmaId: calisan.firma_id, ekipYoneticisi: calisan.ekip_yoneticisi },
+        });
+      }
+    }
+    // 2) Firma (firmalar.yetkili_email | kullanici_adi)
+    const firmaRes = await pool.query(
+      'SELECT * FROM firmalar WHERE LOWER(yetkili_email) = LOWER($1) OR LOWER(kullanici_adi) = LOWER($1)',
+      [giris_bilgisi]
+    );
+    if (firmaRes.rows.length && firmaRes.rows[0].yetkili_sifre_hash) {
+      const firma = firmaRes.rows[0];
+      if (await bcrypt.compare(sifre, firma.yetkili_sifre_hash)) {
+        const token = firmaTokenUret(firma.id);
+        return res.json({ ok: true, rol: 'firma', token, firma: { id: firma.id, ad: firma.ad } });
+      }
+    }
+    return res.status(401).json({ ok: false, error: 'E-posta/kullanıcı adı veya şifre hatalı.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ ok: false, error: 'Sunucu hatası.' });
+  }
+});
+
 router.get('/firma/calisanlarimiz', requireFirmaToken, async (req, res) => {
   try {
     const firmaResult = await pool.query('SELECT id, ad, slug FROM firmalar WHERE id = $1', [req.firmaId]);
