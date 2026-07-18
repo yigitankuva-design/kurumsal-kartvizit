@@ -965,3 +965,69 @@ describe('Mobil API — Ekip / Hiyerarşi', () => {
     expect(res.body.calisan.ekipYoneticisi).toBe(true);
   });
 });
+
+describe('Mobil API — /api/mobil/giris-tek', () => {
+  let firmaId, calisanId;
+  const temsilciEmail = 'giristek-temsilci@example.com';
+  const firmaEmail = 'giristek-firma@example.com';
+  const sifre = 'test1234';
+
+  beforeAll(async () => {
+    const hash = await bcrypt.hash(sifre, 12);
+    const firmaSonuc = await pool.query(
+      `INSERT INTO firmalar (ad, slug, yetkili_email, yetkili_sifre_hash, paket)
+       VALUES ('GirisTek Firma', 'giristek-firma', $1, $2, 'kurumsal') RETURNING id`,
+      [firmaEmail, hash]
+    );
+    firmaId = firmaSonuc.rows[0].id;
+    const calisanSonuc = await pool.query(
+      `INSERT INTO calisanlar (firma_id, ad, soyad, slug, giris_email, giris_sifre_hash)
+       VALUES ($1, 'Tek', 'Temsilci', 'giristek-temsilci', $2, $3) RETURNING id`,
+      [firmaId, temsilciEmail, hash]
+    );
+    calisanId = calisanSonuc.rows[0].id;
+  });
+
+  afterAll(async () => {
+    await pool.query('DELETE FROM firmalar WHERE id = $1', [firmaId]);
+  });
+
+  test('temsilci bilgisiyle rol=temsilci ve token döner', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: temsilciEmail, sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.rol).toBe('temsilci');
+    expect(typeof res.body.token).toBe('string');
+    expect(res.body.calisan.id).toBe(calisanId);
+  });
+
+  test('firma bilgisiyle rol=firma ve token döner', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: firmaEmail, sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.ok).toBe(true);
+    expect(res.body.rol).toBe('firma');
+    expect(typeof res.body.token).toBe('string');
+    expect(res.body.firma.id).toBe(firmaId);
+  });
+
+  test('e-posta büyük/küçük harf duyarsız', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: temsilciEmail.toUpperCase(), sifre });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.rol).toBe('temsilci');
+  });
+
+  test('yanlış şifreyle 401', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: temsilciEmail, sifre: 'yanlis' });
+    expect(res.statusCode).toBe(401);
+  });
+
+  test('eksik alanla 400', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: temsilciEmail });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('kayıtsız bilgiyle 401', async () => {
+    const res = await request(app).post('/api/mobil/giris-tek').send({ giris_bilgisi: 'yok@example.com', sifre: 'herhangi' });
+    expect(res.statusCode).toBe(401);
+  });
+});
